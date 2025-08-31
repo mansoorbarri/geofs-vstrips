@@ -430,13 +430,11 @@ export default function ATCFlightStrip() {
           {renderFlightCategory("control", "Control", flightsByStatus.control)}
         </div>
 
-        <div className="mt-8 p-4 bg-gray-900 border border-gray-700 rounded-lg">
-          <p className="text-gray-300 text-sm">
-            <strong>Database Ready:</strong> The application is now configured with Prisma for efficient database 
-            operations and real-time sharing with full type safety. All flight data is persisted with automatic 
-            history tracking and optimized queries for better performance.
-          </p>
-        </div>
+        <div className="fixed bottom-0 left-0 w-full text-center p-4 bg-black/50 backdrop-blur-sm z-50">
+        <p className="text-gray-500 text-xs">
+          Designed & Developed by <span className="font-semibold text-white">xyzmani</span>
+        </p>
+      </div>
       </div>
     </div>
   )
