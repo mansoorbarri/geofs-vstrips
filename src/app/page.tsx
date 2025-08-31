@@ -15,6 +15,20 @@ import { useFlights, type Flight } from "~/hooks/use-flights"
 
 type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
 
+// NEW: Define a type for the data coming from the imported JSON file
+type ImportedFlight = {
+  callsign: string
+  aircraft_type?: string
+  aircraft?: string
+  departure: string
+  arrival?: string
+  destination?: string
+  altitude: string
+  speed: string
+  status: FlightStatus
+  notes?: string
+}
+
 interface ImportStatus {
   type: "success" | "error" | null
   message: string
@@ -94,7 +108,8 @@ export default function ATCFlightStrip() {
     fileInputRef.current?.click()
   }, [])
 
-  const validateFlight = useCallback((flight: any): flight is Omit<Flight, "id" | "created_at" | "updated_at"> => {
+  // UPDATED: Use ImportedFlight as the type for the predicate
+  const validateFlight = useCallback((flight: any): flight is ImportedFlight => {
     return (
       typeof flight === "object" &&
       typeof flight.callsign === "string" &&
@@ -121,6 +136,7 @@ export default function ATCFlightStrip() {
 
       flightsToImport.forEach((flight, index) => {
         if (validateFlight(flight)) {
+          // This line is now valid because `flight` is typed as ImportedFlight
           const normalizedFlight = {
             callsign: flight.callsign,
             aircraft_type: flight.aircraft_type || flight.aircraft,
