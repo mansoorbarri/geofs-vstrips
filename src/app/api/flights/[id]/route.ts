@@ -3,11 +3,27 @@ import { PrismaClient, FlightStatus } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const flightId = params.id
+
+    const history = await prisma.flight_history.findMany({
+      where: { flight_id: flightId },
+      orderBy: { changed_at: 'desc' }
+    })
+
+    return NextResponse.json({ history })
+  } catch (error) {
+    console.error("Error fetching flight history:", error)
+    return NextResponse.json({ error: "Failed to fetch flight history" }, { status: 500 })
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
     const { callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body
-    const flightId = params.id
+    const { id: flightId } = await params
 
     // Get current flight for history tracking
     const currentFlight = await prisma.flights.findUnique({
@@ -71,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const flightId = params.id
+    const { id: flightId } = await params
 
     // Check if flight exists
     const flight = await prisma.flights.findUnique({
@@ -82,7 +98,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Flight not found" }, { status: 404 })
     }
 
-    // Delete flight (history will be cascade deleted due to foreign key constraint)
+    // Delete flight history first, then the flight
+    await prisma.flight_history.deleteMany({
+      where: { flight_id: flightId }
+    })
+    
+    // Now delete the flight
     await prisma.flights.delete({
       where: { id: flightId }
     })
