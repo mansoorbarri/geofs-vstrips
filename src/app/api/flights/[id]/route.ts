@@ -1,65 +1,66 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient, FlightStatus } from "@prisma/client"
+import { type NextRequest, NextResponse } from "next/server";
+import { PrismaClient, FlightStatus } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-// Corrected GET function for Next.js 15
+// The second argument is a Promise<object> in Next.js 15
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const flightId = (await params).id
+    // You must await the params object to access its properties
+    const flightId = (await params).id;
 
     const history = await prisma.flight_history.findMany({
       where: { flight_id: flightId },
-      orderBy: { changed_at: 'desc' }
-    })
+      orderBy: { changed_at: 'desc' },
+    });
 
-    return NextResponse.json({ history })
+    return NextResponse.json({ history });
   } catch (error) {
-    console.error("Error fetching flight history:", error)
-    return NextResponse.json({ error: "Failed to fetch flight history" }, { status: 500 })
+    console.error("Error fetching flight history:", error);
+    return NextResponse.json({ error: "Failed to fetch flight history" }, { status: 500 });
   }
 }
 
-// Corrected PUT function for Next.js 15
+// The same change applies to the PUT function
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const body = await request.json()
-    const { callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body
-    const { id: flightId } = await params
+    const body = await request.json();
+    const { callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body;
+    const { id: flightId } = await params; // Await params here
 
     // Get current flight for history tracking
     const currentFlight = await prisma.flights.findUnique({
-      where: { id: flightId }
-    })
+      where: { id: flightId },
+    });
 
     if (!currentFlight) {
-      return NextResponse.json({ error: "Flight not found" }, { status: 404 })
+      return NextResponse.json({ error: "Flight not found" }, { status: 404 });
     }
 
     // Validate status if provided
     if (status) {
-      const validStatuses = Object.values(FlightStatus)
+      const validStatuses = Object.values(FlightStatus);
       if (!validStatuses.includes(status)) {
-        return NextResponse.json({ error: "Invalid status" }, { status: 400 })
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
       }
     }
 
     // Prepare update data (only include fields that are provided)
-    const updateData: any = {}
-    if (callsign !== undefined) updateData.callsign = callsign.toUpperCase()
-    if (aircraft_type !== undefined) updateData.aircraft_type = aircraft_type.toUpperCase()
-    if (departure !== undefined) updateData.departure = departure.toUpperCase()
-    if (arrival !== undefined) updateData.arrival = arrival.toUpperCase()
-    if (altitude !== undefined) updateData.altitude = altitude
-    if (speed !== undefined) updateData.speed = speed
-    if (status !== undefined) updateData.status = status
-    if (notes !== undefined) updateData.notes = notes
+    const updateData: any = {};
+    if (callsign !== undefined) updateData.callsign = callsign.toUpperCase();
+    if (aircraft_type !== undefined) updateData.aircraft_type = aircraft_type.toUpperCase();
+    if (departure !== undefined) updateData.departure = departure.toUpperCase();
+    if (arrival !== undefined) updateData.arrival = arrival.toUpperCase();
+    if (altitude !== undefined) updateData.altitude = altitude;
+    if (speed !== undefined) updateData.speed = speed;
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
 
     // Update flight
     const updatedFlight = await prisma.flights.update({
       where: { id: flightId },
-      data: updateData
-    })
+      data: updateData,
+    });
 
     // Log status change to history if status changed
     if (status && status !== currentFlight.status) {
@@ -68,50 +69,50 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           flight_id: flightId,
           old_status: currentFlight.status,
           new_status: status,
-        }
-      })
+        },
+      });
     }
 
-    return NextResponse.json({ flight: updatedFlight })
+    return NextResponse.json({ flight: updatedFlight });
   } catch (error: any) {
-    console.error("Error updating flight:", error)
-    
+    console.error("Error updating flight:", error);
+
     // Handle unique constraint violation (duplicate callsign)
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Flight with this callsign already exists" }, { status: 409 })
+      return NextResponse.json({ error: "Flight with this callsign already exists" }, { status: 409 });
     }
-    
-    return NextResponse.json({ error: "Failed to update flight" }, { status: 500 })
+
+    return NextResponse.json({ error: "Failed to update flight" }, { status: 500 });
   }
 }
 
-// Corrected DELETE function for Next.js 15
+// The same change applies to the DELETE function
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: flightId } = await params
+    const { id: flightId } = await params; // Await params here
 
     // Check if flight exists
     const flight = await prisma.flights.findUnique({
-      where: { id: flightId }
-    })
+      where: { id: flightId },
+    });
 
     if (!flight) {
-      return NextResponse.json({ error: "Flight not found" }, { status: 404 })
+      return NextResponse.json({ error: "Flight not found" }, { status: 404 });
     }
 
     // Delete flight history first, then the flight
     await prisma.flight_history.deleteMany({
-      where: { flight_id: flightId }
-    })
-    
+      where: { flight_id: flightId },
+    });
+
     // Now delete the flight
     await prisma.flights.delete({
-      where: { id: flightId }
-    })
+      where: { id: flightId },
+    });
 
-    return NextResponse.json({ message: "Flight deleted successfully" })
+    return NextResponse.json({ message: "Flight deleted successfully" });
   } catch (error) {
-    console.error("Error deleting flight:", error)
-    return NextResponse.json({ error: "Failed to delete flight" }, { status: 500 })
+    console.error("Error deleting flight:", error);
+    return NextResponse.json({ error: "Failed to delete flight" }, { status: 500 });
   }
 }
