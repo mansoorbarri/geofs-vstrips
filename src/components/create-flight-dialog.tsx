@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "~/components/ui/button"
 import {
@@ -19,56 +18,51 @@ import { Textarea } from "~/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Plus } from "lucide-react"
 
-interface Flight {
-  id: string
-  callsign: string
-  aircraft: string
-  departure: string
-  destination: string
-  altitude: string
-  speed: string
-  status: "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
-  notes?: string
-}
+// Import the correct Flight type from the single source of truth
+import { type Flight } from "~/hooks/use-flights"
+
+// Create a new type for the data we submit to the database
+type NewFlightData = Omit<Flight, "id" | "created_at" | "updated_at">
 
 interface CreateFlightDialogProps {
-  onCreateFlight: (flight: Flight) => void
+  // Correct the prop type to match what page.tsx is providing
+  // It should accept the NewFlightData type and return a Promise<void>
+  onCreateFlight: (newFlightData: NewFlightData) => Promise<void>
 }
 
 export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) {
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
+    // Correct the state to use the correct property names
     callsign: "",
-    aircraft: "",
+    aircraft_type: "",
     departure: "",
-    destination: "",
+    arrival: "",
     altitude: "",
     speed: "",
-    status: "delivery" as Flight["status"],
+    status: "delivery",
     notes: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // Validate required fields
-    if (!formData.callsign || !formData.aircraft || !formData.departure || !formData.destination) {
+    if (!formData.callsign || !formData.aircraft_type || !formData.departure || !formData.arrival) {
+      // You should add some user feedback here
       return
     }
 
-    const newFlight: Flight = {
-      id: `flight_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      ...formData,
-    }
-
-    onCreateFlight(newFlight)
+    // Call the onCreateFlight function with the correctly typed data
+    // Await the promise since it's an async function
+    await onCreateFlight(formData as NewFlightData)
 
     // Reset form and close dialog
     setFormData({
       callsign: "",
-      aircraft: "",
+      aircraft_type: "",
       departure: "",
-      destination: "",
+      arrival: "",
       altitude: "",
       speed: "",
       status: "delivery",
@@ -80,6 +74,9 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  // The status options
+  const statusOptions = ["delivery", "ground", "tower", "departure", "approach", "control"]
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -113,11 +110,12 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="aircraft">Aircraft *</Label>
+              <Label htmlFor="aircraft_type">Aircraft *</Label>
               <Input
-                id="aircraft"
-                value={formData.aircraft}
-                onChange={(e) => handleInputChange("aircraft", e.target.value.toUpperCase())}
+                // Corrected the ID to match the state property
+                id="aircraft_type"
+                value={formData.aircraft_type}
+                onChange={(e) => handleInputChange("aircraft_type", e.target.value.toUpperCase())}
                 placeholder="B737-800"
                 className="bg-gray-800 border-gray-600 text-white"
                 required
@@ -138,11 +136,12 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="destination">Destination *</Label>
+              <Label htmlFor="arrival">Arrival *</Label>
               <Input
-                id="destination"
-                value={formData.destination}
-                onChange={(e) => handleInputChange("destination", e.target.value.toUpperCase())}
+                // Corrected the ID to match the state property
+                id="arrival"
+                value={formData.arrival}
+                onChange={(e) => handleInputChange("arrival", e.target.value.toUpperCase())}
                 placeholder="KLAX"
                 className="bg-gray-800 border-gray-600 text-white"
                 required
@@ -177,18 +176,17 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
             <Label htmlFor="status">Initial Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value: Flight["status"]) => handleInputChange("status", value)}
+              onValueChange={(value) => handleInputChange("status", value)}
             >
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="delivery">Delivery</SelectItem>
-                <SelectItem value="ground">Ground</SelectItem>
-                <SelectItem value="tower">Tower</SelectItem>
-                <SelectItem value="departure">Departure</SelectItem>
-                <SelectItem value="approach">Approach</SelectItem>
-                <SelectItem value="control">Control</SelectItem>
+                {statusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

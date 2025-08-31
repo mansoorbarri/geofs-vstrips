@@ -11,9 +11,11 @@ import { CreateFlightDialog } from "~/components/create-flight-dialog"
 import { EditFlightDialog } from "~/components/edit-flight-dialog"
 import { RealTimeIndicator } from "~/components/real-time-indicator"
 import { Alert, AlertDescription } from "~/components/ui/alert"
-import { useFlights, type Flight } from "~/hooks/use-flights"
+import { useFlights } from "~/hooks/use-flights"
+import { type Flight } from "~/hooks/use-flights";
 
-type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
+// CORRECTED: Export the FlightStatus type so other components can import it
+export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
 
 // NEW: Define a type for the data coming from the imported JSON file
 type ImportedFlight = {
@@ -33,6 +35,13 @@ interface ImportStatus {
   type: "success" | "error" | null
   message: string
 }
+
+// CORRECTED: This interface is no longer needed here, as it's defined in create-flight-dialog.tsx.
+// Leaving it here was causing the type mismatch. I am removing it to clean up the code.
+// interface CreateFlightDialogProps {
+//   onCreateFlight: (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => void;
+// }
+
 
 export default function ATCFlightStrip() {
   const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true)
@@ -55,13 +64,17 @@ export default function ATCFlightStrip() {
     }
 
     flights.forEach((flight) => {
-      if (categories[flight.status]) {
-        categories[flight.status].push(flight)
-      }
-    })
+      // Corrected: Add a type assertion to tell TypeScript that flight.status is a valid FlightStatus.
+      const status = flight.status as FlightStatus;
 
-    return categories
-  }, [flights])
+      if (categories[status]) {
+        // Now TypeScript knows that 'status' is a valid key, so this is safe.
+        categories[status].push(flight);
+      }
+    });
+
+    return categories;
+  }, [flights]);
 
   // Memoize status cycle for performance
   const statusCycle: Record<FlightStatus, FlightStatus> = useMemo(() => ({
@@ -84,7 +97,8 @@ export default function ATCFlightStrip() {
     if (!flight) return
 
     try {
-      await updateFlight(flightId, { status: statusCycle[flight.status] })
+      // Corrected: Add type assertion to inform TypeScript that flight.status is a valid key
+      await updateFlight(flightId, { status: statusCycle[flight.status as FlightStatus] })
     } catch (error) {
       showStatus("error", "Failed to update flight status. Please try again.")
     }
@@ -123,75 +137,80 @@ export default function ATCFlightStrip() {
   }, [])
 
   const handleFileImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     try {
-      const text = await file.text()
-      const jsonData = JSON.parse(text)
-      const flightsToImport = Array.isArray(jsonData) ? jsonData : [jsonData]
+      const text = await file.text();
+      const jsonData = JSON.parse(text);
+      const flightsToImport = Array.isArray(jsonData) ? jsonData : [jsonData];
 
-      const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] = []
-      const invalidFlights: any[] = []
+      const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] = [];
+      const invalidFlights: any[] = [];
 
       flightsToImport.forEach((flight, index) => {
         if (validateFlight(flight)) {
-          // This line is now valid because `flight` is typed as ImportedFlight
-          const normalizedFlight = {
-            callsign: flight.callsign,
-            aircraft_type: flight.aircraft_type || flight.aircraft,
-            departure: flight.departure,
-            arrival: flight.arrival || flight.destination,
-            altitude: flight.altitude,
-            speed: flight.speed,
-            status: flight.status,
-            notes: flight.notes || "",
+          const aircraft_type = flight.aircraft_type || flight.aircraft;
+          const arrival = flight.arrival || flight.destination;
+
+          if (typeof aircraft_type === 'string' && typeof arrival === 'string') {
+            const normalizedFlight = {
+              callsign: flight.callsign,
+              aircraft_type: aircraft_type,
+              departure: flight.departure,
+              arrival: arrival,
+              altitude: flight.altitude,
+              speed: flight.speed,
+              status: flight.status,
+              notes: flight.notes || "",
+            };
+            validFlights.push(normalizedFlight);
+          } else {
+              invalidFlights.push({ index, flight, reason: "Inferred types were incorrect." });
           }
-          validFlights.push(normalizedFlight)
         } else {
-          invalidFlights.push({ index, flight })
+          invalidFlights.push({ index, flight });
         }
-      })
+      });
 
       if (validFlights.length > 0) {
-        let successCount = 0
-        let errorCount = 0
+        let successCount = 0;
+        let errorCount = 0;
 
-        // Process imports in batches for better performance
-        const batchSize = 5
+        const batchSize = 5;
         for (let i = 0; i < validFlights.length; i += batchSize) {
-          const batch = validFlights.slice(i, i + batchSize)
+          const batch = validFlights.slice(i, i + batchSize);
           const promises = batch.map(async (flight) => {
             try {
-              await createFlight(flight)
-              return { success: true }
+              await createFlight(flight);
+              return { success: true };
             } catch (error) {
-              return { success: false }
+              return { success: false };
             }
-          })
+          });
 
-          const results = await Promise.all(promises)
-          successCount += results.filter(r => r.success).length
-          errorCount += results.filter(r => !r.success).length
+          const results = await Promise.all(promises);
+          successCount += results.filter(r => r.success).length;
+          errorCount += results.filter(r => !r.success).length;
         }
 
         const message = `Successfully imported ${successCount} flight(s)${
           errorCount > 0 ? `. ${errorCount} flights failed to import (possibly duplicates).` : "."
-        }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid entries were skipped.` : ""}`
+        }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid entries were skipped.` : ""}`;
 
-        showStatus(successCount > 0 ? "success" : "error", message, 5000)
+        showStatus(successCount > 0 ? "success" : "error", message, 5000);
       } else {
-        showStatus("error", "No valid flights found in the JSON file. Please check the format.")
+        showStatus("error", "No valid flights found in the JSON file. Please check the format.");
       }
     } catch (error) {
-      showStatus("error", "Failed to parse JSON file. Please ensure it's a valid JSON format.")
+      showStatus("error", "Failed to parse JSON file. Please ensure it's a valid JSON format.");
     }
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+      fileInputRef.current.value = "";
     }
-  }, [validateFlight, createFlight, showStatus])
-
+  }, [validateFlight, createFlight, showStatus]);
+  
   const sampleFlights = useMemo(() => [
     {
       callsign: "UAL123",
@@ -245,6 +264,7 @@ export default function ATCFlightStrip() {
     }
   }, [sampleFlights, showStatus])
 
+  // CORRECTED: The handleCreateFlight function is now compatible with the CreateFlightDialog
   const handleCreateFlight = useCallback(async (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => {
     try {
       const newFlight = await createFlight(newFlightData)
@@ -259,20 +279,14 @@ export default function ATCFlightStrip() {
     setEditDialogOpen(true)
   }, [])
 
+  // CORRECTED: The handleUpdateFlight function is now correctly typed
   const handleUpdateFlight = useCallback(async (updatedFlightData: Flight) => {
     try {
-      const updatedFlight = await updateFlight(updatedFlightData.id, {
-        callsign: updatedFlightData.callsign,
-        aircraft_type: updatedFlightData.aircraft_type,
-        departure: updatedFlightData.departure,
-        arrival: updatedFlightData.arrival,
-        altitude: updatedFlightData.altitude,
-        speed: updatedFlightData.speed,
-        status: updatedFlightData.status,
-        notes: updatedFlightData.notes,
-      })
+      // CORRECTED: Pass the correct object with only updatable fields
+      const { id, created_at, updated_at, ...updateData } = updatedFlightData
+      await updateFlight(id, updateData)
 
-      showStatus("success", `Flight strip ${updatedFlight.callsign} updated successfully!`)
+      showStatus("success", `Flight strip ${updatedFlightData.callsign} updated successfully!`)
     } catch (error: any) {
       showStatus("error", error.message || "Failed to update flight. Please try again.")
     }

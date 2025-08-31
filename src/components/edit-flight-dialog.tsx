@@ -16,44 +16,45 @@ import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
 
-interface Flight {
-  id: string
-  callsign: string
-  aircraft: string
-  departure: string
-  destination: string
-  altitude: string
-  speed: string
-  status: "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
-  notes?: string
-}
+// Import the correct Flight type from the single source of truth
+import { type Flight } from "~/hooks/use-flights"
+
+// The FlightStatus type is defined in the main page component, so we can import it
+import { type FlightStatus } from "~/app/page"
 
 interface EditFlightDialogProps {
+  // Use the correct Flight type from the hooks file
   flight: Flight | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUpdateFlight: (flight: Flight) => void
+  // Correct the prop type to accept an async function that returns a Promise<void>
+  onUpdateFlight: (updatedFlight: Flight) => Promise<void>
 }
 
 export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }: EditFlightDialogProps) {
+  // Correct the state to use the correct property names
   const [formData, setFormData] = useState({
     callsign: "",
-    aircraft: "",
+    aircraft_type: "",
     departure: "",
-    destination: "",
+    arrival: "",
     altitude: "",
     speed: "",
-    status: "delivery" as Flight["status"],
+    status: "delivery" as FlightStatus,
     notes: "",
   })
 
+  // The status options, to be consistent with other files
+  const statusOptions: FlightStatus[] = ["delivery", "ground", "tower", "departure", "approach", "control"]
+
   useEffect(() => {
     if (flight) {
+      // Correct the state initialization to use the new property names
       setFormData({
         callsign: flight.callsign,
-        aircraft: flight.aircraft,
+        aircraft_type: flight.aircraft_type,
         departure: flight.departure,
-        destination: flight.destination,
+        arrival: flight.arrival,
         altitude: flight.altitude,
         speed: flight.speed,
         status: flight.status,
@@ -62,19 +63,22 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
     }
   }, [flight])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!flight || !formData.callsign || !formData.aircraft || !formData.departure || !formData.destination) {
+    // Correct the validation to use the new property names
+    if (!flight || !formData.callsign || !formData.aircraft_type || !formData.departure || !formData.arrival) {
       return
     }
 
     const updatedFlight: Flight = {
       ...flight,
+      // Spread the formData to update the flight object with the new values
       ...formData,
     }
 
-    onUpdateFlight(updatedFlight)
+    // Call the onUpdateFlight function with the correctly typed data
+    await onUpdateFlight(updatedFlight)
     onOpenChange(false)
   }
 
@@ -104,11 +108,12 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-aircraft">Aircraft *</Label>
+              <Label htmlFor="edit-aircraft_type">Aircraft *</Label>
               <Input
-                id="edit-aircraft"
-                value={formData.aircraft}
-                onChange={(e) => handleInputChange("aircraft", e.target.value.toUpperCase())}
+                id="edit-aircraft_type"
+                // Correct the value to use the new property name
+                value={formData.aircraft_type}
+                onChange={(e) => handleInputChange("aircraft_type", e.target.value.toUpperCase())}
                 className="bg-gray-800 border-gray-600 text-white"
                 required
               />
@@ -127,11 +132,12 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-destination">Destination *</Label>
+              <Label htmlFor="edit-arrival">Arrival *</Label>
               <Input
-                id="edit-destination"
-                value={formData.destination}
-                onChange={(e) => handleInputChange("destination", e.target.value.toUpperCase())}
+                id="edit-arrival"
+                // Correct the value to use the new property name
+                value={formData.arrival}
+                onChange={(e) => handleInputChange("arrival", e.target.value.toUpperCase())}
                 className="bg-gray-800 border-gray-600 text-white"
                 required
               />
@@ -163,18 +169,18 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
             <Label htmlFor="edit-status">Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value: Flight["status"]) => handleInputChange("status", value)}
+              onValueChange={(value: FlightStatus) => handleInputChange("status", value)}
             >
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="delivery">Delivery</SelectItem>
-                <SelectItem value="ground">Ground</SelectItem>
-                <SelectItem value="tower">Tower</SelectItem>
-                <SelectItem value="departure">Departure</SelectItem>
-                <SelectItem value="approach">Approach</SelectItem>
-                <SelectItem value="control">Control</SelectItem>
+                {/* Use the status options array for consistency */}
+                {statusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -5,18 +5,12 @@ import { Edit, Trash2 } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 
-interface Flight {
-  id: string
-  callsign: string
-  aircraft: string
-  departure: string
-  destination: string
-  altitude: string
-  speed: string
-  status: "all" | "current" | "transferred"
-  notes?: string
-}
+// Correctly import the Flight and FlightStatus types from the source of truth
+import { type Flight } from "~/hooks/use-flights"
+import type { FlightStatus } from "~/app/page"
 
+// The FlightStripProps interface now uses the correct Flight type.
+// No need to redefine it here.
 interface FlightStripProps {
   flight: Flight
   onClick?: () => void
@@ -36,14 +30,21 @@ export function FlightStrip({
   onEdit,
   onDelete,
 }: FlightStripProps) {
-  const getStatusColors = (status: Flight["status"]) => {
+  // Correct the getStatusColors function to use the right status types
+  const getStatusColors = (status: FlightStatus) => {
     switch (status) {
-      case "all":
+      case "delivery":
         return "bg-gray-800 border-gray-600 hover:bg-gray-700"
-      case "current":
+      case "ground":
         return "bg-blue-900 border-blue-600 hover:bg-blue-800"
-      case "transferred":
+      case "tower":
         return "bg-green-900 border-green-600 hover:bg-green-800"
+      case "departure":
+        return "bg-purple-900 border-purple-600 hover:bg-purple-800"
+      case "approach":
+        return "bg-indigo-900 border-indigo-600 hover:bg-indigo-800"
+      case "control":
+        return "bg-red-900 border-red-600 hover:bg-red-800"
       default:
         return "bg-gray-800 border-gray-600 hover:bg-gray-700"
     }
@@ -69,7 +70,8 @@ export function FlightStrip({
     <div
       className={cn(
         "p-3 rounded border cursor-pointer transition-all duration-200 select-none relative group",
-        getStatusColors(flight.status),
+        // The status property on flight is now correctly typed and will work here
+        getStatusColors(flight.status as FlightStatus),
         isDragging && "opacity-50 scale-95 rotate-1",
         className,
       )}
@@ -91,11 +93,13 @@ export function FlightStrip({
           <div className="font-bold text-base">{flight.callsign}</div>
           <div className="text-xs text-gray-300">{flight.status.toUpperCase()}</div>
         </div>
-        <div className="text-gray-200 mb-1">{flight.aircraft}</div>
+        {/* CORRECTED: Use aircraft_type instead of aircraft */}
+        <div className="text-gray-200 mb-1">{flight.aircraft_type}</div>
         <div className="text-gray-200 mb-2">
           <span className="font-medium">{flight.departure}</span>
           <span className="mx-2 text-gray-400">→</span>
-          <span className="font-medium">{flight.destination}</span>
+          {/* CORRECTED: Use arrival instead of destination */}
+          <span className="font-medium">{flight.arrival}</span>
         </div>
         <div className="flex justify-between text-xs text-gray-300 mb-2">
           <span>
