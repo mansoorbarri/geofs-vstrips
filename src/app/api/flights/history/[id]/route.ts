@@ -3,9 +3,11 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+// Change the type of the second argument to Promise<{ id: string }>
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const flightId = params.id
+    // You must await the params object before accessing its properties
+    const flightId = (await params).id
 
     const history = await prisma.flight_history.findMany({
       where: { flight_id: flightId },
