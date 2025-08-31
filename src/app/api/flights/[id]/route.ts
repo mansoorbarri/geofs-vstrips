@@ -3,9 +3,10 @@ import { PrismaClient, FlightStatus } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+// Corrected GET function for Next.js 15
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const flightId = params.id
+    const flightId = (await params).id
 
     const history = await prisma.flight_history.findMany({
       where: { flight_id: flightId },
@@ -19,7 +20,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+// Corrected PUT function for Next.js 15
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json()
     const { callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body
@@ -66,8 +68,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           flight_id: flightId,
           old_status: currentFlight.status,
           new_status: status,
-          // Note: The schema doesn't have a notes field in flight_history, 
-          // so we'll omit it. If you need it, add it to the schema first.
         }
       })
     }
@@ -85,7 +85,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+// Corrected DELETE function for Next.js 15
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: flightId } = await params
 
