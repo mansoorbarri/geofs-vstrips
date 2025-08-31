@@ -27,7 +27,7 @@ interface Flight {
   destination: string
   altitude: string
   speed: string
-  status: "all" | "current" | "transferred"
+  status: "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
   notes?: string
 }
 
@@ -44,7 +44,7 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
     destination: "",
     altitude: "",
     speed: "",
-    status: "all" as Flight["status"],
+    status: "delivery" as Flight["status"],
     notes: "",
   })
 
@@ -71,7 +71,7 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
       destination: "",
       altitude: "",
       speed: "",
-      status: "all",
+      status: "delivery",
       notes: "",
     })
     setOpen(false)
@@ -183,9 +183,12 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="all">All Flights</SelectItem>
-                <SelectItem value="current">Current Flights</SelectItem>
-                <SelectItem value="transferred">Transferred Flights</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="ground">Ground</SelectItem>
+                <SelectItem value="tower">Tower</SelectItem>
+                <SelectItem value="departure">Departure</SelectItem>
+                <SelectItem value="approach">Approach</SelectItem>
+                <SelectItem value="control">Control</SelectItem>
               </SelectContent>
             </Select>
           </div>
