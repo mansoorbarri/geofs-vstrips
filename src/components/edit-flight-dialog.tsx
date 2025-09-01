@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { type Flight } from "~/hooks/use-flights"
 
 // The FlightStatus type is defined in the main page component, so we can import it
-import { type FlightStatus } from "~/app/page"
+import { type FlightStatus } from "~/app/main-board"
 
 interface EditFlightDialogProps {
   // Use the correct Flight type from the hooks file

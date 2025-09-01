@@ -7,7 +7,7 @@ import { cn } from "~/lib/utils"
 
 // Correctly import the Flight and FlightStatus types from the source of truth
 import { type Flight } from "~/hooks/use-flights"
-import type { FlightStatus } from "~/app/page"
+import type { FlightStatus } from "~/app/main-board"
 
 // The FlightStripProps interface now uses the correct Flight type.
 // No need to redefine it here.

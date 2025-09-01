@@ -1,441 +1,67 @@
-"use client"
+import Link from 'next/link';
+import { Button } from "~/components/ui/button";
+import { LogOut, PlaneLanding, PlaneTakeoff, Settings } from "lucide-react";
 
-import type React from "react"
-import { useState, useRef, useCallback, useMemo } from "react"
-import { Button } from "~/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download } from "lucide-react"
-import { FlightStrip } from "~/components/flight-strip"
-import { DropZone } from "~/components/drop-zone"
-import { CreateFlightDialog } from "~/components/create-flight-dialog"
-import { EditFlightDialog } from "~/components/edit-flight-dialog"
-import { RealTimeIndicator } from "~/components/real-time-indicator"
-import { Alert, AlertDescription } from "~/components/ui/alert"
-import { useFlights } from "~/hooks/use-flights"
-import { type Flight } from "~/hooks/use-flights";
-
-// CORRECTED: Export the FlightStatus type so other components can import it
-export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control"
-
-// NEW: Define a type for the data coming from the imported JSON file
-type ImportedFlight = {
-  callsign: string
-  aircraft_type?: string
-  aircraft?: string
-  departure: string
-  arrival?: string
-  destination?: string
-  altitude: string
-  speed: string
-  status: FlightStatus
-  notes?: string
-}
-
-interface ImportStatus {
-  type: "success" | "error" | null
-  message: string
-}
-
-// CORRECTED: This interface is no longer needed here, as it's defined in create-flight-dialog.tsx.
-// Leaving it here was causing the type mismatch. I am removing it to clean up the code.
-// interface CreateFlightDialogProps {
-//   onCreateFlight: (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => void;
-// }
-
-
-export default function ATCFlightStrip() {
-  const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true)
-
-  const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null)
-  const [importStatus, setImportStatus] = useState<ImportStatus>({ type: null, message: "" })
-  const [editingFlight, setEditingFlight] = useState<Flight | null>(null)
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Memoize flight categorization for better performance
-  const flightsByStatus = useMemo(() => {
-    const categories = {
-      delivery: [] as Flight[],
-      ground: [] as Flight[],
-      tower: [] as Flight[],
-      departure: [] as Flight[],
-      approach: [] as Flight[],
-      control: [] as Flight[]
-    }
-
-    flights.forEach((flight) => {
-      // Corrected: Add a type assertion to tell TypeScript that flight.status is a valid FlightStatus.
-      const status = flight.status as FlightStatus;
-
-      if (categories[status]) {
-        // Now TypeScript knows that 'status' is a valid key, so this is safe.
-        categories[status].push(flight);
-      }
-    });
-
-    return categories;
-  }, [flights]);
-
-  // Memoize status cycle for performance
-  const statusCycle: Record<FlightStatus, FlightStatus> = useMemo(() => ({
-    delivery: "ground",
-    ground: "tower",
-    tower: "departure",
-    departure: "approach",
-    approach: "control",
-    control: "delivery",
-  }), [])
-
-  // Show status message helper
-  const showStatus = useCallback((type: "success" | "error", message: string, duration = 3000) => {
-    setImportStatus({ type, message })
-    setTimeout(() => setImportStatus({ type: null, message: "" }), duration)
-  }, [])
-
-  const handleFlightClick = useCallback(async (flightId: string) => {
-    const flight = flights.find((f) => f.id === flightId)
-    if (!flight) return
-
-    try {
-      // Corrected: Add type assertion to inform TypeScript that flight.status is a valid key
-      await updateFlight(flightId, { status: statusCycle[flight.status as FlightStatus] })
-    } catch (error) {
-      showStatus("error", "Failed to update flight status. Please try again.")
-    }
-  }, [flights, updateFlight, statusCycle, showStatus])
-
-  const handleDragStart = useCallback((flightId: string) => {
-    setDraggedFlightId(flightId)
-  }, [])
-
-  const handleDrop = useCallback((targetStatus: FlightStatus) => async (flightId: string) => {
-    try {
-      await updateFlight(flightId, { status: targetStatus })
-      setDraggedFlightId(null)
-    } catch (error) {
-      showStatus("error", "Failed to move flight. Please try again.")
-      setDraggedFlightId(null)
-    }
-  }, [updateFlight, showStatus])
-
-  const handleImportClick = useCallback(() => {
-    fileInputRef.current?.click()
-  }, [])
-
-  // UPDATED: Use ImportedFlight as the type for the predicate
-  const validateFlight = useCallback((flight: any): flight is ImportedFlight => {
-    return (
-      typeof flight === "object" &&
-      typeof flight.callsign === "string" &&
-      (typeof flight.aircraft_type === "string" || typeof flight.aircraft === "string") &&
-      typeof flight.departure === "string" &&
-      (typeof flight.arrival === "string" || typeof flight.destination === "string") &&
-      typeof flight.altitude === "string" &&
-      typeof flight.speed === "string" &&
-      ["delivery", "ground", "tower", "departure", "approach", "control"].includes(flight.status)
-    )
-  }, [])
-
-  const handleFileImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const text = await file.text();
-      const jsonData = JSON.parse(text);
-      const flightsToImport = Array.isArray(jsonData) ? jsonData : [jsonData];
-
-      const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] = [];
-      const invalidFlights: any[] = [];
-
-      flightsToImport.forEach((flight, index) => {
-        if (validateFlight(flight)) {
-          const aircraft_type = flight.aircraft_type || flight.aircraft;
-          const arrival = flight.arrival || flight.destination;
-
-          if (typeof aircraft_type === 'string' && typeof arrival === 'string') {
-            const normalizedFlight = {
-              callsign: flight.callsign,
-              aircraft_type: aircraft_type,
-              departure: flight.departure,
-              arrival: arrival,
-              altitude: flight.altitude,
-              speed: flight.speed,
-              status: flight.status,
-              notes: flight.notes || "",
-            };
-            validFlights.push(normalizedFlight);
-          } else {
-              invalidFlights.push({ index, flight, reason: "Inferred types were incorrect." });
-          }
-        } else {
-          invalidFlights.push({ index, flight });
-        }
-      });
-
-      if (validFlights.length > 0) {
-        let successCount = 0;
-        let errorCount = 0;
-
-        const batchSize = 5;
-        for (let i = 0; i < validFlights.length; i += batchSize) {
-          const batch = validFlights.slice(i, i + batchSize);
-          const promises = batch.map(async (flight) => {
-            try {
-              await createFlight(flight);
-              return { success: true };
-            } catch (error) {
-              return { success: false };
-            }
-          });
-
-          const results = await Promise.all(promises);
-          successCount += results.filter(r => r.success).length;
-          errorCount += results.filter(r => !r.success).length;
-        }
-
-        const message = `Successfully imported ${successCount} flight(s)${
-          errorCount > 0 ? `. ${errorCount} flights failed to import (possibly duplicates).` : "."
-        }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid entries were skipped.` : ""}`;
-
-        showStatus(successCount > 0 ? "success" : "error", message, 5000);
-      } else {
-        showStatus("error", "No valid flights found in the JSON file. Please check the format.");
-      }
-    } catch (error) {
-      showStatus("error", "Failed to parse JSON file. Please ensure it's a valid JSON format.");
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }, [validateFlight, createFlight, showStatus]);
-  
-  const sampleFlights = useMemo(() => [
-    {
-      callsign: "UAL123",
-      aircraft_type: "B737-800",
-      departure: "KJFK",
-      arrival: "KLAX",
-      altitude: "35000",
-      speed: "450",
-      status: "delivery" as FlightStatus,
-      notes: "Priority passenger on board",
-    },
-    {
-      callsign: "DAL456",
-      aircraft_type: "A320",
-      departure: "KORD",
-      arrival: "KDEN",
-      altitude: "37000",
-      speed: "420",
-      status: "ground" as FlightStatus,
-      notes: "Weather deviation requested",
-    },
-    {
-      callsign: "SWA789",
-      aircraft_type: "B737-700",
-      departure: "KPHX",
-      arrival: "KLAS",
-      altitude: "33000",
-      speed: "430",
-      status: "tower" as FlightStatus,
-    },
-  ], [])
-
-  const generateSampleJSON = useCallback(() => {
-    const dataStr = JSON.stringify(sampleFlights, null, 2)
-    const dataBlob = new Blob([dataStr], { type: "application/json" })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = "sample_flights.json"
-    link.click()
-    URL.revokeObjectURL(url)
-  }, [sampleFlights])
-
-  const copySampleJSON = useCallback(async () => {
-    const jsonString = JSON.stringify(sampleFlights, null, 2)
-    try {
-      await navigator.clipboard.writeText(jsonString)
-      showStatus("success", "Sample JSON copied to clipboard! You can paste it into a .json file.")
-    } catch (error) {
-      showStatus("error", "Failed to copy to clipboard. Please try the download option instead.")
-    }
-  }, [sampleFlights, showStatus])
-
-  // CORRECTED: The handleCreateFlight function is now compatible with the CreateFlightDialog
-  const handleCreateFlight = useCallback(async (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => {
-    try {
-      const newFlight = await createFlight(newFlightData)
-      showStatus("success", `Flight strip ${newFlight.callsign} created successfully!`)
-    } catch (error: any) {
-      showStatus("error", error.message || "Failed to create flight. Please try again.")
-    }
-  }, [createFlight, showStatus])
-
-  const handleEditFlight = useCallback((flight: Flight) => {
-    setEditingFlight(flight)
-    setEditDialogOpen(true)
-  }, [])
-
-  // CORRECTED: The handleUpdateFlight function is now correctly typed
-  const handleUpdateFlight = useCallback(async (updatedFlightData: Flight) => {
-    try {
-      // CORRECTED: Pass the correct object with only updatable fields
-      const { id, created_at, updated_at, ...updateData } = updatedFlightData
-      await updateFlight(id, updateData)
-
-      showStatus("success", `Flight strip ${updatedFlightData.callsign} updated successfully!`)
-    } catch (error: any) {
-      showStatus("error", error.message || "Failed to update flight. Please try again.")
-    }
-  }, [updateFlight, showStatus])
-
-  const handleDeleteFlight = useCallback(async (flightId: string) => {
-    const flightToDelete = flights.find((f) => f.id === flightId)
-
-    try {
-      await deleteFlight(flightId)
-      if (flightToDelete) {
-        showStatus("success", `Flight strip ${flightToDelete.callsign} deleted successfully!`)
-      }
-    } catch (error: any) {
-      showStatus("error", error.message || "Failed to delete flight. Please try again.")
-    }
-  }, [flights, deleteFlight, showStatus])
-
-  const handleExportFlights = useCallback(() => {
-    if (flights.length === 0) {
-      showStatus("error", "No flights to export. Add some flights first.")
-      return
-    }
-
-    const dataStr = JSON.stringify(flights, null, 2)
-    const dataBlob = new Blob([dataStr], { type: "application/json" })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `atc_flights_${new Date().toISOString().split("T")[0]}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-
-    showStatus("success", `Exported ${flights.length} flight(s) successfully!`)
-  }, [flights, showStatus])
-
-  // Render flight category component for better code reuse
-  const renderFlightCategory = useCallback((
-    status: FlightStatus,
-    title: string,
-    flights: Flight[]
-  ) => (
-    <DropZone key={status} onDrop={handleDrop(status)}>
-      <Card className="bg-gray-900 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white text-center text-sm">
-            {title} ({flights.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 min-h-96">
-          {flights.length === 0 ? (
-            <p className="text-gray-400 text-center py-8 text-sm">No flights</p>
-          ) : (
-            flights.map((flight) => (
-              <FlightStrip
-                key={flight.id}
-                flight={flight}
-                onClick={() => handleFlightClick(flight.id)}
-                onDragStart={handleDragStart}
-                isDragging={draggedFlightId === flight.id}
-                onEdit={handleEditFlight}
-                onDelete={handleDeleteFlight}
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
-    </DropZone>
-  ), [handleDrop, handleFlightClick, handleDragStart, draggedFlightId, handleEditFlight, handleDeleteFlight])
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-full mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold">ATC Flight Strip Manager</h1>
-            <RealTimeIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
-          </div>
-          <div className="flex gap-4 flex-wrap">
-            <CreateFlightDialog onCreateFlight={handleCreateFlight} />
-            <Button
-              variant="outline"
-              className="bg-black border-white text-white hover:bg-white hover:text-black"
-              onClick={handleImportClick}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Import JSON
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900 hover:text-purple-300"
-              onClick={handleExportFlights}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Current
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300"
-              onClick={copySampleJSON}
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy Sample JSON
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-black border-gray-500 text-gray-300 hover:bg-gray-800 hover:text-white"
-              onClick={generateSampleJSON}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Download Sample
-            </Button>
-          </div>
-          <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
-        </div>
+    <div className="min-h-screen bg-black text-white p-8">
+      <div className="max-w-7xl mx-auto py-12">
+        <header className="flex justify-between items-center mb-12">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+            ATC <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Flight Board</span>
+          </h1>
+        </header>
 
-        {importStatus.type && (
-          <Alert className={`mb-6 ${importStatus.type === "success" ? "border-green-600" : "border-red-600"}`}>
-            {importStatus.type === "success" ? (
-              <CheckCircle className="h-4 w-4 text-green-400" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-red-400" />
-            )}
-            <AlertDescription className="text-white">{importStatus.message}</AlertDescription>
-          </Alert>
-        )}
+        <main className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* Departure Board Card */}
+          <Link href="/departure" passHref>
+            <div className="group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="p-8">
+                <div className="flex items-center mb-4">
+                  <div className="bg-blue-500/20 p-3 rounded-full mr-4">
+                    <PlaneTakeoff className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <h2 className="text-2xl font-semibold">Departure Board</h2>
+                </div>
+                <p className="text-gray-400 mb-6">
+                  Manage flights from gate to departure. This board handles everything from delivery to tower control.
+                </p>
+                <Button className="w-full text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 transition-colors duration-300">
+                  Access Departure Board
+                </Button>
+              </div>
+              <div className="absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-blue-500/10 to-transparent group-hover:scale-110 transition-transform duration-300 pointer-events-none"></div>
+            </div>
+          </Link>
 
-        <EditFlightDialog
-          flight={editingFlight}
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onUpdateFlight={handleUpdateFlight}
-        />
+          {/* Arrival Board Card */}
+          <Link href="/arrival" passHref>
+            <div className="group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="p-8">
+                <div className="flex items-center mb-4">
+                  <div className="bg-purple-500/20 p-3 rounded-full mr-4">
+                    <PlaneLanding className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <h2 className="text-2xl font-semibold">Arrival Board</h2>
+                </div>
+                <p className="text-gray-400 mb-6">
+                  Track and manage incoming flights. This board covers approach, tower, and ground control.
+                </p>
+                <Button className="w-full text-lg px-8 py-6 bg-purple-500 hover:bg-purple-600 transition-colors duration-300">
+                  Access Arrival Board
+                </Button>
+              </div>
+              <div className="absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-purple-500/10 to-transparent group-hover:scale-110 transition-transform duration-300 pointer-events-none"></div>
+            </div>
+          </Link>
+        </main>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
-          {renderFlightCategory("delivery", "Delivery", flightsByStatus.delivery)}
-          {renderFlightCategory("ground", "Ground", flightsByStatus.ground)}
-          {renderFlightCategory("tower", "Tower", flightsByStatus.tower)}
-          {renderFlightCategory("departure", "Departure", flightsByStatus.departure)}
-          {renderFlightCategory("approach", "Approach", flightsByStatus.approach)}
-          {renderFlightCategory("control", "Control", flightsByStatus.control)}
-        </div>
-
-        <div className="fixed bottom-0 left-0 w-full text-center p-4 bg-black/50 backdrop-blur-sm z-50">
+      <div className="fixed bottom-0 left-0 w-full text-center p-4 bg-black/50 backdrop-blur-sm z-50">
         <p className="text-gray-500 text-xs">
           Designed & Developed by <span className="font-semibold text-white">xyzmani</span>
         </p>
       </div>
-      </div>
     </div>
-  )
+  );
 }
