@@ -10,8 +10,10 @@ export async function loginAction(formData: FormData) {
   const dashboardPassword = env.DASHBOARD_PASSWORD;
 
   if (password === dashboardPassword) {
-    // Await the cookies() function
-    await cookies().set({
+    // Remove the 'await' from the cookies() call
+    (await
+      // Remove the 'await' from the cookies() call
+      cookies()).set({
       name: "auth_token",
       value: "authenticated",
       httpOnly: true,
