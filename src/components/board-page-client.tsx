@@ -16,6 +16,7 @@ import { useFlights } from "~/hooks/use-flights";
 import { type Flight } from "~/hooks/use-flights";
 import Link from "next/link";
 import { useParams } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
@@ -60,6 +61,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
+  // NEW: State for the user-selected import status
+  const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
+
 
   const boardSectors = useMemo(() => {
     return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
@@ -170,14 +174,16 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
             if (typeof aircraft_type === "string" && typeof arrival === "string") {
               const normalizedFlight = {
-                airport: flight.airport || airportName,
+                // NEW: Use the current airportName from the prop
+                airport: airportName,
                 callsign: flight.callsign,
                 aircraft_type: aircraft_type,
                 departure: flight.departure,
                 arrival: arrival,
                 altitude: flight.altitude,
                 speed: flight.speed,
-                status: flight.status,
+                // NEW: Use the selected import status
+                status: selectedImportStatus,
                 notes: flight.notes || "",
               };
               validFlights.push(normalizedFlight);
@@ -226,7 +232,8 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         fileInputRef.current.value = "";
       }
     },
-    [validateFlight, createFlight, showStatus, airportName]
+    // NEW: Add selectedImportStatus and airportName to the dependency array
+    [validateFlight, createFlight, showStatus, airportName, selectedImportStatus]
   );
 
   const sampleFlights = useMemo(
@@ -347,16 +354,13 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     );
   }, []);
 
-  // NEW: Function to select all flights
   const handleSelectAll = useCallback(() => {
     setSelectedFlights(flights.map(flight => flight.id));
   }, [flights]);
 
-  // NEW: Function to clear all selections
   const handleClearSelection = useCallback(() => {
     setSelectedFlights([]);
   }, []);
-
 
   const handleExportFlights = useCallback(() => {
     if (selectedFlights.length === 0) {
@@ -377,7 +381,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
     showStatus("success", `Exported ${flightsToExport.length} selected flight(s) successfully!`);
   }, [flights, selectedFlights, showStatus, airportName]);
-
 
   const gridClasses = useMemo(() => {
     return "grid-cols-3";
@@ -413,7 +416,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         <div className="flex gap-4 flex-wrap">
           <CreateFlightDialog onCreateFlight={handleCreateFlight} airportName={airportName} />
           
-          {/* NEW: Select all button */}
           {flights.length > 0 && (
             <Button
               variant="outline"
@@ -425,7 +427,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             </Button>
           )}
 
-          {/* NEW: Clear selection button */}
           {selectedFlights.length > 0 && (
             <Button
               variant="outline"
@@ -436,15 +437,33 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               Clear Selection
             </Button>
           )}
+
+          <div className="flex items-center space-x-2">
+            <Select
+              value={selectedImportStatus}
+              onValueChange={(value) => setSelectedImportStatus(value as FlightStatus)}
+            >
+              <SelectTrigger className="bg-black border-white text-white w-[150px]">
+                <SelectValue placeholder="Import to" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700">
+                {boardSectors.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {statusTitles[status]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              className="bg-black border-white text-white hover:bg-white hover:text-white hover:cursor-pointer"
+              onClick={handleImportClick}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Import JSON
+            </Button>
+          </div>
           
-          <Button
-            variant="outline"
-            className="bg-black border-white text-white hover:bg-white hover:text-white hover:cursor-pointer"
-            onClick={handleImportClick}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import JSON
-          </Button>
           <Button
             variant="outline"
             className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900 hover:text-purple-300 hover:cursor-pointer"
