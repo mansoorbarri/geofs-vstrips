@@ -400,7 +400,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       <div className="flex-shrink-0 p-6">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" passHref>
-            <Button variant="outline" className="mr-4 bg-black border-gray-700 text-gray-400 hover:bg-gray-800">
+            <Button variant="outline" className="mr-4 bg-black border-gray-700 text-gray-400 hover:bg-gray-800 hover:cursor-pointer">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
@@ -417,7 +417,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           {flights.length > 0 && (
             <Button
               variant="outline"
-              className="bg-black border-yellow-500 text-yellow-400 hover:bg-yellow-900 hover:text-yellow-300"
+              className="bg-black border-yellow-500 text-yellow-400 hover:bg-yellow-900 hover:text-yellow-300 hover:cursor-pointer"
               onClick={handleSelectAll}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
@@ -429,7 +429,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           {selectedFlights.length > 0 && (
             <Button
               variant="outline"
-              className="bg-black border-red-500 text-red-400 hover:bg-red-900 hover:text-red-300"
+              className="bg-black border-red-500 text-red-400 hover:bg-red-900 hover:text-red-300 hover:cursor-pointer"
               onClick={handleClearSelection}
             >
               <XCircle className="w-4 h-4 mr-2" />
@@ -439,7 +439,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           
           <Button
             variant="outline"
-            className="bg-black border-white text-white hover:bg-white hover:text-black"
+            className="bg-black border-white text-white hover:bg-white hover:text-white hover:cursor-pointer"
             onClick={handleImportClick}
           >
             <Upload className="w-4 h-4 mr-2" />
@@ -447,7 +447,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           </Button>
           <Button
             variant="outline"
-            className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900 hover:text-purple-300"
+            className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900 hover:text-purple-300 hover:cursor-pointer"
             onClick={handleExportFlights}
             disabled={selectedFlights.length === 0}
           >
@@ -456,7 +456,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           </Button>
           <Button
             variant="outline"
-            className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300"
+            className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300 hover:cursor-pointer"
             onClick={copySampleJSON}
           >
             <Copy className="w-4 h-4 mr-2" />
@@ -464,7 +464,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           </Button>
           <Button
             variant="outline"
-            className="bg-black border-gray-500 text-gray-300 hover:bg-gray-800 hover:text-white"
+            className="bg-black border-gray-500 text-gray-300 hover:bg-gray-800 hover:text-white hover:cursor-pointer"
             onClick={generateSampleJSON}
           >
             <FileText className="w-4 h-4 mr-2" />
