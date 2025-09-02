@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { PlaneTakeoff } from "lucide-react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { AirportSelector } from "~/components/airport-selector";
 
 export default async function HomePage() {
   const cookieStore = await cookies();
@@ -13,70 +14,24 @@ export default async function HomePage() {
     redirect("/gate");
   }
 
-  const airport1 = "YSSY";
-  const airport2 = "YMML";
-  
-  const link1 = `/board/${encodeURIComponent(airport1)}`;
-  const link2 = `/board/${encodeURIComponent(airport2)}`;
+  const airports = [
+    { id: "YSSY", name: "Sydney (YSSY)" },
+    { id: "YMML", name: "Melbourne (YMML)" },
+  ];
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-7xl mx-auto py-12">
-        <header className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+    <div className="min-h-screen bg-black text-white p-8 flex items-center justify-center">
+      <div className="max-w-xl mx-auto py-12 text-center">
+        <header className="mb-8">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2">
             ATC <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Flight Board</span>
           </h1>
+          <p className="text-xl text-gray-400">Select an airport to manage flights.</p>
         </header>
 
-        <main className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* Board Card for Sydney */}
-          <Link href={link1} passHref>
-            <div className="group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="p-8">
-                <div className="flex items-center mb-4">
-                  <div className="bg-blue-500/20 p-3 rounded-full mr-4">
-                    <PlaneTakeoff className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <h2 className="text-2xl font-semibold">{airport1} Board</h2>
-                </div>
-                <p className="text-gray-400 mb-6">
-                  Manage air traffic for {airport1}.
-                </p>
-                <Button className="w-full text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 transition-colors duration-300 hover:cursor-pointer">
-                  Access {airport1} Board
-                </Button>
-              </div>
-              <div className="absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-blue-500/10 to-transparent group-hover:scale-110 transition-transform duration-300 pointer-events-none"></div>
-            </div>
-          </Link>
-
-          {/* Board Card for Melbourne */}
-          <Link href={link2} passHref>
-            <div className="group relative overflow-hidden rounded-xl bg-gray-900 border border-gray-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="p-8">
-                <div className="flex items-center mb-4">
-                  <div className="bg-purple-500/20 p-3 rounded-full mr-4">
-                    <PlaneTakeoff className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <h2 className="text-2xl font-semibold">{airport2} Board</h2>
-                </div>
-                <p className="text-gray-400 mb-6">
-                  Manage air traffic for {airport2}.
-                </p>
-                <Button className="w-full text-lg px-8 py-6 bg-purple-500 hover:bg-purple-600 transition-colors duration-300 hover:cursor-pointer">
-                  Access {airport2} Board
-                </Button>
-              </div>
-              <div className="absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-purple-500/10 to-transparent group-hover:scale-110 transition-transform duration-300 pointer-events-none"></div>
-            </div>
-          </Link>
+        <main>
+          <AirportSelector airports={airports} />
         </main>
-      </div>
-
-      <div className="fixed bottom-0 left-0 w-full text-center bg-black/50 backdrop-blur-sm z-50">
-        <p className="text-gray-500 text-xs">
-          Designed & Developed by <span className="font-semibold text-white">xyzmani</span>
-        </p>
       </div>
     </div>
   );

@@ -12,6 +12,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,24 +33,42 @@ function SubmitButton() {
   );
 }
 
+// Define the airport data here
+const airports = [
+  { id: "YSSY", name: "Sydney (YSSY)" },
+  { id: "YMML", name: "Melbourne (YMML)" },
+];
+
 export function FileFlightForm() {
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
 
+  // We'll use state to hold the form data from the select fields
+  const [formData, setFormData] = useState({
+    departure: '',
+    arrival: '',
+    airport_atc: ''
+  });
+
   const formFields = useMemo(() => [
-    { name: "callsign", label: "Callsign", placeholder: "e.g., DAL123" },
-    { name: "aircraft_type", label: "Aircraft Type", placeholder: "e.g., A320" },
-    { name: "departure", label: "Departure Airport", placeholder: "e.g., KLAX" },
-    { name: "arrival", label: "Arrival Airport", placeholder: "e.g., KJFK" },
-    { name: "altitude", label: "Altitude", placeholder: "e.g., 35000" },
-    { name: "speed", label: "Speed", placeholder: "e.g., 420" },
-    { name: "airport_atc", label: "Airport for ATC", placeholder: "e.g., KJFK" },
+    { name: "callsign", label: "Callsign", placeholder: "e.g., DAL123", type: "text" },
+    { name: "aircraft_type", label: "Aircraft Type", placeholder: "e.g., A320", type: "text" },
+    { name: "departure", label: "Departure Airport", placeholder: "e.g., KLAX", type: "select" },
+    { name: "arrival", label: "Arrival Airport", placeholder: "e.g., KJFK", type: "select" },
+    { name: "altitude", label: "Altitude", placeholder: "e.g., 35000", type: "text" },
+    { name: "speed", label: "Speed", placeholder: "e.g., 420", type: "text" },
+    { name: "airport_atc", label: "Airport for ATC", placeholder: "e.g., KJFK", type: "select" },
   ], []);
 
-  const handleAction = async (formData: FormData) => {
-    const result = await createFlightAction(formData);
+  const handleAction = async (form: FormData) => {
+    // Manually add the select field values to the form data
+    form.set("departure", formData.departure);
+    form.set("arrival", formData.arrival);
+    form.set("airport_atc", formData.airport_atc);
+    
+    const result = await createFlightAction(form);
     setSubmissionResult(result);
   };
 
@@ -83,17 +108,35 @@ export function FileFlightForm() {
       )}
 
       <form action={handleAction} className="space-y-4">
-        {formFields.map(({ name, label, placeholder }) => (
+        {formFields.map(({ name, label, placeholder, type }) => (
           <div key={name} className="space-y-2">
             <Label htmlFor={name}>{label}</Label>
-            <Input
-              id={name}
-              name={name}
-              type="text"
-              placeholder={placeholder}
-              required
-              className="bg-gray-800 border-gray-700 text-white"
-            />
+            {type === "select" ? (
+              <Select
+                name={name}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, [name]: value }))}
+              >
+                <SelectTrigger className="w-full bg-gray-800 text-white border-gray-700">
+                  <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  {airports.map((airport) => (
+                    <SelectItem key={airport.id} value={airport.id}>
+                      {airport.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id={name}
+                name={name}
+                type="text"
+                placeholder={placeholder}
+                required
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            )}
           </div>
         ))}
         
