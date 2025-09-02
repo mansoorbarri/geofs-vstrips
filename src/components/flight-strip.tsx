@@ -1,3 +1,4 @@
+// src/components/flight-strip.tsx
 "use client"
 
 import type React from "react"
@@ -19,6 +20,9 @@ interface FlightStripProps {
   isDragging?: boolean
   onEdit?: (flight: Flight) => void
   onDelete?: (flightId: string) => void
+  // NEW PROPS for selection
+  isSelected: boolean
+  onSelect: (flightId: string) => void
 }
 
 export function FlightStrip({
@@ -29,6 +33,9 @@ export function FlightStrip({
   isDragging,
   onEdit,
   onDelete,
+  // NEW PROPS
+  isSelected,
+  onSelect,
 }: FlightStripProps) {
   const getStatusColors = (status: FlightStatus) => {
     switch (status) {
@@ -64,6 +71,12 @@ export function FlightStrip({
     e.stopPropagation()
     onDelete?.(flight.id)
   }
+  
+  // NEW: Handler for the checkbox to prevent parent click events
+  const handleSelect = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect(flight.id);
+  }
 
   return (
     <div
@@ -71,12 +84,25 @@ export function FlightStrip({
         "p-3 rounded border cursor-pointer transition-all duration-200 select-none relative group",
         getStatusColors(flight.status as FlightStatus),
         isDragging && "opacity-50 scale-95 rotate-1",
+        // NEW: Add a visual indicator for selected state
+        isSelected && "ring-2 ring-white",
         className,
       )}
       onClick={onClick}
       draggable
       onDragStart={handleDragStart}
     >
+      {/* NEW: Checkbox for selecting flights */}
+      <div className="absolute top-2 left-2 z-10">
+        <input
+          type="checkbox"
+          className="form-checkbox h-4 w-4 text-blue-600 bg-gray-900 border-gray-600 rounded cursor-pointer"
+          checked={isSelected}
+          onClick={handleSelect}
+          readOnly
+        />
+      </div>
+
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
         <Button size="sm" variant="ghost" onClick={handleEdit} className="h-6 w-6 p-0 hover:bg-blue-600 text-white">
           <Edit className="h-3 w-3" />
@@ -86,7 +112,7 @@ export function FlightStrip({
         </Button>
       </div>
 
-      <div className="font-mono text-sm text-white pr-16">
+      <div className="font-mono text-sm text-white pr-16 pl-6">
         <div className="flex justify-between items-center mb-1">
           <div className="font-bold text-base">{flight.callsign}</div>
           <div className="text-xs text-gray-300">{flight.status.toUpperCase()}</div>

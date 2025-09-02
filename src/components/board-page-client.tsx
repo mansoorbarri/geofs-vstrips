@@ -5,7 +5,7 @@ import type React from "react";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft } from "lucide-react";
+import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft, XCircle } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
 import { CreateFlightDialog } from "~/components/create-flight-dialog";
@@ -43,7 +43,6 @@ interface BoardPageClientProps {
 }
 
 export function BoardPageClient({ airportName }: BoardPageClientProps) {
-  // NEW TEST CODE START
   const params = useParams();
   const airportNameFromURL = params.airportName;
   
@@ -51,9 +50,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     console.log("Value of airportName prop:", airportName);
     console.log("Value from URL (useParams):", airportNameFromURL);
   }, [airportName, airportNameFromURL]);
-  // NEW TEST CODE END
 
-  // FIXED: Pass airportName to useFlights hook for filtering
   const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true, airportName);
 
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
@@ -63,7 +60,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
 
   const boardSectors = useMemo(() => {
     return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
@@ -342,14 +338,35 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     },
     [flights, deleteFlight, showStatus]
   );
+  
+  const handleFlightSelection = useCallback((flightId: string) => {
+    setSelectedFlights(prevSelected =>
+      prevSelected.includes(flightId)
+        ? prevSelected.filter(id => id !== flightId)
+        : [...prevSelected, flightId]
+    );
+  }, []);
+
+  // NEW: Function to select all flights
+  const handleSelectAll = useCallback(() => {
+    setSelectedFlights(flights.map(flight => flight.id));
+  }, [flights]);
+
+  // NEW: Function to clear all selections
+  const handleClearSelection = useCallback(() => {
+    setSelectedFlights([]);
+  }, []);
+
 
   const handleExportFlights = useCallback(() => {
-    if (flights.length === 0) {
-      showStatus("error", "No flights to export. Add some flights first.");
+    if (selectedFlights.length === 0) {
+      showStatus("error", "No flights selected for export.");
       return;
     }
 
-    const dataStr = JSON.stringify(flights, null, 2);
+    const flightsToExport = flights.filter(f => selectedFlights.includes(f.id));
+
+    const dataStr = JSON.stringify(flightsToExport, null, 2);
     const dataBlob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement("a");
@@ -358,9 +375,10 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     link.click();
     URL.revokeObjectURL(url);
 
-    showStatus("success", `Exported ${flights.length} flight(s) for ${airportName} successfully!`);
-  }, [flights, showStatus, airportName]);
-  
+    showStatus("success", `Exported ${flightsToExport.length} selected flight(s) successfully!`);
+  }, [flights, selectedFlights, showStatus, airportName]);
+
+
   const gridClasses = useMemo(() => {
     return "grid-cols-3";
   }, []);
@@ -393,8 +411,32 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           <RealTimeIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
         </div>
         <div className="flex gap-4 flex-wrap">
-          {/* FIXED: Pass airportName to the dialog */}
           <CreateFlightDialog onCreateFlight={handleCreateFlight} airportName={airportName} />
+          
+          {/* NEW: Select all button */}
+          {flights.length > 0 && (
+            <Button
+              variant="outline"
+              className="bg-black border-yellow-500 text-yellow-400 hover:bg-yellow-900 hover:text-yellow-300"
+              onClick={handleSelectAll}
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Select All
+            </Button>
+          )}
+
+          {/* NEW: Clear selection button */}
+          {selectedFlights.length > 0 && (
+            <Button
+              variant="outline"
+              className="bg-black border-red-500 text-red-400 hover:bg-red-900 hover:text-red-300"
+              onClick={handleClearSelection}
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Clear Selection
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             className="bg-black border-white text-white hover:bg-white hover:text-black"
@@ -407,9 +449,10 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             variant="outline"
             className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900 hover:text-purple-300"
             onClick={handleExportFlights}
+            disabled={selectedFlights.length === 0}
           >
             <Download className="w-4 h-4 mr-2" />
-            Export Current
+            Export Selected
           </Button>
           <Button
             variant="outline"
@@ -472,6 +515,8 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                         isDragging={draggedFlightId === flight.id}
                         onEdit={handleEditFlight}
                         onDelete={handleDeleteFlight}
+                        onSelect={handleFlightSelection}
+                        isSelected={selectedFlights.includes(flight.id)}
                       />
                     ))
                   )}
