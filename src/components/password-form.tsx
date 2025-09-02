@@ -1,31 +1,36 @@
 // src/components/password-form.tsx
 "use client";
 
+import { useFormStatus } from "react-dom";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { loginAction } from "~/app/gate/actions";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer"
+      disabled={pending}
+    >
+      {pending ? "Accessing..." : "Access Boards"}
+    </Button>
+  );
+}
 
 export function PasswordForm() {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!password) {
-      setError("Please enter a password.");
-      return;
+  const handleLogin = async (formData: FormData) => {
+    const result = await loginAction(formData);
+    if (result && result.error) {
+      setError(result.error);
     }
-
-    // Redirect the user to the home page with the password in the URL.
-    // The home page will now handle the validation.
-    router.push(`/?password=${password}`);
   };
 
   return (
@@ -45,7 +50,7 @@ export function PasswordForm() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form action={handleLogin} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input
@@ -53,18 +58,11 @@ export function PasswordForm() {
             name="password"
             type="password"
             placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             className="bg-gray-800 border-gray-700 text-white"
             required
           />
         </div>
-        <Button
-          type="submit"
-          className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer"
-        >
-          Access Boards
-        </Button>
+        <SubmitButton />
       </form>
     </div>
   );
