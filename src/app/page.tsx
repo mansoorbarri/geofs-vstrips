@@ -1,14 +1,33 @@
+// src/app/page.tsx
 import Link from 'next/link';
 import { Button } from "~/components/ui/button";
 import { PlaneTakeoff } from "lucide-react";
+import { redirect } from "next/navigation";
+import { env } from "~/env";
 
-export default function HomePage() {
+// The searchParams prop is now typed as a Promise to match your environment.
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // Await the searchParams promise to get the actual object
+  const resolvedSearchParams = await searchParams;
+  const password = resolvedSearchParams.password;
+  
+  const dashboardPassword = env.DASHBOARD_PASSWORD;
+
+  // Check if the password is correct. If not, redirect to the gate page.
+  if (password !== dashboardPassword) {
+    redirect("/gate");
+  }
+
   const airport1 = "YSSY";
   const airport2 = "YMML";
   
-  // It's a good practice to normalize the URL to be URL-safe
-  const link1 = `/boards/${encodeURIComponent(airport1)}`;
-  const link2 = `/boards/${encodeURIComponent(airport2)}`;
+  // The links must now include the password to work correctly.
+  const link1 = `/board/${encodeURIComponent(airport1)}?password=${password}`;
+  const link2 = `/board/${encodeURIComponent(airport2)}?password=${password}`;
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -54,7 +73,7 @@ export default function HomePage() {
                 <p className="text-gray-400 mb-6">
                   Manage air traffic for {airport2}.
                 </p>
-                <Button className="w-full text-lg px-8 py-6 bg-purple-500 hover:bg-purple-600 transition-colors duration-300 hover:cursor-pointer">
+                <Button className="w-full text-lg px-8 py-6 bg-purple-500 hover:bg-purple-600 hover:cursor-pointer">
                   Access {airport2} Board
                 </Button>
               </div>
