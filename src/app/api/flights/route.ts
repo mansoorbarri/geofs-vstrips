@@ -25,41 +25,49 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { airport, callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body;
+    
+    // FINAL FIX: Use a flexible approach to get fields with or without the '1_' prefix
+    const airport = body['1_airport'] || body.airport;
+    const callsign = body['1_callsign'] || body.callsign;
+    const geofs_callsign = body['1_geofs_callsign'] || body.geofs_callsign;
+    const aircraft_type = body['1_aircraft_type'] || body.aircraft_type;
+    const departure = body['1_departure'] || body.departure;
+    const arrival = body['1_arrival'] || body.arrival;
+    const altitude = body['1_altitude'] || body.altitude;
+    const speed = body['1_speed'] || body.speed;
+    const status = body['1_status'] || body.status;
+    const notes = body['1_notes'] || body.notes;
 
-    // Remove the redundant `if (!airport)` and relax the validation
     if (!callsign || !airport || !aircraft_type || !departure || !arrival || !status) {
       return NextResponse.json({ 
         error: "Missing required fields: callsign, airport, aircraft_type, departure, arrival, status" 
       }, { status: 400 });
     }
 
-    // Validate status
     const validStatuses = Object.values(FlightStatus);
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    // Create flight with normalized data
     const flight = await prisma.flights.create({
       data: {
-        airport: airport.toUpperCase(), // Normalize airport code
+        airport: airport.toUpperCase(),
         callsign: callsign.toUpperCase(),
+        geofs_callsign: geofs_callsign || null,
         aircraft_type: aircraft_type.toUpperCase(),
         departure: departure.toUpperCase(),
         arrival: arrival.toUpperCase(),
-        altitude: altitude || null, // Ensure `altitude` can be nullable
-        speed: speed || null, // Ensure `speed` can be nullable
+        altitude: altitude || null,
+        speed: speed || null,
         status: status,
         notes: notes || '',
       },
     });
 
-    // Log initial status to history
     await prisma.flight_history.create({
       data: {
         flight_id: flight.id,
-        old_status: '', // No previous status for new flight
+        old_status: '',
         new_status: status,
       },
     });

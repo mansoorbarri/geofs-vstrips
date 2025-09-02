@@ -7,7 +7,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { useMemo, useState } from "react";
-import { createFlightAction } from "~/app/file-flight/actions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -20,19 +19,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button
-      type="submit"
-      className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer"
-      disabled={pending}
-    >
-      {pending ? "Submitting..." : "File Flight Plan"}
-    </Button>
-  );
-}
-
 // Define the airport data here
 const airports = [
   { id: "YSSY", name: "Sydney (YSSY)" },
@@ -44,32 +30,57 @@ export function FileFlightForm() {
     success: boolean;
     message: string;
   } | null>(null);
-
-  // We'll use state to hold the form data from the select fields
-  const [formData, setFormData] = useState({
-    departure: '',
-    arrival: '',
-    airport_atc: ''
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formFields = useMemo(() => [
     { name: "callsign", label: "Callsign", placeholder: "e.g., DAL123", type: "text" },
+    { name: "geofs_callsign", label: "GeoFS Callsign", placeholder: "e.g., Ayman", type: "text" },
     { name: "aircraft_type", label: "Aircraft Type", placeholder: "e.g., A320", type: "text" },
-    { name: "departure", label: "Departure Airport", placeholder: "e.g., KLAX", type: "select" },
-    { name: "arrival", label: "Arrival Airport", placeholder: "e.g., KJFK", type: "select" },
+    { name: "departure", label: "Departure Airport", placeholder: "e.g., KLAX", type: "text" },
+    { name: "arrival", label: "Arrival Airport", placeholder: "e.g., KJFK", type: "text" },
     { name: "altitude", label: "Altitude", placeholder: "e.g., 35000", type: "text" },
     { name: "speed", label: "Speed", placeholder: "e.g., 420", type: "text" },
     { name: "airport_atc", label: "Airport for ATC", placeholder: "e.g., KJFK", type: "select" },
   ], []);
 
-  const handleAction = async (form: FormData) => {
-    // Manually add the select field values to the form data
-    form.set("departure", formData.departure);
-    form.set("arrival", formData.arrival);
-    form.set("airport_atc", formData.airport_atc);
-    
-    const result = await createFlightAction(form);
-    setSubmissionResult(result);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setSubmissionResult(null);
+
+    const formData = new FormData(event.currentTarget);
+    const flightData = {
+      airport: formData.get("airport_atc"),
+      callsign: formData.get("callsign"),
+      geofs_callsign: formData.get("geofs_callsign"),
+      aircraft_type: formData.get("aircraft_type"),
+      departure: formData.get("departure"),
+      arrival: formData.get("arrival"),
+      altitude: formData.get("altitude"),
+      speed: formData.get("speed"),
+      notes: formData.get("notes"),
+      status: "delivery", // Default status
+    };
+
+    try {
+      const response = await fetch('/api/flights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(flightData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to file flight.');
+      }
+
+      setSubmissionResult({ success: true, message: "Thank you. Your flight is filed. See you at the event!" });
+    } catch (error: any) {
+      setSubmissionResult({ success: false, message: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submissionResult?.success) {
@@ -107,14 +118,13 @@ export function FileFlightForm() {
         </Alert>
       )}
 
-      <form action={handleAction} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {formFields.map(({ name, label, placeholder, type }) => (
           <div key={name} className="space-y-2">
             <Label htmlFor={name}>{label}</Label>
             {type === "select" ? (
               <Select
                 name={name}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, [name]: value }))}
               >
                 <SelectTrigger className="w-full bg-gray-800 text-white border-gray-700">
                   <SelectValue placeholder={placeholder} />
@@ -149,8 +159,13 @@ export function FileFlightForm() {
             className="bg-gray-800 border-gray-700 text-white"
           />
         </div>
-
-        <SubmitButton />
+        <Button
+          type="submit"
+          className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Submitting..." : "File Flight Plan"}
+        </Button>
       </form>
     </div>
   );

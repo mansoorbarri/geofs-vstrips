@@ -20,8 +20,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
+// --- UPDATED TYPE: ADDED geofs_callsign ---
 type ImportedFlight = {
   callsign: string;
+  geofs_callsign?: string;
   airport?: string;
   aircraft_type?: string;
   aircraft?: string;
@@ -177,6 +179,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 // NEW: Use the current airportName from the prop
                 airport: airportName,
                 callsign: flight.callsign,
+                // --- ADDED NEW FIELD HERE ---
+                geofs_callsign: flight.geofs_callsign || null,
+                // ----------------------------
                 aircraft_type: aircraft_type,
                 departure: flight.departure,
                 arrival: arrival,
@@ -241,6 +246,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       {
         airport: airportName,
         callsign: "UAL123",
+        // --- ADDED NEW FIELD HERE ---
+        geofs_callsign: "Ayman",
+        // ----------------------------
         aircraft_type: "B737-800",
         departure: "KJFK",
         arrival: "KLAX",
@@ -252,6 +260,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       {
         airport: airportName,
         callsign: "DAL456",
+        // --- ADDED NEW FIELD HERE ---
+        geofs_callsign: "geofs_user",
+        // ----------------------------
         aircraft_type: "A320",
         departure: "KORD",
         arrival: "KDEN",

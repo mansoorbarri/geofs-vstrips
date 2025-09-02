@@ -116,7 +116,12 @@ export function FlightStrip({
         <div className="flex justify-between items-center mb-1">
           <div className="font-bold text-base">{flight.callsign}</div>
           <div className="text-xs text-gray-300">{flight.status.toUpperCase()}</div>
-        </div>        
+        </div> 
+        {/* --- ADDED NEW FIELD HERE --- */}
+        {flight.geofs_callsign && (
+          <div className="text-xs text-gray-400 mb-1">GeoFS: {flight.geofs_callsign}</div>
+        )}
+        {/* ---------------------------- */}
         <div className="text-gray-200 mb-1">{flight.aircraft_type}</div>
         <div className="text-gray-200 mb-2">
           <span className="font-medium">{flight.departure}</span>

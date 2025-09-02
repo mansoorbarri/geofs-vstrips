@@ -32,9 +32,10 @@ interface EditFlightDialogProps {
 }
 
 export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }: EditFlightDialogProps) {
-  // Correct the state to use the correct property names
+  // Correct the state to use the correct property names and add geofs_callsign
   const [formData, setFormData] = useState({
     callsign: "",
+    geofs_callsign: "", // <-- ADDED: New state field
     aircraft_type: "",
     departure: "",
     arrival: "",
@@ -49,9 +50,10 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
 
   useEffect(() => {
     if (flight) {
-      // Correct the state initialization to use the new property names
+      // Correct the state initialization to use the new property names and geofs_callsign
       setFormData({
         callsign: flight.callsign,
+        geofs_callsign: flight.geofs_callsign || "", // <-- ADDED: Initialize with value from flight prop
         aircraft_type: flight.aircraft_type,
         departure: flight.departure,
         arrival: flight.arrival,
@@ -107,20 +109,29 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 required
               />
             </div>
+            {/* ADDED: New field for GeoFS Callsign */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-geofs_callsign">GeoFS Callsign</Label>
+              <Input
+                id="edit-geofs_callsign"
+                value={formData.geofs_callsign}
+                onChange={(e) => handleInputChange("geofs_callsign", e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-aircraft_type">Aircraft *</Label>
               <Input
                 id="edit-aircraft_type"
-                // Correct the value to use the new property name
                 value={formData.aircraft_type}
                 onChange={(e) => handleInputChange("aircraft_type", e.target.value.toUpperCase())}
                 className="bg-gray-800 border-gray-600 text-white"
                 required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-departure">Departure *</Label>
               <Input
@@ -131,20 +142,19 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 required
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-arrival">Arrival *</Label>
               <Input
                 id="edit-arrival"
-                // Correct the value to use the new property name
                 value={formData.arrival}
                 onChange={(e) => handleInputChange("arrival", e.target.value.toUpperCase())}
                 className="bg-gray-800 border-gray-600 text-white"
                 required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-altitude">Altitude</Label>
               <Input
@@ -154,6 +164,9 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-speed">Speed</Label>
               <Input
@@ -163,26 +176,25 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-status">Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value: FlightStatus) => handleInputChange("status", value)}
-            >
-              <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                {/* Use the status options array for consistency */}
-                {statusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value: FlightStatus) => handleInputChange("status", value)}
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {/* Use the status options array for consistency */}
+                  {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -1,3 +1,4 @@
+// src/hooks/use-flights.ts
 "use client"
 import useSWR from "swr"
 import { useState, useCallback, useMemo, useEffect } from "react"
@@ -6,8 +7,11 @@ import type { Prisma } from "@prisma/client"
 export type Flight = Prisma.flightsGetPayload<{
   select: {
     id: true
-    airport: true  // FIXED: Changed from 'aiport' to 'airport'
+    airport: true
     callsign: true
+    // --- ADDED NEW FIELD HERE ---
+    geofs_callsign: true
+    // ----------------------------
     aircraft_type: true
     departure: true
     arrival: true

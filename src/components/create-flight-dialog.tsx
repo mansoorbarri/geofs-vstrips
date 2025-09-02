@@ -1,3 +1,4 @@
+// src/components/CreateFlightDialog.tsx
 "use client"
 
 import type React from "react"
@@ -22,7 +23,10 @@ import { Plus } from "lucide-react"
 import { type Flight } from "~/hooks/use-flights"
 
 // FIXED: Remove "airport" from the Omit. The parent component expects this field.
-type NewFlightData = Omit<Flight, "id" | "created_at" | "updated_at">
+// Add geofs_callsign to the type definition as an optional string.
+type NewFlightData = Omit<Flight, "id" | "created_at" | "updated_at"> & {
+  geofs_callsign?: string;
+}
 
 interface CreateFlightDialogProps {
   onCreateFlight: (newFlightData: NewFlightData) => Promise<void>
@@ -34,6 +38,7 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
   const [formData, setFormData] = useState({
     airport: airportName,
     callsign: "",
+    geofs_callsign: "", // <-- ADDED: New state field
     aircraft_type: "",
     departure: "",
     arrival: "",
@@ -61,6 +66,7 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
     setFormData({
       airport: airportName,
       callsign: "",
+      geofs_callsign: "", // <-- ADDED: Reset new field
       aircraft_type: "",
       departure: "",
       arrival: "",
@@ -114,6 +120,20 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
+            {/* ADDED: New field for GeoFS Callsign */}
+            <div className="space-y-2">
+              <Label htmlFor="geofs_callsign">GeoFS Callsign</Label>
+              <Input
+                id="geofs_callsign"
+                value={formData.geofs_callsign}
+                onChange={(e) => handleInputChange("geofs_callsign", e.target.value)}
+                placeholder="Ayman"
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="aircraft_type">Aircraft *</Label>
               <Input
@@ -125,9 +145,6 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="departure">Departure *</Label>
               <Input
@@ -139,6 +156,9 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="arrival">Arrival *</Label>
               <Input
@@ -150,9 +170,6 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="altitude">Altitude</Label>
               <Input
@@ -163,6 +180,9 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="speed">Speed</Label>
               <Input
@@ -173,25 +193,24 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Initial Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => handleInputChange("status", value)}
-            >
-              <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                {statusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="status">Initial Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleInputChange("status", value)}
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
