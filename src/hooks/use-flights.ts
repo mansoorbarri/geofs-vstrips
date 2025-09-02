@@ -1,5 +1,4 @@
 "use client"
-
 import useSWR from "swr"
 import { useState, useCallback, useMemo, useEffect } from "react"
 import type { Prisma } from "@prisma/client"
@@ -7,6 +6,7 @@ import type { Prisma } from "@prisma/client"
 export type Flight = Prisma.flightsGetPayload<{
   select: {
     id: true
+    airport: true  // FIXED: Changed from 'aiport' to 'airport'
     callsign: true
     aircraft_type: true
     departure: true
@@ -40,57 +40,76 @@ const fetcher = async (url: string) => {
   return res.json()
 }
 
-export function useFlights(realtime = false): UseFlightsResult {
-  const { data, error, isLoading, mutate } = useSWR<{ flights: Flight[] }>("/api/flights", fetcher, {
-    refreshInterval: realtime ? 5000 : 0,
-    revalidateOnFocus: realtime,
-    fallbackData: { flights: [] },
-  })
+// UPDATED: Added optional airport parameter
+export function useFlights(realtime = false, airport?: string): UseFlightsResult {
+  // UPDATED: Build URL with airport query parameter if provided
+  const apiUrl = useMemo(() => {
+    const baseUrl = "/api/flights"
+    if (airport) {
+      return `${baseUrl}?airport=${encodeURIComponent(airport)}`
+    }
+    return baseUrl
+  }, [airport])
+
+  const { data, error, isLoading, mutate } = useSWR<{ flights: Flight[] }>(
+    apiUrl,  // UPDATED: Use dynamic URL
+    fetcher,
+    {
+      refreshInterval: realtime ? 1000 : 0,
+      revalidateOnFocus: realtime,
+      fallbackData: { flights: [] },
+    }
+  )
 
   const [lastUpdate, setLastUpdate] = useState<string | null>(null)
 
-useEffect(() => {
-  if (data?.flights && data.flights.length > 0) {
-    // Convert string dates to Date objects for proper numerical comparison
-    const sortedFlights = [...data.flights].sort((a, b) => {
-      const dateA = new Date(a.updated_at);
-      const dateB = new Date(b.updated_at);
-      return dateB.getTime() - dateA.getTime();
-    });
+  useEffect(() => {
+    if (data?.flights && data.flights.length > 0) {
+      // Convert string dates to Date objects for proper numerical comparison
+      const sortedFlights = [...data.flights].sort((a, b) => {
+        const dateA = new Date(a.updated_at);
+        const dateB = new Date(b.updated_at);
+        return dateB.getTime() - dateA.getTime();
+      });
 
-    const latestFlight = sortedFlights[0];
-
-    if (latestFlight) {
-      // The updated_at property is a string from the API.
-      // You can either use the original string or, if you want a new
-      // ISO string from the Date object, you must call toISOString().
-      // This is the line that will fix your runtime and type errors:
-      setLastUpdate(new Date(latestFlight.updated_at).toISOString());
+      const latestFlight = sortedFlights[0];
+      if (latestFlight) {
+        setLastUpdate(new Date(latestFlight.updated_at).toISOString());
+      } else {
+        setLastUpdate(null);
+      }
     } else {
       setLastUpdate(null);
     }
-  } else {
-    setLastUpdate(null);
-  }
-}, [data]);
+  }, [data]);
 
   const flights = useMemo(() => data?.flights || [], [data])
 
+  // UPDATED: Include airport in createFlight
   const createFlight = useCallback(
     async (flightData: Omit<Flight, "id" | "created_at" | "updated_at">): Promise<Flight> => {
-      const res = await fetch("/api/flights", {
+      // Ensure airport is included in the flight data
+      const flightDataWithAirport = {
+        ...flightData,
+        airport: flightData.airport || airport || "", // Use provided airport as fallback
+      }
+
+      const res = await fetch("/api/flights/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(flightData),
+        body: JSON.stringify(flightDataWithAirport),
       })
+
       if (!res.ok) {
-        throw new Error("Failed to create flight.")
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.message || "Failed to create flight.")
       }
+
       const newFlight = await res.json()
-      void mutate() // Corrected: Use 'void' to mark the promise as intentionally unhandled
+      void mutate() // Revalidate the SWR cache
       return newFlight
     },
-    [mutate],
+    [mutate, airport],
   )
 
   const updateFlight = useCallback(
@@ -103,11 +122,14 @@ useEffect(() => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(flightData),
       })
+
       if (!res.ok) {
-        throw new Error("Failed to update flight.")
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.message || "Failed to update flight.")
       }
+
       const updatedFlight = await res.json()
-      void mutate() // Corrected: Use 'void' to mark the promise as intentionally unhandled
+      void mutate() // Revalidate the SWR cache
       return updatedFlight
     },
     [mutate],
@@ -117,10 +139,13 @@ useEffect(() => {
     const res = await fetch(`/api/flights/${id}`, {
       method: "DELETE",
     })
+
     if (!res.ok) {
-      throw new Error("Failed to delete flight.")
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || "Failed to delete flight.")
     }
-    void mutate() // Corrected: Use 'void' to mark the promise as intentionally unhandled
+
+    void mutate() // Revalidate the SWR cache
   }, [mutate])
 
   return {

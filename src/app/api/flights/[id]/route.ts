@@ -3,30 +3,38 @@ import { PrismaClient, FlightStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// The second argument is a Promise<object> in Next.js 15
+// GET - Fetch individual flight with history
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // You must await the params object to access its properties
     const flightId = (await params).id;
+
+    const flight = await prisma.flights.findUnique({
+      where: { id: flightId },
+    });
+
+    if (!flight) {
+      return NextResponse.json({ error: "Flight not found" }, { status: 404 });
+    }
 
     const history = await prisma.flight_history.findMany({
       where: { flight_id: flightId },
       orderBy: { changed_at: 'desc' },
     });
 
-    return NextResponse.json({ history });
+    return NextResponse.json({ flight, history });
   } catch (error) {
-    console.error("Error fetching flight history:", error);
-    return NextResponse.json({ error: "Failed to fetch flight history" }, { status: 500 });
+    console.error("Error fetching flight:", error);
+    return NextResponse.json({ error: "Failed to fetch flight" }, { status: 500 });
   }
 }
 
-// The same change applies to the PUT function
+// PUT - Update individual flight
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json();
-    const { callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body;
-    const { id: flightId } = await params; // Await params here
+    // UPDATED: Include airport in destructuring
+    const { airport, callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body;
+    const { id: flightId } = await params;
 
     // Get current flight for history tracking
     const currentFlight = await prisma.flights.findUnique({
@@ -47,6 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Prepare update data (only include fields that are provided)
     const updateData: any = {};
+    if (airport !== undefined) updateData.airport = airport.toUpperCase(); // NEW: Handle airport updates
     if (callsign !== undefined) updateData.callsign = callsign.toUpperCase();
     if (aircraft_type !== undefined) updateData.aircraft_type = aircraft_type.toUpperCase();
     if (departure !== undefined) updateData.departure = departure.toUpperCase();
@@ -86,10 +95,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// The same change applies to the DELETE function
+// DELETE - Delete individual flight
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: flightId } = await params; // Await params here
+    const { id: flightId } = await params;
 
     // Check if flight exists
     const flight = await prisma.flights.findUnique({
@@ -110,7 +119,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       where: { id: flightId },
     });
 
-    return NextResponse.json({ message: "Flight deleted successfully" });
+    return NextResponse.json({ 
+      message: "Flight deleted successfully",
+      deletedFlight: {
+        id: flight.id,
+        callsign: flight.callsign,
+        airport: flight.airport // Include airport info in response
+      }
+    });
   } catch (error) {
     console.error("Error deleting flight:", error);
     return NextResponse.json({ error: "Failed to delete flight" }, { status: 500 });

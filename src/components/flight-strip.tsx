@@ -5,12 +5,12 @@ import { Edit, Trash2 } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 
-// Correctly import the Flight and FlightStatus types from the source of truth
+// Import both Flight and FlightStatus from the same source
 import { type Flight } from "~/hooks/use-flights"
-import type { FlightStatus } from "~/app/main-board"
 
-// The FlightStripProps interface now uses the correct Flight type.
-// No need to redefine it here.
+// Define FlightStatus here since it's used for UI logic
+export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
+
 interface FlightStripProps {
   flight: Flight
   onClick?: () => void
@@ -30,7 +30,6 @@ export function FlightStrip({
   onEdit,
   onDelete,
 }: FlightStripProps) {
-  // Correct the getStatusColors function to use the right status types
   const getStatusColors = (status: FlightStatus) => {
     switch (status) {
       case "delivery":
@@ -70,7 +69,6 @@ export function FlightStrip({
     <div
       className={cn(
         "p-3 rounded border cursor-pointer transition-all duration-200 select-none relative group",
-        // The status property on flight is now correctly typed and will work here
         getStatusColors(flight.status as FlightStatus),
         isDragging && "opacity-50 scale-95 rotate-1",
         className,
@@ -92,13 +90,11 @@ export function FlightStrip({
         <div className="flex justify-between items-center mb-1">
           <div className="font-bold text-base">{flight.callsign}</div>
           <div className="text-xs text-gray-300">{flight.status.toUpperCase()}</div>
-        </div>
-        {/* CORRECTED: Use aircraft_type instead of aircraft */}
+        </div>        
         <div className="text-gray-200 mb-1">{flight.aircraft_type}</div>
         <div className="text-gray-200 mb-2">
           <span className="font-medium">{flight.departure}</span>
           <span className="mx-2 text-gray-400">→</span>
-          {/* CORRECTED: Use arrival instead of destination */}
           <span className="font-medium">{flight.arrival}</span>
         </div>
         <div className="flex justify-between text-xs text-gray-300 mb-2">

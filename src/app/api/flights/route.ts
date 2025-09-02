@@ -1,82 +1,77 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient, FlightStatus } from "@prisma/client"
+import { type NextRequest, NextResponse } from "next/server";
+import { PrismaClient, FlightStatus } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const since = searchParams.get("since") // For real-time updates
+    const { searchParams } = new URL(request.url);
+    const airport = searchParams.get('airport');
 
-    let whereClause = {}
-    if (since) {
-      whereClause = {
-        updated_at: {
-          gt: new Date(since)
-        }
-      }
-    }
-
+    const whereClause = airport ? { airport } : {};
+    
     const flights = await prisma.flights.findMany({
       where: whereClause,
-      orderBy: { updated_at: 'desc' }
-    })
+      orderBy: { created_at: 'desc' },
+    });
 
-    return NextResponse.json({ flights })
+    return NextResponse.json({ flights });
   } catch (error) {
-    console.error("Error fetching flights:", error)
-    return NextResponse.json({ error: "Failed to fetch flights" }, { status: 500 })
+    console.error("Error fetching flights:", error);
+    return NextResponse.json({ error: "Failed to fetch flights" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body
+    const body = await request.json();
+    const { airport, callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body;
 
-    // Validate required fields
-    if (!callsign || !aircraft_type || !departure || !arrival || !altitude || !speed || !status) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    // Remove the redundant `if (!airport)` and relax the validation
+    if (!callsign || !airport || !aircraft_type || !departure || !arrival || !status) {
+      return NextResponse.json({ 
+        error: "Missing required fields: callsign, airport, aircraft_type, departure, arrival, status" 
+      }, { status: 400 });
     }
 
     // Validate status
-    const validStatuses = Object.values(FlightStatus)
+    const validStatuses = Object.values(FlightStatus);
     if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 })
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
+    // Create flight with normalized data
     const flight = await prisma.flights.create({
       data: {
+        airport: airport.toUpperCase(), // Normalize airport code
         callsign: callsign.toUpperCase(),
         aircraft_type: aircraft_type.toUpperCase(),
         departure: departure.toUpperCase(),
         arrival: arrival.toUpperCase(),
-        altitude,
-        speed,
-        status,
-        notes: notes || ""
-      }
-    })
+        altitude: altitude || null, // Ensure `altitude` can be nullable
+        speed: speed || null, // Ensure `speed` can be nullable
+        status: status,
+        notes: notes || '',
+      },
+    });
 
-    // Log status change to history
+    // Log initial status to history
     await prisma.flight_history.create({
       data: {
         flight_id: flight.id,
-        old_status: "", // NULL equivalent - empty string or you could make this field optional
-        new_status: status
-        // Note: removed notes field as it's not in your schema
-      }
-    })
+        old_status: '', // No previous status for new flight
+        new_status: status,
+      },
+    });
 
-    return NextResponse.json({ flight }, { status: 201 })
+    return NextResponse.json({ flight });
   } catch (error: any) {
-    console.error("Error creating flight:", error)
-    
-    // Handle unique constraint violation (duplicate callsign)
+    console.error("Error creating flight:", error);
+
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Flight with this callsign already exists" }, { status: 409 })
+      return NextResponse.json({ error: "Flight with this callsign already exists" }, { status: 409 });
     }
-    
-    return NextResponse.json({ error: "Failed to create flight" }, { status: 500 })
+
+    return NextResponse.json({ error: "Failed to create flight" }, { status: 500 });
   }
 }

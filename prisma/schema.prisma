@@ -21,6 +21,7 @@ enum FlightStatus {
 
 model flights {
   id            String          @id @default(uuid()) @db.Uuid
+  airport      String        @db.VarChar(10)
   callsign      String          @db.VarChar(255)
   aircraft_type String          @db.VarChar(255)
   departure     String          @db.VarChar(255)

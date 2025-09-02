@@ -1,10 +1,10 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download } from "lucide-react";
+import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
 import { CreateFlightDialog } from "~/components/create-flight-dialog";
@@ -14,15 +14,15 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { useFlights } from "~/hooks/use-flights";
 import { type Flight } from "~/hooks/use-flights";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from 'next/navigation';
 
-
-// CORRECTED: Export the FlightStatus type so other components can import it
+// Export the FlightStatus type so other components can import it
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
-// NEW: Define a type for the data coming from the imported JSON file
+// Define a type for the data coming from the imported JSON file
 type ImportedFlight = {
   callsign: string;
+  airport?: string;
   aircraft_type?: string;
   aircraft?: string;
   departure: string;
@@ -40,47 +40,76 @@ interface ImportStatus {
 }
 
 interface MainBoardProps {
-  boardType: "departure" | "arrival";
+  airportName: string;
 }
 
-export function ATCFlightStrip({ boardType }: MainBoardProps) {
-  const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true);
+export function ATCFlightStrip({ airportName }: MainBoardProps) {
+  // NEW TEST CODE START
+  const params = useParams();
+  const airportNameFromURL = params.airportName;
+  
+  useEffect(() => {
+    console.log("Value of airportName prop:", airportName);
+    console.log("Value from URL (useParams):", airportNameFromURL);
+  }, [airportName, airportNameFromURL]);
+  // NEW TEST CODE END
+
+  // FIXED: Add a validation check for the airportName prop
+  if (!airportName || airportName.trim() === "") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-6 text-center">
+        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+        <h1 className="text-3xl font-bold mb-2">Airport Not Found</h1>
+        <p className="text-gray-400 mb-6">
+          Please provide a valid airport name in the URL. Example: 
+          <br />
+          <Link href="/board/KJFK" className="underline text-blue-400 hover:text-blue-500">
+            /board/KJFK
+          </Link>ATC
+        </p>
+        <Link href="/" passHref>
+          <Button variant="outline" className="bg-black border-gray-700 text-gray-400 hover:bg-gray-800">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // UPDATED: Pass airportName to useFlights hook for filtering
+  const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true, airportName);
 
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<ImportStatus>({ type: null, message: "" });
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for selected flights and "select all" functionality
+  const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   const boardSectors = useMemo(() => {
-    if (boardType === "departure") {
-      return ["delivery", "ground", "tower", "departure", "control"] as const;
-    } else {
-      return ["ground", "tower", "approach", "control"] as const;
-    }
-  }, [boardType]);
+    return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
+  }, []);
 
   const flightsByStatus = useMemo(() => {
-    // Corrected: This part is fine. It creates an object with the correct keys.
     const categories = boardSectors.reduce((acc, status) => {
       acc[status] = [];
       return acc;
     }, {} as Record<typeof boardSectors[number], Flight[]>);
 
     flights.forEach((flight) => {
-      // Corrected: Check if the flight's status is one of the valid board sectors.
-      // We use a type assertion to satisfy the TypeScript compiler.
       const status = flight.status as FlightStatus;
       
       if ((boardSectors as readonly FlightStatus[]).includes(status)) {
-        // The `status` is guaranteed to be a valid key here.
         categories[status].push(flight);
       }
     });
 
     return categories;
   }, [flights, boardSectors]);
-
 
   const statusCycle: Record<FlightStatus, FlightStatus> = useMemo(
     () => ({
@@ -170,6 +199,7 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
 
             if (typeof aircraft_type === "string" && typeof arrival === "string") {
               const normalizedFlight = {
+                airport: flight.airport || airportName, // UPDATED: Use imported airport or default to current airport
                 callsign: flight.callsign,
                 aircraft_type: aircraft_type,
                 departure: flight.departure,
@@ -225,12 +255,14 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
         fileInputRef.current.value = "";
       }
     },
-    [validateFlight, createFlight, showStatus]
+    [validateFlight, createFlight, showStatus, airportName]
   );
 
+  // UPDATED: Sample flights now include airport field
   const sampleFlights = useMemo(
     () => [
       {
+        airport: airportName,
         callsign: "UAL123",
         aircraft_type: "B737-800",
         departure: "KJFK",
@@ -241,6 +273,7 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
         notes: "Priority passenger on board",
       },
       {
+        airport: airportName,
         callsign: "DAL456",
         aircraft_type: "A320",
         departure: "KORD",
@@ -251,6 +284,7 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
         notes: "Weather deviation requested",
       },
       {
+        airport: airportName,
         callsign: "SWA789",
         aircraft_type: "B737-700",
         departure: "KPHX",
@@ -260,7 +294,7 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
         status: "tower" as FlightStatus,
       },
     ],
-    []
+    [airportName]
   );
 
   const generateSampleJSON = useCallback(() => {
@@ -269,10 +303,10 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "sample_flights.json";
+    link.download = `sample_flights_${airportName}.json`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [sampleFlights]);
+  }, [sampleFlights, airportName]);
 
   const copySampleJSON = useCallback(async () => {
     const jsonString = JSON.stringify(sampleFlights, null, 2);
@@ -284,16 +318,22 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
     }
   }, [sampleFlights, showStatus]);
 
+  // UPDATED: Ensure created flights have airport field
   const handleCreateFlight = useCallback(
     async (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => {
       try {
-        const newFlight = await createFlight(newFlightData);
+        // Ensure airport is set to current airport
+        const flightWithAirport = {
+          ...newFlightData,
+          airport: newFlightData.airport || airportName,
+        };
+        const newFlight = await createFlight(flightWithAirport);
         showStatus("success", `Flight strip ${newFlight.callsign} created successfully!`);
       } catch (error: any) {
         showStatus("error", error.message || "Failed to create flight. Please try again.");
       }
     },
-    [createFlight, showStatus]
+    [createFlight, showStatus, airportName]
   );
 
   const handleEditFlight = useCallback((flight: Flight) => {
@@ -342,12 +382,17 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `atc_flights_${new Date().toISOString().split("T")[0]}.json`;
+    // UPDATED: Include airport name in export filename
+    link.download = `atc_flights_${airportName}_${new Date().toISOString().split("T")[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
 
-    showStatus("success", `Exported ${flights.length} flight(s) successfully!`);
-  }, [flights, showStatus]);
+    showStatus("success", `Exported ${flights.length} flight(s) for ${airportName} successfully!`);
+  }, [flights, showStatus, airportName]);
+  
+  const gridClasses = useMemo(() => {
+    return "grid-cols-3";
+  }, []);
 
   const statusTitles: Record<FlightStatus, string> = useMemo(
     () => ({
@@ -361,19 +406,8 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
     []
   );
 
-  // New: Determine the grid class based on the board type
-  const gridClasses = useMemo(() => {
-    if (boardType === "departure") {
-      return "grid-cols-5";
-    } else {
-      return "grid-cols-4";
-    }
-  }, [boardType]);
-
   return (
-    // Updated: Use `flex` and `flex-col` for a full-height layout. The `p-6` is moved to a parent container.
     <div className="flex flex-col min-h-screen bg-black text-white">
-      {/* Header section with back button and other controls */}
       <div className="flex-shrink-0 p-6">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" passHref>
@@ -383,12 +417,12 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
             </Button>
           </Link>
           <h1 className="text-3xl font-bold flex-grow text-center">
-            {boardType === "departure" ? "Departure" : "Arrival"} Board
+            {airportName} Board
           </h1>
           <RealTimeIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
         </div>
         <div className="flex gap-4 flex-wrap">
-          <CreateFlightDialog onCreateFlight={handleCreateFlight} />
+        <CreateFlightDialog onCreateFlight={handleCreateFlight} airportName={airportName} />
           <Button
             variant="outline"
             className="bg-black border-white text-white hover:bg-white hover:text-black"
@@ -443,12 +477,9 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
         onUpdateFlight={handleUpdateFlight}
       />
 
-      {/* Main content area, configured to grow and fill remaining space */}
       <main className="flex-grow p-6 pt-0 overflow-hidden">
-        {/* Updated: Use the conditional grid class and `h-full` to stretch to height */}
         <div className={`grid ${gridClasses} gap-4 h-full`}>
           {boardSectors.map((status) => (
-            // Updated: Each drop zone and its card now take up the full available height
             <DropZone key={status} onDrop={handleDrop(status)} className="h-full">
               <Card className="bg-gray-900 border-gray-700 flex flex-col h-full">
                 <CardHeader className="flex-shrink-0">
@@ -456,7 +487,6 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
                     {statusTitles[status]} ({flightsByStatus[status].length})
                   </CardTitle>
                 </CardHeader>
-                {/* Updated: Added `flex-grow` and `overflow-y-auto` to enable scrolling and fill remaining height */}
                 <CardContent className="flex-grow space-y-2 p-4 overflow-y-auto">
                   {flightsByStatus[status].length === 0 ? (
                     <p className="text-gray-400 text-center py-8 text-sm">No flights</p>
@@ -479,12 +509,6 @@ export function ATCFlightStrip({ boardType }: MainBoardProps) {
           ))}
         </div>
       </main>
-
-      <div className="fixed bottom-0 left-0 w-full text-center p-4 bg-black/50 backdrop-blur-sm z-50">
-        <p className="text-gray-500 text-xs">
-          Designed & Developed by <span className="font-semibold text-white">xyzmani</span>
-        </p>
-      </div>
     </div>
   );
 }

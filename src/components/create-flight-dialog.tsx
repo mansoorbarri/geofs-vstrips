@@ -21,19 +21,18 @@ import { Plus } from "lucide-react"
 // Import the correct Flight type from the single source of truth
 import { type Flight } from "~/hooks/use-flights"
 
-// Create a new type for the data we submit to the database
+// FIXED: Remove "airport" from the Omit. The parent component expects this field.
 type NewFlightData = Omit<Flight, "id" | "created_at" | "updated_at">
 
 interface CreateFlightDialogProps {
-  // Correct the prop type to match what page.tsx is providing
-  // It should accept the NewFlightData type and return a Promise<void>
   onCreateFlight: (newFlightData: NewFlightData) => Promise<void>
+  airportName: string
 }
 
-export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) {
+export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlightDialogProps) {
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
-    // Correct the state to use the correct property names
+    airport: airportName,
     callsign: "",
     aircraft_type: "",
     departure: "",
@@ -44,21 +43,23 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
     notes: "",
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     // Validate required fields
-    if (!formData.callsign || !formData.aircraft_type || !formData.departure || !formData.arrival) {
+    if (!formData.callsign || !formData.aircraft_type || !formData.departure || !formData.arrival || !formData.status) {
       // You should add some user feedback here
+      console.log("Missing required fields");
       return
     }
 
     // Call the onCreateFlight function with the correctly typed data
-    // Await the promise since it's an async function
+    // The formData object already contains the 'airport' field.
     await onCreateFlight(formData as NewFlightData)
 
     // Reset form and close dialog
     setFormData({
+      airport: airportName,
       callsign: "",
       aircraft_type: "",
       departure: "",
@@ -68,6 +69,7 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
       status: "delivery",
       notes: "",
     })
+    console.log(formData)
     setOpen(false)
   }
 
@@ -97,6 +99,9 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Hidden input to automatically include the airport name */}
+          <Input type="hidden" value={formData.airport} name="airport" />
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="callsign">Callsign *</Label>
@@ -112,7 +117,6 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
             <div className="space-y-2">
               <Label htmlFor="aircraft_type">Aircraft *</Label>
               <Input
-                // Corrected the ID to match the state property
                 id="aircraft_type"
                 value={formData.aircraft_type}
                 onChange={(e) => handleInputChange("aircraft_type", e.target.value.toUpperCase())}
@@ -138,7 +142,6 @@ export function CreateFlightDialog({ onCreateFlight }: CreateFlightDialogProps) 
             <div className="space-y-2">
               <Label htmlFor="arrival">Arrival *</Label>
               <Input
-                // Corrected the ID to match the state property
                 id="arrival"
                 value={formData.arrival}
                 onChange={(e) => handleInputChange("arrival", e.target.value.toUpperCase())}
