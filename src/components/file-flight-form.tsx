@@ -56,8 +56,8 @@ export function FileFlightForm() {
       aircraft_type: formData.get("aircraft_type"),
       departure: formData.get("departure"),
       arrival: formData.get("arrival"),
-      altitude: formData.get("altitude"),
-      speed: formData.get("speed"),
+      altitude: formData.get("cruise altitude"),
+      speed: formData.get("cruise speed"),
       notes: formData.get("notes"),
       status: "delivery", // Default status
     };
