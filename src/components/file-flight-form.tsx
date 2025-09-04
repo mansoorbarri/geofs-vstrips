@@ -156,6 +156,7 @@ export function FileFlightForm() {
             id="notes"
             name="notes"
             placeholder="Additional information"
+            required
             className="bg-gray-800 border-gray-700 text-white"
           />
         </div>
