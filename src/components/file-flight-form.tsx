@@ -38,8 +38,8 @@ export function FileFlightForm() {
     { name: "aircraft_type", label: "Aircraft Type", placeholder: "e.g., A320", type: "text" },
     { name: "departure", label: "Departure Airport", placeholder: "e.g., KLAX", type: "text" },
     { name: "arrival", label: "Arrival Airport", placeholder: "e.g., KJFK", type: "text" },
-    { name: "altitude", label: "Altitude", placeholder: "e.g., 35000", type: "text" },
-    { name: "speed", label: "Speed", placeholder: "e.g., 420", type: "text" },
+    { name: "altitude", label: "Cruise Altitude", placeholder: "e.g., 35000", type: "text" },
+    { name: "speed", label: "Cruise Speed", placeholder: "e.g., 420", type: "text" },
     { name: "airport_atc", label: "Airport for ATC", placeholder: "e.g., KJFK", type: "select" },
   ], []);
 
@@ -56,8 +56,8 @@ export function FileFlightForm() {
       aircraft_type: formData.get("aircraft_type"),
       departure: formData.get("departure"),
       arrival: formData.get("arrival"),
-      altitude: formData.get("cruise altitude"),
-      speed: formData.get("cruise speed"),
+      altitude: formData.get("altitude"),
+      speed: formData.get("speed"),
       notes: formData.get("notes"),
       status: "delivery", // Default status
     };
