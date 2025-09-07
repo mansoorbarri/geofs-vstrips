@@ -526,7 +526,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         <div className={`grid ${gridClasses} gap-4 h-full`}>
           {boardSectors.map((status) => (
             <DropZone key={status} onDrop={handleDrop(status)} className="h-full">
-              <Card className="bg-gray-900 border-gray-700 flex flex-col h-[50vh]">
+              <Card className="bg-gray-900 border-gray-700 flex flex-col h-[70vh]">
                 <CardHeader className="flex-shrink-0">
                   <CardTitle className="text-white text-center text-sm">
                     {statusTitles[status]} ({flightsByStatus[status].length})
