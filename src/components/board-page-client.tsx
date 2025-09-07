@@ -544,7 +544,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                         onDragStart={handleDragStart}
                         isDragging={draggedFlightId === flight.id}
                         onEdit={handleEditFlight}
-                        // onDelete={handleDeleteFlight}
+                        onDelete={handleDeleteFlight}
                         onSelect={handleFlightSelection}
                         isSelected={selectedFlights.includes(flight.id)}
                       />

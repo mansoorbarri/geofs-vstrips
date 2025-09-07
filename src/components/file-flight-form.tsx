@@ -98,12 +98,12 @@ export function FileFlightForm() {
   return (
     <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white">
       <div className="flex justify-between items-center mb-6">
-        <Link href="/" passHref>
+        {/* <Link href="/" passHref>
           <Button variant="outline" className="bg-black border-gray-700 text-gray-400 hover:bg-gray-800 hover:cursor-pointer">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-        </Link>
+        </Link> */}
         <h1 className="text-3xl font-bold flex-grow text-center">File a Flight Plan</h1>
         <div className="w-[100px]" />
       </div>
