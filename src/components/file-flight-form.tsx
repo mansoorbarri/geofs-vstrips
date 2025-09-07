@@ -151,7 +151,7 @@ export function FileFlightForm() {
         ))}
         
         <div className="space-y-2">
-          <Label htmlFor="notes">Notes</Label>
+          <Label htmlFor="notes">Flight Route</Label>
           <Textarea
             id="notes"
             name="notes"
