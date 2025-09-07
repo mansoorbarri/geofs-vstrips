@@ -40,7 +40,7 @@ export function FileFlightForm() {
     { name: "arrival", label: "Arrival Airport", placeholder: "e.g., KJFK", type: "text" },
     { name: "altitude", label: "Cruise Altitude", placeholder: "e.g., 35000", type: "text" },
     { name: "speed", label: "Cruise Speed", placeholder: "e.g., 420", type: "text" },
-    { name: "airport_atc", label: "Airport for ATC", placeholder: "e.g., KJFK", type: "select" },
+    { name: "airport_atc", label: "DEPARTURE AIRPORT", placeholder: "e.g., KJFK", type: "select" },
   ], []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
