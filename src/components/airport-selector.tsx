@@ -45,7 +45,7 @@ export function AirportSelector({ airports }: { airports: Airport[] }) {
       <Button
         onClick={handleGoToBoard}
         disabled={!selectedAirport}
-        className="w-full sm:w-auto px-8 py-6 text-lg bg-blue-500 hover:bg-blue-600 transition-colors duration-300"
+        className="w-full sm:w-auto px-8 py-6 text-lg bg-blue-500 hover:bg-blue-600 transition-colors duration-300 hover:cursor-pointer"
       >
         Go to Board
       </Button>
