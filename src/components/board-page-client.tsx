@@ -17,6 +17,8 @@ import { type Flight } from "~/hooks/use-flights";
 import Link from "next/link";
 import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { useUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
@@ -46,6 +48,15 @@ interface BoardPageClientProps {
 }
 
 export function BoardPageClient({ airportName }: BoardPageClientProps) {
+  const { user, isSignedIn } = useUser();
+  if (!isSignedIn) {
+    redirect('/sign-up');
+  }
+
+  if (!user.publicMetadata || user.publicMetadata.controller !== true) {
+    redirect('/become-controller');
+  }
+
   const params = useParams();
   const airportNameFromURL = params.airportName;
   

@@ -59,7 +59,7 @@ export function useFlights(realtime = false, airport?: string): UseFlightsResult
     apiUrl,  // UPDATED: Use dynamic URL
     fetcher,
     {
-      refreshInterval: realtime ? 3000 : 0,
+      refreshInterval: realtime ? 5000 : 0,
       revalidateOnFocus: realtime,
       fallbackData: { flights: [] },
     }

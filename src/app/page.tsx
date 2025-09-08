@@ -1,22 +1,28 @@
 // src/app/page.tsx
-import Link from 'next/link';
-import { Button } from "~/components/ui/button";
-import { PlaneTakeoff } from "lucide-react";
+"use client"
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { AirportSelector } from "~/components/airport-selector";
+import { useUser } from "@clerk/nextjs";
 
-export default async function HomePage() {
-  const cookieStore = await cookies();
-  const authenticated = cookieStore.get("auth_token")?.value === "authenticated";
+export default function HomePage() {
+  const { isLoaded, isSignedIn, user } = useUser();
 
-  if (!authenticated) {
-    redirect("/gate");
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn) {
+    redirect('/sign-up');
+  }
+
+  if (!user.publicMetadata || user.publicMetadata.controller !== true) {
+    redirect('/become-controller');
   }
 
   const airports = [
-    { id: "YSSY", name: "Sydney (YSSY)" },
-    { id: "YMML", name: "Melbourne (YMML)" },
+    { id: "ZBW", name: "Boston" },
+    { id: "BDL", name: "Bradley" },
+    { id: "DXR", name: "Danbury" },
   ];
 
   return (
