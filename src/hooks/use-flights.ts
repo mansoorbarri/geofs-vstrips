@@ -4,25 +4,26 @@ import useSWR from "swr"
 import { useState, useCallback, useMemo, useEffect } from "react"
 import type { Prisma } from "@prisma/client"
 
-export type Flight = Prisma.flightsGetPayload<{
-  select: {
-    id: true
-    airport: true
-    callsign: true
-    // --- ADDED NEW FIELD HERE ---
-    geofs_callsign: true
-    // ----------------------------
-    aircraft_type: true
-    departure: true
-    arrival: true
-    altitude: true
-    speed: true
-    status: true
-    notes: true
-    created_at: true
-    updated_at: true
-  }
-}>
+// src/hooks/use-flights.ts
+
+export interface Flight {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  airport: string;
+  callsign: string;
+  geofs_callsign: string | null;
+  discord_username: string | null; // NEW: Discord username
+  aircraft_type: string;
+  departure: string;
+  departure_time: string | null; // NEW: Departure time
+  arrival: string;
+  altitude: string;
+  speed: string;
+  status: string;
+  notes: string | null;
+}
+
 
 interface UseFlightsResult {
   flights: Flight[]

@@ -1,15 +1,12 @@
-// src/components/flight-strip.tsx
 "use client"
 
 import type React from "react"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, Check } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 
-// Import both Flight and FlightStatus from the same source
 import { type Flight } from "~/hooks/use-flights"
 
-// Define FlightStatus here since it's used for UI logic
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
 interface FlightStripProps {
@@ -20,7 +17,6 @@ interface FlightStripProps {
   isDragging?: boolean
   onEdit?: (flight: Flight) => void
   onDelete?: (flightId: string) => void
-  // NEW PROPS for selection
   isSelected: boolean
   onSelect: (flightId: string) => void
 }
@@ -33,7 +29,6 @@ export function FlightStrip({
   isDragging,
   onEdit,
   onDelete,
-  // NEW PROPS
   isSelected,
   onSelect,
 }: FlightStripProps) {
@@ -72,7 +67,6 @@ export function FlightStrip({
     onDelete?.(flight.id)
   }
   
-  // NEW: Handler for the checkbox to prevent parent click events
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect(flight.id);
@@ -84,7 +78,6 @@ export function FlightStrip({
         "p-3 rounded border cursor-pointer transition-all duration-200 select-none relative group",
         getStatusColors(flight.status as FlightStatus),
         isDragging && "opacity-50 scale-95 rotate-1",
-        // NEW: Add a visual indicator for selected state
         isSelected && "ring-2 ring-white",
         className,
       )}
@@ -92,15 +85,25 @@ export function FlightStrip({
       draggable
       onDragStart={handleDragStart}
     >
-      {/* NEW: Checkbox for selecting flights */}
-      <div className="absolute top-2 left-2 z-10">
-        <input
-          type="checkbox"
-          className="form-checkbox h-4 w-4 text-blue-600 bg-gray-900 border-gray-600 rounded cursor-pointer"
-          checked={isSelected}
-          onClick={handleSelect}
-          readOnly
-        />
+      <div
+        className={cn(
+          "absolute top-2 left-2 z-10 w-5 h-5 transition-all duration-300 flex items-center justify-center cursor-pointer",
+          "before:content-[''] before:absolute before:h-[2px] before:w-3 before:bg-gray-400 before:transition-all before:duration-300",
+          "hover:border hover:border-gray-400 hover:rounded-sm",
+          isSelected ? "border-blue-600 bg-blue-600 rounded-sm" : ""
+        )}
+        onClick={handleSelect}
+        role="checkbox"
+        aria-checked={isSelected}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            onSelect(flight.id);
+          }
+        }}
+      >
+        {isSelected && <Check className="h-4 w-4 text-white" />}
       </div>
 
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -112,23 +115,42 @@ export function FlightStrip({
         </Button>
       </div>
 
-      <div className="font-mono text-sm text-white pr-16 pl-6">
-        <div className="flex justify-between items-center mb-1">
+      {/* REORGANIZED CONTENT FOR BETTER READABILITY */}
+      <div className="font-mono text-sm text-white pr-16 pl-6 space-y-2">
+        {/* Row 1: Callsign & Status */}
+        <div className="flex justify-between items-center">
           <div className="font-bold text-base">{flight.callsign}</div>
-          <div className="text-xs text-gray-300">{flight.status.toUpperCase()}</div>
+          <div className="text-xs text-gray-300 font-semibold">{flight.status.toUpperCase()}</div>
         </div> 
-        {/* --- ADDED NEW FIELD HERE --- */}
-        {flight.geofs_callsign && (
-          <div className="text-xs text-gray-400 mb-1">GeoFS: {flight.geofs_callsign}</div>
+
+        {/* Row 2: Pilot Details */}
+        {(flight.geofs_callsign || flight.discord_username) && (
+          <div className="flex items-center space-x-2 text-xs text-gray-400">
+            {flight.geofs_callsign && <span className="text-gray-300">GEO: {flight.geofs_callsign}</span>}
+            {flight.geofs_callsign && flight.discord_username && <span className="text-gray-500">|</span>}
+            {flight.discord_username && <span className="text-gray-300">DISCORD: {flight.discord_username}</span>}
+          </div>
         )}
-        {/* ---------------------------- */}
-        <div className="text-gray-200 mb-1">{flight.aircraft_type}</div>
-        <div className="text-gray-200 mb-2">
-          <span className="font-medium">{flight.departure}</span>
-          <span className="mx-2 text-gray-400">→</span>
-          <span className="font-medium">{flight.arrival}</span>
+
+        {/* Row 3: Aircraft Type */}
+        <div className="text-gray-200">{flight.aircraft_type}</div>
+
+        {/* Row 4: Route & Time */}
+        <div className="flex justify-between items-center text-gray-200">
+          <div>
+            <span className="font-medium">{flight.departure}</span>
+            <span className="mx-2 text-gray-400">→</span>
+            <span className="font-medium">{flight.arrival}</span>
+          </div>
+          {flight.departure_time && (
+            <div className="text-xs text-gray-300">
+              <span className="font-semibold">ETD:</span> {flight.departure_time}
+            </div>
+          )}
         </div>
-        <div className="flex justify-between text-xs text-gray-300 mb-2">
+
+        {/* Row 5: Altitude & Speed */}
+        <div className="flex justify-between text-xs text-gray-300">
           <span>
             ALT: <span className="text-white">{flight.altitude}</span>
           </span>
@@ -136,6 +158,8 @@ export function FlightStrip({
             SPD: <span className="text-white">{flight.speed}</span>
           </span>
         </div>
+
+        {/* Notes block remains the same */}
         {flight.notes && (
           <div className="text-xs text-yellow-300 bg-gray-800 bg-opacity-50 p-2 rounded mt-2">
             <div className="font-semibold mb-1">NOTES:</div>
