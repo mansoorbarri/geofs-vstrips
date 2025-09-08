@@ -411,11 +411,11 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
   const statusTitles: Record<FlightStatus, string> = useMemo(
     () => ({
-      delivery: "Delivery [121.90]",
-      ground: "Ground [121.900]",
-      tower: "Tower [120.300]",
+      delivery: "Delivery",
+      ground: "Ground",
+      tower: "Tower",
       departure: "Departure",
-      approach: "Approach [125.350]",
+      approach: "Approach",
       control: "Control",
     }),
     []
@@ -475,7 +475,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               value={selectedImportStatus}
               onValueChange={(value) => setSelectedImportStatus(value as FlightStatus)}
             >
-              <SelectTrigger className="bg-black border-grey-700 text-white w-[160px]">
+              <SelectTrigger className="bg-black border-grey-700 text-white w-[110px]">
                 <SelectValue placeholder="Import to" />
               </SelectTrigger>
               <SelectContent className="bg-gray-900 border-gray-700">
