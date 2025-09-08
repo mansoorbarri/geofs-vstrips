@@ -169,7 +169,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         (typeof flight.arrival === "string" || typeof flight.destination === "string") &&
         typeof flight.altitude === "string" &&
         typeof flight.speed === "string" &&
-        ["delivery", "ground", "tower", "departure", "approach", "control"].includes(flight.status)
+        (flight.status === undefined || ["delivery", "ground", "tower", "departure", "approach", "control"].includes(flight.status))
       );
     },
     []
@@ -198,14 +198,14 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 airport: flight.airport || "",
                 callsign: flight.callsign || "",
                 geofs_callsign: flight.geofs_callsign || null,
-                discord_username: flight.discord_username || null, // ADDED: New field
+                discord_username: flight.discord_username || " ", // ADDED: New field
                 aircraft_type: flight.aircraft_type || "",
                 departure: flight.departure || "",
-                departure_time: flight.departure_time ?? null, // ADDED: New field
+                departure_time: flight.departure_time ?? " ", // ADDED: New field
                 arrival: flight.arrival || "",
                 altitude: flight.altitude || "",
                 speed: flight.speed || "",
-                status: flight.status as FlightStatus || "delivery",
+                status: selectedImportStatus,
                 notes: flight.notes || "",
               };
               validFlights.push(normalizedFlight);
@@ -258,44 +258,50 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   );
 
   const sampleFlights = useMemo(
-    () => [
-      {
-        airport: airportName,
-        callsign: "UAL123",
-        geofs_callsign: "Ayman",
-        aircraft_type: "B737-800",
-        departure: "KJFK",
-        arrival: "KLAX",
-        altitude: "35000",
-        speed: "450",
-        status: "delivery" as FlightStatus,
-        notes: "Priority passenger on board",
-      },
-      {
-        airport: airportName,
-        callsign: "DAL456",
-        geofs_callsign: "geofs_user",
-        aircraft_type: "A320",
-        departure: "KORD",
-        arrival: "KDEN",
-        altitude: "37000",
-        speed: "420",
-        status: "ground" as FlightStatus,
-        notes: "Weather deviation requested",
-      },
-      {
-        airport: airportName,
-        callsign: "SWA789",
-        aircraft_type: "B737-700",
-        departure: "KPHX",
-        arrival: "KLAS",
-        altitude: "33000",
-        speed: "430",
-        status: "tower" as FlightStatus,
-      },
-    ],
-    [airportName]
-  );
+      () => [
+        {
+          airport: airportName,
+          callsign: "DAL456",
+          geofs_callsign: "featherway",
+          discord_username: "featherway",
+          departure_time: "1300",
+          aircraft_type: "A320",
+          departure: "KORD",
+          arrival: "KDEN",
+          altitude: "37000",
+          speed: "420",
+          // status field is intentionally removed to show it's set on import
+          notes: "Weather deviation requested",
+        },
+        {
+          airport: airportName,
+          callsign: "DAL456",
+          geofs_callsign: "featherway",
+          discord_username: "featherway",
+          departure_time: "1300",
+          aircraft_type: "A320",
+          departure: "KORD",
+          arrival: "KDEN",
+          altitude: "37000",
+          speed: "420",
+          notes: "Weather deviation requested",
+        },
+        {
+          airport: airportName,
+          callsign: "DAL456",
+          geofs_callsign: "featherway",
+          discord_username: "featherway",
+          departure_time: "1300",
+          aircraft_type: "A320",
+          departure: "KORD",
+          arrival: "KDEN",
+          altitude: "37000",
+          speed: "420",
+          notes: "Weather deviation requested",
+        },
+      ],
+      [airportName]
+    );
 
   const generateSampleJSON = useCallback(() => {
     const dataStr = JSON.stringify(sampleFlights, null, 2);
