@@ -7,8 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import {
@@ -18,14 +17,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { redirect } from "next/navigation";
 
 // Define the airport data here
-const airports = [
-  { id: "YSSY", name: "Sydney (YSSY)" },
-  { id: "YMML", name: "Melbourne (YMML)" },
-];
+  const airports = [
+    { id: "ZBW", name: "Boston" },
+    { id: "BDL", name: "Bradley" },
+    { id: "DXR", name: "Danbury" },
+  ];
 
 export function FileFlightForm() {
+  const { isLoaded, isSignedIn } = useUser();
+  
+    if (!isLoaded) {
+      return null;
+    }
+  
+    if (!isSignedIn) {
+      redirect('/sign-up');
+    }
+
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message: string;
