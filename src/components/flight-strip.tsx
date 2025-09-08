@@ -126,7 +126,7 @@ export function FlightStrip({
         {/* Row 2: Pilot Details */}
         {(flight.geofs_callsign || flight.discord_username) && (
           <div className="flex items-center space-x-2 text-xs text-gray-400">
-            {flight.geofs_callsign && <span className="text-gray-300">GEO: {flight.geofs_callsign}</span>}
+            {flight.geofs_callsign && <span className="text-gray-300">GFS: {flight.geofs_callsign}</span>}
             {flight.geofs_callsign && flight.discord_username && <span className="text-gray-500">|</span>}
             {flight.discord_username && <span className="text-gray-300">DISCORD: {flight.discord_username}</span>}
           </div>

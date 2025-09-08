@@ -18,10 +18,13 @@ import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
+import { Plus } from "lucide-react";
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
 type ImportedFlight = {
+  discord_username: null;
+  departure_time: null;
   callsign: string;
   geofs_callsign?: string;
   airport?: string;
@@ -191,16 +194,18 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             const arrival = flight.arrival || flight.destination;
 
             if (typeof aircraft_type === "string" && typeof arrival === "string") {
-              const normalizedFlight = {
-                airport: airportName,
-                callsign: flight.callsign,
+              const normalizedFlight: Omit<Flight, "id" | "created_at" | "updated_at"> = {
+                airport: flight.airport || "",
+                callsign: flight.callsign || "",
                 geofs_callsign: flight.geofs_callsign || null,
-                aircraft_type: aircraft_type,
-                departure: flight.departure,
-                arrival: arrival,
-                altitude: flight.altitude,
-                speed: flight.speed,
-                status: selectedImportStatus,
+                discord_username: flight.discord_username || null, // ADDED: New field
+                aircraft_type: flight.aircraft_type || "",
+                departure: flight.departure || "",
+                departure_time: flight.departure_time ?? null, // ADDED: New field
+                arrival: flight.arrival || "",
+                altitude: flight.altitude || "",
+                speed: flight.speed || "",
+                status: flight.status as FlightStatus || "delivery",
                 notes: flight.notes || "",
               };
               validFlights.push(normalizedFlight);
@@ -313,21 +318,21 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     }
   }, [sampleFlights, showStatus]);
 
-  const handleCreateFlight = useCallback(
-    async (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => {
-      try {
-        const flightWithAirport = {
-          ...newFlightData,
-          airport: newFlightData.airport || airportName,
-        };
-        const newFlight = await createFlight(flightWithAirport);
-        showStatus("success", `Flight strip ${newFlight.callsign} created successfully!`);
-      } catch (error: any) {
-        showStatus("error", error.message || "Failed to create flight. Please try again.");
-      }
-    },
-    [createFlight, showStatus, airportName]
-  );
+  // const handleCreateFlight = useCallback(
+  //   async (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => {
+  //     try {
+  //       const flightWithAirport = {
+  //         ...newFlightData,
+  //         airport: newFlightData.airport || airportName,
+  //       };
+  //       const newFlight = await createFlight(flightWithAirport);
+  //       showStatus("success", `Flight strip ${newFlight.callsign} created successfully!`);
+  //     } catch (error: any) {
+  //       showStatus("error", error.message || "Failed to create flight. Please try again.");
+  //     }
+  //   },
+  //   [createFlight, showStatus, airportName]
+  // );
 
   const handleEditFlight = useCallback((flight: Flight) => {
     setEditingFlight(flight);
@@ -433,7 +438,15 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           <RealTimeIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
         </div>
         <div className="flex gap-4 flex-wrap">
-          <CreateFlightDialog onCreateFlight={handleCreateFlight} airportName={airportName} />    
+          <Link href="/file-flight" target="_blank" passHref>
+            <Button
+              variant="outline"
+              className="bg-black border-green-500 text-green-400 hover:bg-green-900 hover:text-green-300 hover:cursor-pointer shine-button"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Flight Strip
+            </Button>
+          </Link>          
           <div className="h-8 border-l ml-1 border-gray-700"></div>      
           {flights.length > 0 && (
             <Button

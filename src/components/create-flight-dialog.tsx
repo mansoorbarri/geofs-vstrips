@@ -22,10 +22,11 @@ import { Plus } from "lucide-react"
 // Import the correct Flight type from the single source of truth
 import { type Flight } from "~/hooks/use-flights"
 
-// FIXED: Remove "airport" from the Omit. The parent component expects this field.
-// Add geofs_callsign to the type definition as an optional string.
+// UPDATED: Added new fields to the type definition
 type NewFlightData = Omit<Flight, "id" | "created_at" | "updated_at"> & {
   geofs_callsign?: string;
+  discord_username?: string;
+  departure_time?: string;
 }
 
 interface CreateFlightDialogProps {
@@ -38,9 +39,11 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
   const [formData, setFormData] = useState({
     airport: airportName,
     callsign: "",
-    geofs_callsign: "", // <-- ADDED: New state field
+    geofs_callsign: "",
+    discord_username: "", // NEW STATE FIELD
     aircraft_type: "",
     departure: "",
+    departure_time: "", // NEW STATE FIELD
     arrival: "",
     altitude: "",
     speed: "",
@@ -51,24 +54,23 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    // Validate required fields
+    // Validation remains the same, as the new fields are optional
     if (!formData.callsign || !formData.aircraft_type || !formData.departure || !formData.arrival || !formData.status) {
-      // You should add some user feedback here
       console.log("Missing required fields");
       return
     }
 
-    // Call the onCreateFlight function with the correctly typed data
-    // The formData object already contains the 'airport' field.
     await onCreateFlight(formData as NewFlightData)
 
     // Reset form and close dialog
     setFormData({
       airport: airportName,
       callsign: "",
-      geofs_callsign: "", // <-- ADDED: Reset new field
+      geofs_callsign: "",
+      discord_username: "", // RESET NEW FIELD
       aircraft_type: "",
       departure: "",
+      departure_time: "", // RESET NEW FIELD
       arrival: "",
       altitude: "",
       speed: "",
@@ -83,7 +85,6 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // The status options
   const statusOptions = ["delivery", "ground", "tower", "departure", "approach", "control"]
 
   return (
@@ -91,7 +92,7 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="bg-black border-green-500 text-green-400 hover:bg-green-900 hover:text-green-300"
+          className="bg-black border-green-500 text-green-400 hover:bg-green-900 hover:text-green-300 shine-button"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Flight Strip
@@ -105,9 +106,9 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Hidden input to automatically include the airport name */}
           <Input type="hidden" value={formData.airport} name="airport" />
           
+          {/* Group 1: Callsign & Pilot Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="callsign">Callsign *</Label>
@@ -120,7 +121,6 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
-            {/* ADDED: New field for GeoFS Callsign */}
             <div className="space-y-2">
               <Label htmlFor="geofs_callsign">GeoFS Callsign</Label>
               <Input
@@ -131,8 +131,20 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
+            {/* NEW FIELD: Discord Username */}
+            <div className="space-y-2">
+              <Label htmlFor="discord_username">Discord Username</Label>
+              <Input
+                id="discord_username"
+                value={formData.discord_username}
+                onChange={(e) => handleInputChange("discord_username", e.target.value)}
+                placeholder="pilot_user"
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
           </div>
 
+          {/* Group 2: Aircraft & Route */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="aircraft_type">Aircraft *</Label>
@@ -156,9 +168,6 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="arrival">Arrival *</Label>
               <Input
@@ -170,6 +179,21 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 required
               />
             </div>
+            {/* NEW FIELD: Departure Time */}
+            <div className="space-y-2">
+              <Label htmlFor="departure_time">Departure Time</Label>
+              <Input
+                id="departure_time"
+                value={formData.departure_time}
+                onChange={(e) => handleInputChange("departure_time", e.target.value)}
+                placeholder="14:30"
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
+          </div>
+
+          {/* Group 3: Performance & Status */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="altitude">Altitude</Label>
               <Input
@@ -180,9 +204,6 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="speed">Speed</Label>
               <Input
@@ -213,6 +234,7 @@ export function CreateFlightDialog({ onCreateFlight, airportName }: CreateFlight
             </div>
           </div>
 
+          {/* Notes */}
           <div className="space-y-2">
             <Label htmlFor="notes">Controller Notes</Label>
             <Textarea

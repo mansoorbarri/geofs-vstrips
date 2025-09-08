@@ -1,3 +1,4 @@
+// src/components/edit-flight-dialog.tsx
 "use client"
 
 import type React from "react"
@@ -23,21 +24,21 @@ import { type Flight } from "~/hooks/use-flights"
 import { type FlightStatus } from "~/components/board-page-client"
 
 interface EditFlightDialogProps {
-  // Use the correct Flight type from the hooks file
   flight: Flight | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  // Correct the prop type to accept an async function that returns a Promise<void>
   onUpdateFlight: (updatedFlight: Flight) => Promise<void>
 }
 
 export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }: EditFlightDialogProps) {
-  // Correct the state to use the correct property names and add geofs_callsign
+  // UPDATED: Added new state fields for Discord and departure time
   const [formData, setFormData] = useState({
     callsign: "",
-    geofs_callsign: "", // <-- ADDED: New state field
+    geofs_callsign: "",
+    discord_username: "", // NEW STATE FIELD
     aircraft_type: "",
     departure: "",
+    departure_time: "", // NEW STATE FIELD
     arrival: "",
     altitude: "",
     speed: "",
@@ -45,21 +46,22 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
     notes: "",
   })
 
-  // The status options, to be consistent with other files
   const statusOptions: FlightStatus[] = ["delivery", "ground", "tower", "departure", "approach", "control"]
 
   useEffect(() => {
     if (flight) {
-      // Correct the state initialization to use the new property names and geofs_callsign
+      // UPDATED: Initialize with the new fields from the flight prop
       setFormData({
         callsign: flight.callsign,
-        geofs_callsign: flight.geofs_callsign || "", // <-- ADDED: Initialize with value from flight prop
+        geofs_callsign: flight.geofs_callsign || "",
+        discord_username: flight.discord_username || "", // NEW INITIALIZATION
         aircraft_type: flight.aircraft_type,
         departure: flight.departure,
+        departure_time: flight.departure_time || "", // NEW INITIALIZATION
         arrival: flight.arrival,
         altitude: flight.altitude,
         speed: flight.speed,
-        status: flight.status,
+        status: flight.status as FlightStatus,
         notes: flight.notes || "",
       })
     }
@@ -68,18 +70,16 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Correct the validation to use the new property names
+    // Validation remains the same. The new fields are optional.
     if (!flight || !formData.callsign || !formData.aircraft_type || !formData.departure || !formData.arrival) {
       return
     }
 
     const updatedFlight: Flight = {
       ...flight,
-      // Spread the formData to update the flight object with the new values
       ...formData,
     }
 
-    // Call the onUpdateFlight function with the correctly typed data
     await onUpdateFlight(updatedFlight)
     onOpenChange(false)
   }
@@ -109,13 +109,23 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 required
               />
             </div>
-            {/* ADDED: New field for GeoFS Callsign */}
+            {/* Field for GeoFS Callsign */}
             <div className="space-y-2">
               <Label htmlFor="edit-geofs_callsign">GeoFS Callsign</Label>
               <Input
                 id="edit-geofs_callsign"
                 value={formData.geofs_callsign}
                 onChange={(e) => handleInputChange("geofs_callsign", e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
+            {/* NEW FIELD for Discord Username */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-discord_username">Discord Username</Label>
+              <Input
+                id="edit-discord_username"
+                value={formData.discord_username}
+                onChange={(e) => handleInputChange("discord_username", e.target.value)}
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
@@ -142,9 +152,6 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 required
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-arrival">Arrival *</Label>
               <Input
@@ -155,6 +162,19 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 required
               />
             </div>
+            {/* NEW FIELD for Departure Time */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-departure_time">Departure Time</Label>
+              <Input
+                id="edit-departure_time"
+                value={formData.departure_time}
+                onChange={(e) => handleInputChange("departure_time", e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-altitude">Altitude</Label>
               <Input
@@ -164,9 +184,6 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-speed">Speed</Label>
               <Input
@@ -186,7 +203,6 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-600">
-                  {/* Use the status options array for consistency */}
                   {statusOptions.map((status) => (
                       <SelectItem key={status} value={status}>
                           {status.charAt(0).toUpperCase() + status.slice(1)}
