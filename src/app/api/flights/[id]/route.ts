@@ -1,10 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { PrismaClient, FlightStatus } from "@prisma/client";
+import { auth } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
 // GET - Fetch individual flight with history
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const flightId = (await params).id;
 
@@ -30,6 +36,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 // PUT - Update individual flight
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
   try {
     const body = await request.json();
     // UPDATED: Include airport in destructuring
@@ -97,6 +108,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 // DELETE - Delete individual flight
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
   try {
     const { id: flightId } = await params;
 
