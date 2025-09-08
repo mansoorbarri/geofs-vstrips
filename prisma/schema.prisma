@@ -24,7 +24,7 @@ model flights {
   airport          String          @db.VarChar(4)
   callsign         String          @db.VarChar(7)
   discord_username String?         @db.VarChar(32)
-  geofs_callsign   String?         @db.VarChar(23)
+  geofs_callsign   String?         @db.VarChar(24)
   aircraft_type    String          @db.VarChar(5)
   departure        String          @db.VarChar(4)
   departure_time   String          @db.VarChar(4)
