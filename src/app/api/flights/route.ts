@@ -35,22 +35,25 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
+    console.log(body);
     
     // FINAL FIX: Use a flexible approach to get fields with or without the '1_' prefix
     const airport = body['1_airport'] || body.airport;
     const callsign = body['1_callsign'] || body.callsign;
     const geofs_callsign = body['1_geofs_callsign'] || body.geofs_callsign;
+    const discord_username = body['1_discord_username'] || body.discord_username;
     const aircraft_type = body['1_aircraft_type'] || body.aircraft_type;
     const departure = body['1_departure'] || body.departure;
+    const departure_time = body['1_departure_time'] || body.departure_time;
     const arrival = body['1_arrival'] || body.arrival;
     const altitude = body['1_altitude'] || body.altitude;
     const speed = body['1_speed'] || body.speed;
     const status = body['1_status'] || body.status;
     const notes = body['1_notes'] || body.notes;
 
-    if (!callsign || !airport || !aircraft_type || !departure || !arrival || !status) {
+    if (!airport || !callsign || !geofs_callsign || !departure || !arrival || !status || !discord_username) {
       return NextResponse.json({ 
-        error: "Missing required fields: callsign, airport, aircraft_type, departure, arrival, status" 
+        error: "Missing one or more required fields like: Airport, Discord Username, Callsign, GeoFS Callsign, Departure Aiport, Arrival Airport, Status" 
       }, { status: 400 });
     }
 
@@ -63,9 +66,11 @@ export async function POST(request: NextRequest) {
       data: {
         airport: airport.toUpperCase(),
         callsign: callsign.toUpperCase(),
+        discord_username: discord_username.toUpperCase(),
         geofs_callsign: geofs_callsign || null,
         aircraft_type: aircraft_type.toUpperCase(),
         departure: departure.toUpperCase(),
+        departure_time: departure_time || "",
         arrival: arrival.toUpperCase(),
         altitude: altitude || null,
         speed: speed || null,
@@ -81,7 +86,6 @@ export async function POST(request: NextRequest) {
         new_status: status,
       },
     });
-
     return NextResponse.json({ flight });
   } catch (error: any) {
     console.error("Error creating flight:", error);

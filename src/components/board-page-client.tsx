@@ -1,4 +1,3 @@
-// src/components/board-page-client.tsx
 "use client";
 
 import type React from "react";
@@ -22,7 +21,6 @@ import { redirect } from "next/navigation";
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
-// --- UPDATED TYPE: ADDED geofs_callsign ---
 type ImportedFlight = {
   callsign: string;
   geofs_callsign?: string;
@@ -38,11 +36,19 @@ type ImportedFlight = {
   notes?: string;
 };
 
+// CORRECTED: Moved this array out of the interface
+const airports = [
+  { id: "KBOS", name: "Boston" },
+  { id: "KBDL", name: "Bradley" },
+  { id: "KDXR", name: "Danbury" },
+];
+
 interface ImportStatus {
   type: "success" | "error" | null;
   message: string;
 }
 
+// CORRECTED: Renamed the interface and fixed the syntax
 interface BoardPageClientProps {
   airportName: string;
 }
@@ -74,7 +80,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
-  // NEW: State for the user-selected import status
   const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
 
 
@@ -187,18 +192,14 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
             if (typeof aircraft_type === "string" && typeof arrival === "string") {
               const normalizedFlight = {
-                // NEW: Use the current airportName from the prop
                 airport: airportName,
                 callsign: flight.callsign,
-                // --- ADDED NEW FIELD HERE ---
                 geofs_callsign: flight.geofs_callsign || null,
-                // ----------------------------
                 aircraft_type: aircraft_type,
                 departure: flight.departure,
                 arrival: arrival,
                 altitude: flight.altitude,
                 speed: flight.speed,
-                // NEW: Use the selected import status
                 status: selectedImportStatus,
                 notes: flight.notes || "",
               };
@@ -248,7 +249,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         fileInputRef.current.value = "";
       }
     },
-    // NEW: Add selectedImportStatus and airportName to the dependency array
     [validateFlight, createFlight, showStatus, airportName, selectedImportStatus]
   );
 
@@ -257,9 +257,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       {
         airport: airportName,
         callsign: "UAL123",
-        // --- ADDED NEW FIELD HERE ---
         geofs_callsign: "Ayman",
-        // ----------------------------
         aircraft_type: "B737-800",
         departure: "KJFK",
         arrival: "KLAX",
@@ -271,9 +269,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       {
         airport: airportName,
         callsign: "DAL456",
-        // --- ADDED NEW FIELD HERE ---
         geofs_callsign: "geofs_user",
-        // ----------------------------
         aircraft_type: "A320",
         departure: "KORD",
         arrival: "KDEN",

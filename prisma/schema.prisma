@@ -21,14 +21,16 @@ enum FlightStatus {
 
 model flights {
   id               String          @id @default(uuid()) @db.Uuid
-  airport          String          @db.VarChar(10)
-  callsign         String          @db.VarChar(255)
-  geofs_callsign   String?         @db.VarChar(255)
-  aircraft_type    String          @db.VarChar(255)
-  departure        String          @db.VarChar(255)
-  arrival          String          @db.VarChar(255)
-  altitude         String          @db.VarChar(255)
-  speed            String          @db.VarChar(255)
+  airport          String          @db.VarChar(4)
+  callsign         String          @db.VarChar(7)
+  discord_username String?         @db.VarChar(32)
+  geofs_callsign   String?         @db.VarChar(23)
+  aircraft_type    String          @db.VarChar(5)
+  departure        String          @db.VarChar(4)
+  departure_time   String          @db.VarChar(4)
+  arrival          String          @db.VarChar(4)
+  altitude         String          @db.VarChar(5)
+  speed            String          @db.VarChar(4)
   status           FlightStatus
   notes            String          @db.Text
   created_at       DateTime        @default(now()) @db.Timestamptz(6)
