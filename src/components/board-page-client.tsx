@@ -426,14 +426,15 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               Back to Dashboard
             </Button>
           </Link>
+          {/* <div className="h-8 border-l border-gray-700"></div> */}
           <h1 className="text-3xl font-bold flex-grow text-center">
             {airportName} Board
           </h1>
           <RealTimeIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
         </div>
         <div className="flex gap-4 flex-wrap">
-          <CreateFlightDialog onCreateFlight={handleCreateFlight} airportName={airportName} />
-          
+          <CreateFlightDialog onCreateFlight={handleCreateFlight} airportName={airportName} />    
+          <div className="h-8 border-l ml-1 border-gray-700"></div>      
           {flights.length > 0 && (
             <Button
               variant="outline"

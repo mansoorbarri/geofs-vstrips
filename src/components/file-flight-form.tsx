@@ -312,13 +312,13 @@ export function FileFlightForm() {
           </div>
         </div>
         
-        <Button
-          type="submit"
-          className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Submitting..." : "File Flight Plan"}
-        </Button>
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer shine-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Submitting..." : "File Flight Plan"}
+          </Button>
       </form>
     </div>
   );

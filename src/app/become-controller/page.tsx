@@ -20,7 +20,7 @@ export default function BecomeControllerPage() {
             <span className="font-bold text-white">xyzmani</span> on Discord.
           </p>
           <p className="text-sm text-gray-500 mt-4">
-            Don't have an account? <Link href="/sign-up" className="text-blue-400 hover:underline">Sign up here</Link>.
+            {"Don't have an account? "}<Link href="/sign-up" className="text-blue-400 hover:underline">Sign up here</Link>.
           </p>
         </main>
       </div>
