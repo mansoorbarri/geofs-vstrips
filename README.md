@@ -1,5 +1,4 @@
 ## todo 
-- remove "aiport for atc" 
-- add discord username field
-- add frequencies with the card title 
-- add departure time/slot 
+- add frequency with title
+- change "aircraft type" > "aircraft"
+- allow geofs callsign to be 24 characters
