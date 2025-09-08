@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft, XCircle } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
-import { CreateFlightDialog } from "~/components/create-flight-dialog";
+// import { CreateFlightDialog } from "~/components/create-flight-dialog";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
 import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -411,11 +411,11 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
   const statusTitles: Record<FlightStatus, string> = useMemo(
     () => ({
-      delivery: "Delivery",
-      ground: "Ground",
-      tower: "Tower",
+      delivery: "Delivery [121.90]",
+      ground: "Ground [121.900]",
+      tower: "Tower [120.300]",
       departure: "Departure",
-      approach: "Approach",
+      approach: "Approach [125.350]",
       control: "Control",
     }),
     []
@@ -475,7 +475,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               value={selectedImportStatus}
               onValueChange={(value) => setSelectedImportStatus(value as FlightStatus)}
             >
-              <SelectTrigger className="bg-black border-white text-white w-[150px]">
+              <SelectTrigger className="bg-black border-grey-700 text-white w-[160px]">
                 <SelectValue placeholder="Import to" />
               </SelectTrigger>
               <SelectContent className="bg-gray-900 border-gray-700">
