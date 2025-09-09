@@ -20,9 +20,7 @@ export default function HomePage() {
   }
 
   const airports = [
-    { id: "KBOS", name: "Boston" },
     { id: "KBDL", name: "Bradley" },
-    { id: "KDXR", name: "Danbury" },
   ];
 
   return (

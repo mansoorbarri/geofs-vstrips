@@ -19,9 +19,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 const airports = [
-  { id: "KBOS", name: "Boston" },
   { id: "KBDL", name: "Bradley" },
-  { id: "KDXR", name: "Danbury" },
 ];
 
 const flightSchema = z.object({
