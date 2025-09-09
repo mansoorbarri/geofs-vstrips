@@ -42,7 +42,7 @@ Follow these steps to set up and run the project locally.
 #### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/mansoorbarri/geofs-vstrips](https://github.com/mansooorbarri/geofs-vstrips)
+git clone https://github.com/mansoorbarri/geofs-vstrips
 cd geofs-vstrips
 ```
 
