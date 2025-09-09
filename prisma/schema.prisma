@@ -22,7 +22,7 @@ enum FlightStatus {
 model flights {
   id               String          @id @default(uuid()) @db.Uuid
   airport          String          @db.VarChar(4)
-  callsign         String          @db.VarChar(7)
+  callsign         String          @db.VarChar(7) @unique
   discord_username String?         @db.VarChar(32)
   geofs_callsign   String?         @db.VarChar(24)
   aircraft_type    String          @db.VarChar(5)
