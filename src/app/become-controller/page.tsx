@@ -26,9 +26,6 @@ export default function BecomeControllerPage() {
             If you are a controller and would like to manage a board, please message{" "}
             <span className="font-bold text-white">xyzmani</span> on Discord.
           </p>
-          <p className="text-sm text-gray-500 mt-4">
-            {"Don't have an account? "}<Link href="/sign-up" className="text-blue-400 hover:underline">Sign up here</Link>.
-          </p>
         </main>
       </div>
     </div>

@@ -300,7 +300,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           notes: "Weather deviation requested",
         },
       ],
-      [airportName]
+      []
     );
 
   const generateSampleJSON = useCallback(() => {

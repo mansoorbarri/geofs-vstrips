@@ -7,6 +7,7 @@ import { Suspense } from "react"
 import {
   ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 import "~/styles/globals.css"
+import SessionManager from "~/components/session-manager"
 
 export const metadata: Metadata = {
   title: "ATC Flight Strip Manager",
@@ -23,6 +24,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="dark">
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white`}>
+          <SessionManager />
           <Suspense fallback={null}>{children}</Suspense>
           <Analytics />
         </body>
