@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export function middleware(request: { nextUrl: { pathname: string; }; url: string | URL | undefined; }) {
   const redirectEnabled = process.env.REDIRECT_HOME_TO_NO_EVENT === "true";
 
-  if (request.nextUrl.pathname === "/" && redirectEnabled) {
+  if ((request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/file-flight" || request.nextUrl.pathname.startsWith("/board/")) && redirectEnabled) {
     return NextResponse.redirect(new URL("/no-event", request.url));
   }
 }
