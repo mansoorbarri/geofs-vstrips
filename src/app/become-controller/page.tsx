@@ -26,6 +26,9 @@ export default function BecomeControllerPage() {
             If you are a controller and would like to manage a board, please message{" "}
             <span className="font-bold text-white">xyzmani</span> on Discord.
           </p>
+          <p>
+            <span className="text-gray-500">want to file a flight instead? </span><Link href={"file-flight"} className="text-gray-200 hover:text-white hover:underline">file a flight</Link>
+          </p>
         </main>
       </div>
     </div>
