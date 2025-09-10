@@ -4,18 +4,26 @@ import { auth } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
+interface PublicMetadata {
+  controller?: boolean;
+}
+
 export async function GET(request: NextRequest) {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
+  const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
+  if (!isController) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const airport = searchParams.get('airport');
-
     const whereClause = airport ? { airport } : {};
-    
+
     const flights = await prisma.flights.findMany({
       where: whereClause,
       orderBy: { created_at: 'desc' },
@@ -33,11 +41,11 @@ export async function POST(request: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
   try {
     const body = await request.json();
     console.log(body);
-    
-    // FINAL FIX: Use a flexible approach to get fields with or without the '1_' prefix
+
     const airport = body['1_airport'] || body.airport;
     const callsign = body['1_callsign'] || body.callsign;
     const geofs_callsign = body['1_geofs_callsign'] || body.geofs_callsign;
@@ -52,8 +60,8 @@ export async function POST(request: NextRequest) {
     const notes = body['1_notes'] || body.notes;
 
     if (!airport || !callsign || !geofs_callsign || !departure || !arrival || !status || !discord_username) {
-      return NextResponse.json({ 
-        error: "Missing one or more required fields like: Airport, Discord Username, Callsign, GeoFS Callsign, Departure Aiport, Arrival Airport, Status" 
+      return NextResponse.json({
+        error: "Missing one or more required fields like: Airport, Discord Username, Callsign, GeoFS Callsign, Departure Aiport, Arrival Airport, Status"
       }, { status: 400 });
     }
 
@@ -86,6 +94,7 @@ export async function POST(request: NextRequest) {
         new_status: status,
       },
     });
+
     return NextResponse.json({ flight });
   } catch (error: any) {
     console.error("Error creating flight:", error);

@@ -252,7 +252,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         fileInputRef.current.value = "";
       }
     },
-    [validateFlight, createFlight, showStatus, airportName, selectedImportStatus]
+    [validateFlight, createFlight, showStatus, selectedImportStatus]
   );
 
   const sampleFlights = useMemo(
