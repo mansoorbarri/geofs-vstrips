@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { limited, response } = checkRateLimit(userId);
-  if (limited) {
-    return response || NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
+  if (!isController) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
-
+  
   try {
     const { searchParams } = new URL(request.url);
     const airport = searchParams.get('airport');
