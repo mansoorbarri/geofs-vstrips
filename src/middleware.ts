@@ -1,4 +1,13 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+
+export function middleware(request: { nextUrl: { pathname: string; }; url: string | URL | undefined; }) {
+  const redirectEnabled = process.env.REDIRECT_HOME_TO_NO_EVENT === "true";
+
+  if (request.nextUrl.pathname === "/" && redirectEnabled) {
+    return NextResponse.redirect(new URL("/no-event", request.url));
+  }
+}
 
 export default clerkMiddleware();
 
