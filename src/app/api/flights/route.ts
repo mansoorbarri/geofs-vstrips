@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { PrismaClient, FlightStatus } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
+import { checkRateLimit } from "~/lib/rate-limiter";
 
 const prisma = new PrismaClient();
 
@@ -14,9 +15,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
-  if (!isController) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { limited, response } = checkRateLimit(userId);
+  if (limited) {
+    return response || NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
   try {
@@ -36,10 +37,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimitResult = checkRateLimit(userId);
+  if (rateLimitResult.limited) {
+    return rateLimitResult.response || NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
   try {
@@ -75,8 +81,8 @@ export async function POST(request: NextRequest) {
         airport: airport.toUpperCase(),
         callsign: callsign.toUpperCase(),
         discord_username: discord_username.toUpperCase(),
-        geofs_callsign: geofs_callsign || null,
-        aircraft_type: aircraft_type.toUpperCase(),
+        geofs_callsign: geofs_callsign,
+        aircraft_type: aircraft_type ? aircraft_type.toUpperCase() : null,
         departure: departure.toUpperCase(),
         departure_time: departure_time || "",
         arrival: arrival.toUpperCase(),
