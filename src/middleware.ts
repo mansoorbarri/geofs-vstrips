@@ -1,15 +1,20 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export function middleware(request: { nextUrl: { pathname: string; }; url: string | URL | undefined; }) {
+export default clerkMiddleware((auth, request: NextRequest) => {
+  // Your custom redirect logic
   const redirectEnabled = process.env.REDIRECT_HOME_TO_NO_EVENT === "true";
-
-  if ((request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/file-flight" || request.nextUrl.pathname.startsWith("/board/")) && redirectEnabled) {
+  
+  if ((request.nextUrl.pathname === "/" || 
+       request.nextUrl.pathname === "/file-flight" || 
+       request.nextUrl.pathname.startsWith("/board/")) && redirectEnabled) {
     return NextResponse.redirect(new URL("/no-event", request.url));
   }
-}
-
-export default clerkMiddleware();
+  
+  // Let Clerk handle the rest
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [
