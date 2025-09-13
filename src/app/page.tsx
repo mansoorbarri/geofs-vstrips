@@ -21,9 +21,10 @@ export default function HomePage() {
   }
   
   const airports = [
-    { id: "KBDL", name: "Bradley" },
+    { id: "WMKK", name: " Kuala Lumpur" },
+    { id: "WSSS", name: " Singapore" },
   ];
-  
+    
   return (
     <div className="min-h-screen bg-black text-white p-8 flex flex-col">
       <div className="flex-1 flex items-center justify-center">

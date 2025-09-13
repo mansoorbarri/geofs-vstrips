@@ -41,7 +41,8 @@ type ImportedFlight = {
 
 // CORRECTED: Moved this array out of the interface
 const airports = [
-  { id: "KBDL", name: "Bradley" },
+  { id: "WMKK", name: " Kuala Lumpur" },
+  { id: "WSSS", name: " Singapore" },
 ];
 
 interface ImportStatus {
