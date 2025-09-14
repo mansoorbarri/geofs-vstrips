@@ -194,7 +194,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
             if (typeof aircraft_type === "string" && typeof arrival === "string") {
               const normalizedFlight: Omit<Flight, "id" | "created_at" | "updated_at"> = {
-                airport: flight.airport || "",
+                airport: airportName,
                 callsign: flight.callsign || "",
                 geofs_callsign: flight.geofs_callsign || null,
                 discord_username: flight.discord_username || " ", // ADDED: New field
