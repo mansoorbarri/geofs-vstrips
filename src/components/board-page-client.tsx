@@ -4,7 +4,7 @@ import type React from "react";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft, XCircle } from "lucide-react";
+import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft, XCircle, Send, X } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
@@ -15,6 +15,7 @@ import { type Flight } from "~/hooks/use-flights";
 import Link from "next/link";
 import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -39,13 +40,19 @@ type ImportedFlight = {
 };
 
 const airports = [
-  { id: "WMKK", name: " Kuala Lumpur" },
-  { id: "WSSS", name: " Singapore" },
+  { id: "WMKK", name: "Kuala Lumpur" },
+  { id: "WSSS", name: "Singapore" },
 ];
 
 interface ImportStatus {
   type: "success" | "error" | null;
   message: string;
+}
+
+interface TransferDialogState {
+  isOpen: boolean;
+  targetAirport: string;
+  targetSector: FlightStatus;
 }
 
 interface BoardPageClientProps {
@@ -80,6 +87,11 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
   const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
+  const [transferDialog, setTransferDialog] = useState<TransferDialogState>({
+    isOpen: false,
+    targetAirport: "",
+    targetSector: "delivery"
+  });
 
   const boardSectors = useMemo(() => {
     return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
@@ -249,14 +261,14 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         fileInputRef.current.value = "";
       }
     },
-    [validateFlight, createFlight, showStatus, selectedImportStatus]
+    [validateFlight, createFlight, showStatus, selectedImportStatus, airportName]
   );
 
   const sampleFlights = useMemo(
       () => [
         {
           airport: airportName,
-          callsign: "DAL126",
+          callsign: "DAL456",
           geofs_callsign: "featherway",
           discord_username: "featherway",
           departure_time: "1300",
@@ -269,7 +281,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         },
         {
           airport: airportName,
-          callsign: "DAL46",
+          callsign: "DAL456",
           geofs_callsign: "featherway",
           discord_username: "featherway",
           departure_time: "1300",
@@ -282,7 +294,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         },
         {
           airport: airportName,
-          callsign: "DAL452",
+          callsign: "DAL456",
           geofs_callsign: "featherway",
           discord_username: "featherway",
           departure_time: "1300",
@@ -294,7 +306,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           notes: "Weather deviation requested",
         },
       ],
-      []
+      [airportName]
     );
 
   const generateSampleJSON = useCallback(() => {
@@ -439,6 +451,72 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     }
   }, [selectedFlights, flights, deleteFlight, showStatus]);
 
+  const handleTransferClick = useCallback(() => {
+    if (selectedFlights.length === 0) {
+      showStatus("error", "No flights selected for transfer.");
+      return;
+    }
+    
+    const otherAirports = airports.filter(airport => airport.id !== airportName);
+    setTransferDialog({
+      isOpen: true,
+      targetAirport: otherAirports.length > 0 ? otherAirports[0]!.id : "",
+      targetSector: "delivery"
+    });
+  }, [selectedFlights, airportName]);
+
+  const handleTransferConfirm = useCallback(async () => {
+    if (selectedFlights.length === 0 || !transferDialog.targetAirport) {
+      return;
+    }
+
+    const flightsToTransfer = flights.filter(f => selectedFlights.includes(f.id));
+    
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      const batchSize = 5;
+      for (let i = 0; i < flightsToTransfer.length; i += batchSize) {
+        const batch = flightsToTransfer.slice(i, i + batchSize);
+        const promises = batch.map(async (flight) => {
+          try {
+            await updateFlight(flight.id, {
+              airport: transferDialog.targetAirport,
+              status: transferDialog.targetSector,
+            });
+            
+            return { success: true };
+          } catch (error) {
+            return { success: false };
+          }
+        });
+
+        const results = await Promise.all(promises);
+        successCount += results.filter((r) => r.success).length;
+        errorCount += results.filter((r) => !r.success).length;
+      }
+
+      setSelectedFlights([]);
+      setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" });
+
+      const targetAirportName = airports.find(a => a.id === transferDialog.targetAirport)?.name || transferDialog.targetAirport;
+      const sectorName = statusTitles[transferDialog.targetSector];
+
+      const message = `Successfully transferred ${successCount} flight strip(s) to ${targetAirportName} ${sectorName}${
+        errorCount > 0 ? `. ${errorCount} flights failed to transfer.` : "."
+      }`;
+
+      showStatus(successCount > 0 ? "success" : "error", message, 5000);
+    } catch (error) {
+      showStatus("error", "Failed to transfer selected flights. Please try again.");
+    }
+  }, [selectedFlights, flights, transferDialog, updateFlight, showStatus]);
+
+  const handleTransferCancel = useCallback(() => {
+    setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" });
+  }, []);
+
   const gridClasses = useMemo(() => {
     return "grid-cols-3";
   }, []);
@@ -549,6 +627,15 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           </Button>
           <Button
             variant="outline"
+            className="bg-black border-orange-500 text-orange-400 hover:bg-orange-900 hover:text-orange-300 hover:cursor-pointer"
+            onClick={handleTransferClick}
+            disabled={selectedFlights.length === 0}
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Transfer Selected
+          </Button>
+          <Button
+            variant="outline"
             className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300 hover:cursor-pointer"
             onClick={copySampleJSON}
           >
@@ -584,6 +671,103 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         onOpenChange={setEditDialogOpen}
         onUpdateFlight={handleUpdateFlight}
       />
+
+      <Dialog open={transferDialog.isOpen} onOpenChange={handleTransferCancel}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Transfer Selected Flights</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              Transfer {selectedFlights.length} selected flight strip(s) to another board and sector.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Target Airport/Board
+              </label>
+              <Select
+                value={transferDialog.targetAirport}
+                onValueChange={(value) => 
+                  setTransferDialog(prev => ({ ...prev, targetAirport: value }))
+                }
+              >
+                <SelectTrigger className="bg-black border-gray-700 text-white">
+                  <SelectValue placeholder="Select target airport" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700">
+                  {airports
+                    .filter(airport => airport.id !== airportName)
+                    .map((airport) => (
+                      <SelectItem key={airport.id} value={airport.id}>
+                        {airport.id} - {airport.name}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Target Sector
+              </label>
+              <Select
+                value={transferDialog.targetSector}
+                onValueChange={(value) => 
+                  setTransferDialog(prev => ({ ...prev, targetSector: value as FlightStatus }))
+                }
+              >
+                <SelectTrigger className="bg-black border-gray-700 text-white">
+                  <SelectValue placeholder="Select target sector" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700">
+                  {boardSectors.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {statusTitles[status]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {transferDialog.targetAirport && (
+              <div className="p-3 bg-gray-800 rounded-lg border border-gray-600">
+                <p className="text-sm text-gray-300">
+                  <strong>Transfer Summary:</strong><br />
+                  Moving {selectedFlights.length} flight(s) from <strong>{airportName}</strong> to{" "}
+                  <strong>
+                    {airports.find(a => a.id === transferDialog.targetAirport)?.name || transferDialog.targetAirport}
+                  </strong>{" "}
+                  under <strong>{statusTitles[transferDialog.targetSector]}</strong> sector.
+                </p>
+                <p className="text-xs text-yellow-400 mt-2">
+                  Note: This will remove the flights from the current board and create them in the target board.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleTransferCancel}
+              className="bg-black border-gray-600 text-gray-300 hover:bg-gray-800"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTransferConfirm}
+              disabled={!transferDialog.targetAirport}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Transfer Flights
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <main className="flex-grow p-6 pt-0 overflow-hidden">
         <div className={`grid ${gridClasses} gap-4 h-full`}>
