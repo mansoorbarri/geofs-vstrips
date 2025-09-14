@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft, XCircle } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
-// import { CreateFlightDialog } from "~/components/create-flight-dialog";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
 import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -39,7 +38,6 @@ type ImportedFlight = {
   notes?: string;
 };
 
-// CORRECTED: Moved this array out of the interface
 const airports = [
   { id: "WMKK", name: " Kuala Lumpur" },
   { id: "WSSS", name: " Singapore" },
@@ -50,7 +48,6 @@ interface ImportStatus {
   message: string;
 }
 
-// CORRECTED: Renamed the interface and fixed the syntax
 interface BoardPageClientProps {
   airportName: string;
 }
@@ -83,7 +80,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
   const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
-
 
   const boardSectors = useMemo(() => {
     return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
@@ -197,10 +193,10 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 airport: airportName,
                 callsign: flight.callsign || "",
                 geofs_callsign: flight.geofs_callsign || null,
-                discord_username: flight.discord_username || " ", // ADDED: New field
+                discord_username: flight.discord_username || " ",
                 aircraft_type: flight.aircraft_type || "",
                 departure: flight.departure || "",
-                departure_time: flight.departure_time ?? " ", // ADDED: New field
+                departure_time: flight.departure_time ?? " ",
                 arrival: flight.arrival || "",
                 altitude: flight.altitude || "",
                 speed: flight.speed || "",
@@ -260,21 +256,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       () => [
         {
           airport: airportName,
-          callsign: "DAL456",
-          geofs_callsign: "featherway",
-          discord_username: "featherway",
-          departure_time: "1300",
-          aircraft_type: "A320",
-          departure: "KORD",
-          arrival: "KDEN",
-          altitude: "37000",
-          speed: "420",
-          // status field is intentionally removed to show it's set on import
-          notes: "Weather deviation requested",
-        },
-        {
-          airport: airportName,
-          callsign: "DAL456",
+          callsign: "DAL126",
           geofs_callsign: "featherway",
           discord_username: "featherway",
           departure_time: "1300",
@@ -287,7 +269,20 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         },
         {
           airport: airportName,
-          callsign: "DAL456",
+          callsign: "DAL46",
+          geofs_callsign: "featherway",
+          discord_username: "featherway",
+          departure_time: "1300",
+          aircraft_type: "A320",
+          departure: "KORD",
+          arrival: "KDEN",
+          altitude: "37000",
+          speed: "420",
+          notes: "Weather deviation requested",
+        },
+        {
+          airport: airportName,
+          callsign: "DAL452",
           geofs_callsign: "featherway",
           discord_username: "featherway",
           departure_time: "1300",
@@ -322,22 +317,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       showStatus("error", "Failed to copy to clipboard. Please try the download option instead.");
     }
   }, [sampleFlights, showStatus]);
-
-  // const handleCreateFlight = useCallback(
-  //   async (newFlightData: Omit<Flight, "id" | "created_at" | "updated_at">) => {
-  //     try {
-  //       const flightWithAirport = {
-  //         ...newFlightData,
-  //         airport: newFlightData.airport || airportName,
-  //       };
-  //       const newFlight = await createFlight(flightWithAirport);
-  //       showStatus("success", `Flight strip ${newFlight.callsign} created successfully!`);
-  //     } catch (error: any) {
-  //       showStatus("error", error.message || "Failed to create flight. Please try again.");
-  //     }
-  //   },
-  //   [createFlight, showStatus, airportName]
-  // );
 
   const handleEditFlight = useCallback((flight: Flight) => {
     setEditingFlight(flight);
@@ -410,6 +389,56 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     showStatus("success", `Exported ${flightsToExport.length} selected flight(s) successfully!`);
   }, [flights, selectedFlights, showStatus, airportName]);
 
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedFlights.length === 0) {
+      showStatus("error", "No flights selected for deletion.");
+      return;
+    }
+
+    const flightsToDelete = flights.filter(f => selectedFlights.includes(f.id));
+    const flightCallsigns = flightsToDelete.map(f => f.callsign).join(", ");
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedFlights.length} selected flight strip(s)?\n\nCallsigns: ${flightCallsigns}\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      const batchSize = 5;
+      for (let i = 0; i < selectedFlights.length; i += batchSize) {
+        const batch = selectedFlights.slice(i, i + batchSize);
+        const promises = batch.map(async (flightId) => {
+          try {
+            await deleteFlight(flightId);
+            return { success: true };
+          } catch (error) {
+            return { success: false };
+          }
+        });
+
+        const results = await Promise.all(promises);
+        successCount += results.filter((r) => r.success).length;
+        errorCount += results.filter((r) => !r.success).length;
+      }
+
+      setSelectedFlights([]);
+
+      const message = `Successfully deleted ${successCount} flight strip(s)${
+        errorCount > 0 ? `. ${errorCount} flights failed to delete.` : "."
+      }`;
+
+      showStatus(successCount > 0 ? "success" : "error", message, 5000);
+    } catch (error) {
+      showStatus("error", "Failed to delete selected flights. Please try again.");
+    }
+  }, [selectedFlights, flights, deleteFlight, showStatus]);
+
   const gridClasses = useMemo(() => {
     return "grid-cols-3";
   }, []);
@@ -436,7 +465,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               Back to Dashboard
             </Button>
           </Link>
-          {/* <div className="h-8 border-l border-gray-700"></div> */}
           <h1 className="text-3xl font-bold flex-grow text-center">
             {airportName} Board
           </h1>
@@ -509,6 +537,15 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           >
             <Download className="w-4 h-4 mr-2" />
             Export Selected
+          </Button>
+          <Button
+            variant="outline"
+            className="bg-black border-red-500 text-red-400 hover:bg-red-900 hover:text-red-300 hover:cursor-pointer"
+            onClick={handleDeleteSelected}
+            disabled={selectedFlights.length === 0}
+          >
+            <XCircle className="w-4 h-4 mr-2" />
+            Delete Selected
           </Button>
           <Button
             variant="outline"
