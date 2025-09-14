@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AirportSelector } from "~/components/airport-selector";
 import { useUser } from "@clerk/nextjs";
 import Footer from "~/components/footer";
+import { airports } from "~/constants/airports";
 
 export default function HomePage() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -19,11 +20,6 @@ export default function HomePage() {
   if (!user.publicMetadata || user.publicMetadata.controller !== true) {
     redirect('/become-controller');
   }
-  
-  const airports = [
-    { id: "WMKK", name: " Kuala Lumpur" },
-    { id: "WSSS", name: " Singapore" },
-  ];
     
   return (
     <div className="min-h-screen bg-black text-white p-8 flex flex-col">

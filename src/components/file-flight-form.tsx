@@ -18,11 +18,6 @@ import {
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-const airports = [
-  { id: "WMKK", name: " Kuala Lumpur" },
-  { id: "WSSS", name: " Singapore" },
-];
-
 const flightSchema = z.object({
   airport: z.string()
   .min(1, "Airport is required")

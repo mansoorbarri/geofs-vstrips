@@ -17,7 +17,7 @@ type Airport = {
   name: string;
 };
 
-export function AirportSelector({ airports }: { airports: Airport[] }) {
+export function AirportSelector({ airports }: { airports: readonly Airport[] }) {
   const [selectedAirport, setSelectedAirport] = useState<string | null>(null);
   const router = useRouter();
 

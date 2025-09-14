@@ -19,8 +19,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
+import { airports } from "~/constants/airports";
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
+
 
 type ImportedFlight = {
   discord_username: null;
@@ -38,11 +40,6 @@ type ImportedFlight = {
   status: FlightStatus;
   notes?: string;
 };
-
-const airports = [
-  { id: "WMKK", name: "Kuala Lumpur" },
-  { id: "WSSS", name: "Singapore" },
-];
 
 interface ImportStatus {
   type: "success" | "error" | null;
