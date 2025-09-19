@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { airports } from "~/constants/airports";
 
 const flightSchema = z.object({
   airport: z.string()
@@ -60,7 +61,7 @@ const flightSchema = z.object({
 
 export function FileFlightForm() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const [selectedAirport, setSelectedAirport] = useState("WMKK");
+  const [selectedAirport, setSelectedAirport] = useState("");
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message?: string;
@@ -84,15 +85,15 @@ export function FileFlightForm() {
     const formData = new FormData(event.currentTarget);
     const formValues = {
       // airport: selectedAirport,
-      airport: "WMKK",
+      airport: selectedAirport,
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
       // departure: formData.get("departure") as string,
-      departure: "WMKK",
+      departure: formData.get("departure") as string,
       departure_time: formData.get("departure_time") as string,
       // arrival: formData.get("arrival") as string,
-      arrival: "WSSS",
+      arrival: formData.get("arrival") as string,
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
       notes: formData.get("notes") as string,
@@ -235,8 +236,7 @@ export function FileFlightForm() {
                 name="departure"
                 type="text"
                 placeholder="e.g., KLAX"
-                value="WMKK - Kuala Lumpur"
-                disabled
+                // disabled 
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
@@ -248,8 +248,7 @@ export function FileFlightForm() {
                 name="arrival"
                 type="text"
                 placeholder="e.g., KJFK"
-                value="WSSS - Singapore"
-                disabled
+                // disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
@@ -286,19 +285,19 @@ export function FileFlightForm() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="airport_atc">Where do you want ATC?</Label>
-              <Select name="airport_atc" onValueChange={setSelectedAirport} value={selectedAirport} disabled>
+              <Select name="airport_atc" onValueChange={setSelectedAirport} value={selectedAirport}>
                 <SelectTrigger className="w-full bg-gray-800 text-white border-gray-700">
                   <SelectValue placeholder="Select an airport" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                  {/* {airports.map((airport) => (
+                  {airports.map((airport) => (
                     <SelectItem key={airport.id} value={airport.id}>
                       {airport.name} ({airport.id})
                     </SelectItem>
-                  ))} */}
-                  <SelectItem value="WMKK">
+                  ))}
+                  {/* <SelectItem value="WMKK">
                      Kuala Lumpur (WMKK)
-                  </SelectItem>
+                  </SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
