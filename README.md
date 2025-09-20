@@ -4,6 +4,9 @@ A web-based Air Traffic Control (ATC) system designed for the GeoFS Events commu
 
 This project was built from scratch to address the need for a modern, reliable, and real-time ATC strips solution for virtual pilots and controllers.
 
+## Todo 
+- [ ] allow users to edit flight details if they are in delivery. 
+
 ---
 
 ### ✨ Features

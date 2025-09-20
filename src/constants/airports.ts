@@ -1,10 +1,6 @@
 export const airports = [
-  { id: "PHLI", name: "Lihue" }, 
-  { id: "PHJR", name: "Kalaeloa" },
-  { id: "PHNL", name: "Honolulu" },
-  { id: "PHOG", name: "Kahului" },
-  { id: "PHKO", name: "Kohala" },
-  { id: "PHTO", name: "Hilo"}
+  { id: "OPLA", name: "Lahore" },
+  { id: "OPKC", name: "karachi"}
 ] as const;
 
 export type AirportCode = typeof airports[number]['id'];

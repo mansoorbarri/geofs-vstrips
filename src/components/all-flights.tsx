@@ -185,7 +185,7 @@ const handleFileImport = useCallback(
         fileInputRef.current.value = "";
       }
     },
-    [validateFlight, createFlight, showStatus, selectedImportStatus]
+    [createFlight, showStatus, selectedImportStatus]
   );
 
   const sampleFlights = useMemo(

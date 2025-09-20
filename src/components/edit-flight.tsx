@@ -4,10 +4,10 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Lock } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,16 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { z } from "zod";
 import { airports } from "~/constants/airports";
-import Link from "next/link";
+import Footer from "~/components/footer";
 
 const flightSchema = z.object({
   airport: z.string()
-  .min(1, "Airport is required")
-  .max(4, "Airport must be 4 characters or less")
-  .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
+    .min(1, "Airport is required")
+    .max(4, "Airport must be 4 characters or less")
+    .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
   callsign: z.string()
     .min(1, "Callsign is required")
     .max(7, "Callsign must be 7 characters or less"),  
@@ -60,23 +60,105 @@ const flightSchema = z.object({
     .max(2000, "Notes are too long"),
 });
 
-export function FileFlightForm() {
-  const { isLoaded, isSignedIn, user } = useUser();
+interface Flight {
+  id: string;
+  airport: string;
+  callsign: string;
+  geofs_callsign: string;
+  aircraft_type: string;
+  departure: string;
+  departure_time: string;
+  arrival: string;
+  altitude: string;
+  speed: string;
+  status: string;
+  notes: string;
+  discord_username: string;
+}
+
+interface EditFlightFormProps {
+  flightId: string;
+};
+
+const CACHE_KEY = 'flights_cache';
+const CACHE_DURATION = 5 * 60 * 1000;
+
+export function EditFlightForm({ flightId }: EditFlightFormProps) {
+  const { isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
+  const [flight, setFlight] = useState<Flight | null>(null);
   const [selectedAirport, setSelectedAirport] = useState("");
+  const [loading, setLoading] = useState(true);
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message?: string;
     errors?: z.ZodIssue[];
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  if (!isLoaded) {
-    return null;
-  }
 
-  if (!isSignedIn) {
-    redirect('/sign-up');
-  }
+  const getCachedFlights = () => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_DURATION) {
+          return data;
+        }
+        localStorage.removeItem(CACHE_KEY);
+      }
+    } catch (error) {
+      localStorage.removeItem(CACHE_KEY);
+    }
+    return null;
+  };
+
+  const setCachedFlights = (flightsData: Flight[]) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: flightsData,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error('Failed to cache flights:', error);
+    }
+  };
+
+  const fetchFlight = async () => {
+    const cached = getCachedFlights();
+    if (cached) {
+      const foundFlight = cached.find((f: Flight) => f.id === flightId);
+      if (foundFlight) {
+        setFlight(foundFlight);
+        setSelectedAirport(foundFlight.airport);
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch('/api/flights/my');
+      if (!response.ok) {
+        throw new Error('Failed to fetch flights');
+      }
+      const data = await response.json();
+      
+      const foundFlight = data.flights?.find((f: Flight) => f.id === flightId);
+      if (!foundFlight) {
+        throw new Error('Flight not found or you do not have permission to edit this flight');
+      }
+      
+      setFlight(foundFlight);
+      setSelectedAirport(foundFlight.airport);
+      setCachedFlights(data.flights);
+    } catch (error: any) {
+      setSubmissionResult({
+        success: false,
+        message: error.message || 'Failed to load flight plan'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,15 +167,12 @@ export function FileFlightForm() {
 
     const formData = new FormData(event.currentTarget);
     const formValues = {
-      // airport: selectedAirport,
       airport: selectedAirport,
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      // departure: formData.get("departure") as string,
       departure: formData.get("departure") as string,
       departure_time: formData.get("departure_time") as string,
-      // arrival: formData.get("arrival") as string,
       arrival: formData.get("arrival") as string,
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
@@ -111,27 +190,26 @@ export function FileFlightForm() {
       return;
     }
 
-    const flightData = {
-      ...validation.data,
-      discord_username: user.username,
-      status: "delivery",
-    };
-
     try {
-      const response = await fetch('/api/flights', {
-        method: 'POST',
+      const response = await fetch(`/api/flights/${flightId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(flightData),
+        body: JSON.stringify(validation.data),
       });
       
-      console.log(flightData);
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to file flight.');
+        throw new Error(result.error || 'Failed to update flight plan.');
       }
 
-      setSubmissionResult({ success: true, message: "Thank you. Your flight is filed. See you at the event!" });
+      setSubmissionResult({ 
+        success: true, 
+        message: "Flight plan updated successfully!" 
+      });
+      
+      localStorage.removeItem(CACHE_KEY);
+      await fetchFlight();
     } catch (error: any) {
       setSubmissionResult({ success: false, message: error.message });
     } finally {
@@ -139,22 +217,94 @@ export function FileFlightForm() {
     }
   };
 
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    if (!isSignedIn) {
+      redirect('/sign-up');
+      return;
+    }
+
+    void fetchFlight();
+  }, [isLoaded, isSignedIn, flightId]);
+
+  if (!isLoaded || loading) {
+    return (
+      <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+        <p className="mt-4">Loading flight plan...</p>
+      </div>
+    );
+  }
+
+  if (!flight) {
+    return (
+      <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
+        <AlertCircle className="h-16 w-16 mx-auto text-red-500 mb-4" />
+        <h1 className="text-3xl font-bold mb-4">Flight Not Found</h1>
+        <p className="text-lg text-gray-300 mb-6">
+          The requested flight plan could not be found.
+        </p>
+        <Button onClick={() => router.back()} className="bg-blue-600 hover:bg-blue-700">
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  const isEditable = flight.status === "delivery";
+
   if (submissionResult?.success) {
     return (
       <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
         <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
-        <h1 className="3xl font-bold mb-4">Flight Filed!</h1>
+        <h1 className="text-3xl font-bold mb-4">Flight Plan Updated!</h1>
         <p className="text-lg text-gray-300 mb-6">
           {submissionResult.message}
         </p>
+        <Button 
+          onClick={() => setSubmissionResult(null)} 
+          className="bg-blue-600 hover:bg-blue-700 mr-4"
+        >
+          Edit Again
+        </Button>
+        <Button 
+          onClick={() => router.push('/edit-flight')} 
+          className="bg-gray-600 hover:bg-gray-700"
+        >
+          View All Flights
+        </Button>
+      </div>
+    );
+  }
+
+  if (!isEditable) {
+    return (
+      <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
+        <Lock className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
+        <h1 className="text-3xl font-bold mb-4">Flight Plan Locked</h1>
+        <p className="text-lg text-gray-300 mb-2">
+          This flight plan cannot be edited because its status is: 
+        </p>
+        <span className="inline-block bg-gray-800 text-yellow-400 px-3 py-1 rounded-full text-sm font-semibold mb-6">
+          {flight.status.toUpperCase()}
+        </span>
+        <p className="text-sm text-gray-400 mb-6">
+          {`Flight plans can only be edited when the status is "DELIVERY"`}.
+        </p>
+        <Button onClick={() => router.back()} className="bg-blue-600 hover:bg-blue-700">
+          Go Back
+        </Button>
       </div>
     );
   }
 
   return (
+    <div className="flex flex-col min-h-screen">
     <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white">
       <div className="flex flex-col items-center mb-6">
-        <h1 className="text-3xl font-bold">File a Flight Plan</h1>
+        <h1 className="text-3xl font-bold">Edit Flight Plan</h1>
+        <p className="text-gray-400 mt-2">Callsign: {flight.callsign}</p>
       </div>
 
       {submissionResult?.success === false && (
@@ -175,7 +325,6 @@ export function FileFlightForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* === Section 1: Pilot & Aircraft Info === */}
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -184,6 +333,7 @@ export function FileFlightForm() {
                 id="callsign"
                 name="callsign"
                 type="text"
+                defaultValue={flight.callsign}
                 placeholder="e.g., DAL123"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -195,6 +345,7 @@ export function FileFlightForm() {
                 id="geofs_callsign"
                 name="geofs_callsign"
                 type="text"
+                defaultValue={flight.geofs_callsign}
                 placeholder="e.g., Ayman"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -206,6 +357,7 @@ export function FileFlightForm() {
                 id="aircraft_type"
                 name="aircraft_type"
                 type="text"
+                defaultValue={flight.aircraft_type}
                 placeholder="e.g., A320"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -217,6 +369,7 @@ export function FileFlightForm() {
                 id="departure_time"
                 name="departure_time"
                 type="text"
+                defaultValue={flight.departure_time}
                 placeholder="e.g., 1300"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -227,7 +380,6 @@ export function FileFlightForm() {
         
         <div className="border-b border-gray-700"></div>
 
-        {/* === Section 2: Route & Performance === */}
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -236,8 +388,8 @@ export function FileFlightForm() {
                 id="departure"
                 name="departure"
                 type="text"
+                defaultValue={flight.departure}
                 placeholder="e.g., KLAX"
-                // disabled 
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
@@ -248,8 +400,8 @@ export function FileFlightForm() {
                 id="arrival"
                 name="arrival"
                 type="text"
+                defaultValue={flight.arrival}
                 placeholder="e.g., KJFK"
-                // disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
@@ -260,6 +412,7 @@ export function FileFlightForm() {
                 id="altitude"
                 name="altitude"
                 type="text"
+                defaultValue={flight.altitude}
                 placeholder="e.g., FL350"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -271,6 +424,7 @@ export function FileFlightForm() {
                 id="speed"
                 name="speed"
                 type="text"
+                defaultValue={flight.speed}
                 placeholder="e.g., 0.82"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -281,7 +435,6 @@ export function FileFlightForm() {
         
         <div className="border-b border-gray-700"></div>
 
-        {/* === Section 3: Operational & Route Notes === */}
         <div>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -296,9 +449,6 @@ export function FileFlightForm() {
                       {airport.name} ({airport.id})
                     </SelectItem>
                   ))}
-                  {/* <SelectItem value="WMKK">
-                     Kuala Lumpur (WMKK)
-                  </SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
@@ -307,6 +457,7 @@ export function FileFlightForm() {
               <Textarea
                 id="notes"
                 name="notes"
+                defaultValue={flight.notes}
                 placeholder="e.g., DCT VOR VOR STAR"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -315,22 +466,25 @@ export function FileFlightForm() {
           </div>
         </div>
         
+        <div className="flex gap-4">
           <Button
             type="submit"
-            className="w-full bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer shine-button"
+            className="flex-1 bg-green-600 text-white hover:bg-green-700 hover:cursor-pointer shine-button"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Submitting..." : "File Flight Plan"}
+            {isSubmitting ? "Updating..." : "Update Flight Plan"}
           </Button>
           <Button
             type="button"
-            className="w-full bg-slate-500 text-white hover:bg-blue-600 hover:cursor-pointer"
+            onClick={() => router.back()}
+            className="bg-gray-600 text-white hover:bg-gray-700 hover:cursor-pointer"
           >
-            <Link href="/edit-flight">
-              Edit a Flight Plan
-            </Link>
+            Cancel
           </Button>
+        </div>
       </form>
+    </div>
+    <Footer />
     </div>
   );
 }
