@@ -454,7 +454,10 @@ const handleFileImport = useCallback(
   }, [flights]);
 
   return (
+    // Change 1: Set the main container to a column layout with `min-h-screen`
+    // to occupy the full viewport height.
     <div className="flex flex-col min-h-screen bg-black text-white">
+      {/* Change 2: Ensure header content doesn't shrink and stays fixed. */}
       <div className="flex-shrink-0 p-6">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" passHref>
@@ -689,14 +692,21 @@ const handleFileImport = useCallback(
         </DialogContent>
       </Dialog>
       
+      {/* Change 3: Apply `flex-grow` to the main element to make it fill the remaining vertical space. */}
+      {/* This ensures the card has a defined height to enable its internal scrolling. */}
       <main className="flex-grow p-6 pt-0 overflow-hidden">
         <div className="flex justify-center h-full">
-          <Card className="bg-gray-900 border-gray-700 flex flex-col w-full max-w-2xl h-full">
+          {/* Change 4: The Card container itself should be a flexbox column and have `h-full` */}
+          {/* so it fills the available height from the parent `main` element. */}
+          <Card className="bg-gray-900 border-gray-700 flex flex-col w-150 h-[85vh]">
+            {/* Change 5: `CardHeader` should be `flex-shrink-0` so it doesn't get squashed. */}
             <CardHeader className="flex-shrink-0">
               <CardTitle className="text-white text-center text-sm">
                 All Flights ({flights.length})
               </CardTitle>
             </CardHeader>
+            {/* Change 6: `CardContent` gets `flex-grow` and `overflow-y-auto` which makes it */}
+            {/* the scrollable area. */}
             <CardContent className="flex-grow space-y-2 p-4 overflow-y-auto">
               {sortedFlights.length === 0 ? (
                 <p className="text-gray-400 text-center py-8 text-sm">No flights</p>
