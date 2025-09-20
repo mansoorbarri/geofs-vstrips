@@ -32,7 +32,7 @@ const flightSchema = z.object({
     .max(24, "GeoFS Callsign must be 23 characters or less"),
   aircraft_type: z.string()
     .min(1, "Aircraft type is required")
-    .max(5, "Aircraft type must be 5 characters or less")
+    .max(6, "Aircraft type must be 6 characters or less")
     .regex(/^[A-Z]{1,4}[0-9]{1,4}$/, "Must be like A320 or B777"),
   departure: z.string()
     .min(1, "Departure is required")

@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 // Key: userId, Value: { count: number, lastReset: number }
 const requestMap = new Map<string, { count: number, lastReset: number }>();
 
-const RATE_LIMIT_COUNT = 2; // Max requests
+const RATE_LIMIT_COUNT = 3; // Max requests
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
 
 export function checkRateLimit(userId: string): { limited: boolean, response?: NextResponse } {
