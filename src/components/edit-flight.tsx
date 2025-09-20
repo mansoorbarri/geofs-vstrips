@@ -263,14 +263,14 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
           {submissionResult.message}
         </p>
         <Button 
-          onClick={() => setSubmissionResult(null)} 
-          className="bg-blue-600 hover:bg-blue-700 mr-4"
+          onClick={() => router.push('/file-flight')}
+          className="bg-blue-600 hover:bg-blue-700 text-white mr-4 hover:cursor-pointer"
         >
-          Edit Again
+          File Another
         </Button>
         <Button 
           onClick={() => router.push('/edit-flight')} 
-          className="bg-gray-600 hover:bg-gray-700"
+          className="bg-gray-600 hover:bg-gray-700 text-white hover:cursor-pointer"
         >
           View All Flights
         </Button>

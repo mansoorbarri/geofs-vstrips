@@ -139,7 +139,6 @@ return (
     <div className="flex flex-col min-h-screen">
       <div className="container mx-auto p-6 max-w-4xl bg-gray-900 rounded-lg shadow-xl text-white">
       <div className="flex items-center justify-center mb-6">
-        <Plane className="h-8 w-8 mr-3 text-blue-400" />
         <h1 className="text-3xl font-bold">Edit Your Flights</h1>
       </div>
 
@@ -191,13 +190,13 @@ return (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-2">
-                    <h3 className="text-xl font-semibold text-blue-400">{flight.callsign}</h3>
+                    <h3 className="text-xl font-semibold text-blue-500">{flight.callsign}</h3>
                     <span className="px-2 py-1 bg-green-800 text-green-200 rounded text-sm">
                       {flight.status.toUpperCase()}
                     </span>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                     <div>
                       <p className="text-gray-400">Route</p>
                       <p className="text-white">{flight.departure} → {flight.arrival}</p>
@@ -207,15 +206,27 @@ return (
                       <p className="text-white">{flight.aircraft_type}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Departure</p>
+                      <p className="text-gray-400">Departure Time</p>
                       <p className="text-white">{flight.departure_time}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Altitude</p>
+                      <p className="text-white">{flight.altitude}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Speed</p>
+                      <p className="text-white">{flight.speed}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Notes</p>
+                      <p className="text-white">{flight.notes}</p>
                     </div>
                   </div>
                 </div>
-                
+
                 <Button
                   onClick={() => router.push(`/edit-flight?id=${flight.id}`)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2  hover:cursor-pointer"
+                  className="border-1 fill-none bg-grey-900 border-white  hover:bg-white hover:text-black text-white  flex items-center gap-2 hover:cursor-pointer"
                 >
                   <Edit className="h-4 w-4" />
                   Edit

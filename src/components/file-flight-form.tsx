@@ -322,14 +322,14 @@ export function FileFlightForm() {
           >
             {isSubmitting ? "Submitting..." : "File Flight Plan"}
           </Button>
-          <Button
-            type="button"
-            className="w-full bg-slate-500 text-white hover:bg-blue-600 hover:cursor-pointer"
-          >
-            <Link href="/edit-flight">
+          <Link href="/edit-flight">
+            <Button
+              type="button"
+              className="w-full bg-slate-500 text-white hover:bg-slate-600 hover:cursor-pointer"
+            >
               Edit a Flight Plan
-            </Link>
-          </Button>
+            </Button>
+          </Link>
       </form>
     </div>
   );
