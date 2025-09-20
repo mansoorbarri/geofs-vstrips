@@ -46,13 +46,13 @@ export function AirportSelector({ airports }: { airports: readonly Airport[] }) 
         <Button
           onClick={handleGoToBoard}
           disabled={!selectedAirport}
-          className="w-full sm:w-auto px-4 py-2 text-lg bg-blue-500 hover:bg-blue-600 transition-colors duration-300 hover:cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 text-lg  bg-blue-500 hover:bg-blue-600 transition-colors duration-300 hover:cursor-pointer"
         >
           Go to Board
         </Button>
         <Link href="/all-flights" passHref>
           <Button
-            className="w-full sm:w-auto px-4 py-2 text-lg bg-green-500 hover:bg-green-600 transition-colors duration-300 hover:cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 text-md text-white bg-black border-1 border-white hover:bg-white hover:text-black transition-colors duration-300 hover:cursor-pointer"
           >
             All Flights
           </Button>

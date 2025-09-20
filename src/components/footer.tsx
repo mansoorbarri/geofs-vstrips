@@ -5,7 +5,7 @@ export default function Footer() {
         <div className="flex flex-col items-center justify-center space-y-2 text-center border-t border-gray-800 pt-6">
           <p className="text-sm text-gray-400">
             Designed and developed by{" "}
-            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300">
+            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300">
               xyzmani
             </span>
           </p>

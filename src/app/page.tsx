@@ -27,7 +27,7 @@ export default function HomePage() {
         <div className="max-w-xl mx-auto py-12 text-center">
           <header className="mb-8">
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2">
-              ATC <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Flight Board</span>
+              ATC <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500">Flight Board</span>
             </h1>
             <p className="text-xl text-gray-400">Select an airport to manage flights.</p>
           </header>
