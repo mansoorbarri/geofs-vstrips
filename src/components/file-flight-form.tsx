@@ -325,7 +325,7 @@ export function FileFlightForm() {
           <Link href="/edit-flight">
             <Button
               type="button"
-              className="w-full bg-slate-500 text-white hover:bg-slate-600 hover:cursor-pointer"
+              className="w-full bg-grey-900 text-white border-1 border-white hover:bg-white hover:text-black hover:cursor-pointer"
             >
               Edit a Flight Plan
             </Button>
