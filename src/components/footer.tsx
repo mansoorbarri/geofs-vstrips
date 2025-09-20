@@ -10,7 +10,7 @@ export default function Footer() {
               </span>
             {` & developed by`}
             <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300">
-              {` anar`}
+              {` xyzmani`}
             </span>
           </p>
           <p className="text-xs text-gray-600">
