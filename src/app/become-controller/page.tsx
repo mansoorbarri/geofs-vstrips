@@ -30,7 +30,7 @@ export default function BecomeControllerPage() {
               <span className="font-bold text-white">xyzmani</span> on Discord.
             </p>
             <p>
-              <span className="text-gray-500">want to file a flight instead? </span>
+              <span className="text-gray-500">Want to file a flight instead? </span>
               <Link href={"file-flight"} className="text-gray-200 hover:text-white hover:underline">
                 file a flight
               </Link>
