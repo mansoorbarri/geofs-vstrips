@@ -57,6 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
+  const clerk_discord_username = (sessionClaims?.discord_username as string);
 
   try {
     const body = await request.json();
@@ -71,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Flight not found" }, { status: 404 });
     }
 
-    const isPilotOwner = currentFlight.discord_username === userId;
+    const isPilotOwner = currentFlight.discord_username === clerk_discord_username;
     const canEdit = isController || (isPilotOwner && currentFlight.status === "delivery");
 
     if (!canEdit) {
@@ -120,6 +121,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Failed to update flight" }, { status: 500 });
   }
 }
+
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId, sessionClaims } = await auth();
   if (!userId) {
