@@ -18,7 +18,7 @@ export default function HomePage() {
   }
   
   if (!user.publicMetadata || user.publicMetadata.controller !== true) {
-    redirect('/become-controller');
+    redirect('/file-flight');
   }
     
   return (
