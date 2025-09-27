@@ -148,7 +148,7 @@ return (
           <h2 className="text-xl font-semibold mb-2">No flights found</h2>
           <p className="text-gray-400 mb-6">{`You haven't created any flight plans yet.`}</p>
           <Button 
-            onClick={() => router.push('/create-flight')} 
+            onClick={() => router.push('/file-flight')} 
             className="bg-blue-600 hover:bg-blue-700"
           >
             Create Your First Flight
