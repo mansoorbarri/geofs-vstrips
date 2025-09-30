@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { AlertCircle, CheckCircle, Lock } from "lucide-react";
@@ -123,7 +123,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     }
   };
 
-  const fetchFlight = async () => {
+  const fetchFlight = useCallback(async () => {
     const cached = getCachedFlights();
     if (cached) {
       const foundFlight = cached.find((f: Flight) => f.id === flightId);
@@ -158,7 +158,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [flightId, setLoading, setFlight, setSelectedAirport, setSubmissionResult]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -167,20 +167,15 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
     const formData = new FormData(event.currentTarget);
     const formValues = {
-      // airport: selectedAirport,
       airport: "OPLA",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      // departure: formData.get("departure") as string,
       departure: "OPLA",
-      // departure_time: formData.get("departure_time") as string,
       departure_time: "0500",
-      // arrival: formData.get("arrival") as string,
       arrival: "OPKC",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      // notes: formData.get("notes") as string,
       notes: "OPLA/36R MIMA2D MIMAL G214 RK J112 NH NH1C OPKC/25L",
     };
 
@@ -231,7 +226,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     }
 
     void fetchFlight();
-  }, [isLoaded, isSignedIn, flightId]);
+  }, [isLoaded, isSignedIn, fetchFlight]);
 
   if (!isLoaded || loading) {
     return (
@@ -455,11 +450,6 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   <SelectValue placeholder="Select an airport" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                  {/* {airports.map((airport) => (
-                    <SelectItem key={airport.id} value={airport.id}>
-                      {airport.name} ({airport.id})
-                    </SelectItem>
-                  ))} */}
                   <SelectItem value="OPLA">
                     Lahore (OPLA)
                   </SelectItem>

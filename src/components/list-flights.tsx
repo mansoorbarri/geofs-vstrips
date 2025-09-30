@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -71,7 +71,7 @@ export function FlightsList() {
     }
   };
 
-  const fetchFlights = async () => {
+  const fetchFlights = useCallback(async () => {
     const cached = getCachedFlights();
     if (cached) {
       setFlights(cached);
@@ -101,7 +101,7 @@ export function FlightsList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setFlights, setLoading, setError]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -112,7 +112,7 @@ export function FlightsList() {
     }
 
     void fetchFlights();
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, fetchFlights, router]);
 
   if (!isLoaded || loading) {
     return (

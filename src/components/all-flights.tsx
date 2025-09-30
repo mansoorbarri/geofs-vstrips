@@ -1,3 +1,4 @@
+// src/components/all-flights.tsx (AllFlightsPageClient)
 "use client";
 
 import type React from "react";
@@ -15,10 +16,10 @@ import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
 import { airports } from "~/constants/airports";
+import Loading from "~/components/loading";
+import { useRouter } from "next/navigation";
 
-// Re-introduce the full FlightStatus type
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
 interface ImportStatus {
@@ -26,7 +27,6 @@ interface ImportStatus {
   message: string;
 }
 
-// Re-introduce the TransferDialogState interface
 interface TransferDialogState {
   isOpen: boolean;
   targetAirport: string;
@@ -34,33 +34,30 @@ interface TransferDialogState {
 }
 
 export function AllFlightsPageClient() {
-  const { user, isSignedIn } = useUser();
-  if (!isSignedIn) {
-    redirect('/sign-up');
-  }
+  // 🚀 ALL HOOKS MUST BE DEFINED HERE, BEFORE ANY CONDITIONAL RETURNS
 
-  if (!user.publicMetadata || user.publicMetadata.controller !== true) {
-    redirect('/become-controller');
-  }
-
+  // --- Auth/Router Hooks ---
+  const router = useRouter();
+  const { isLoaded, isSignedIn, user } = useUser();
+  
+  // --- Data Hook ---
+  // Ensure the second argument of useFlights is 'undefined' if you want it to fetch all flights
   const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true, undefined);
 
+  // --- State Hooks ---
   const [importStatus, setImportStatus] = useState<ImportStatus>({ type: null, message: "" });
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
   const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
-
-  // Re-introduce the transfer dialog state
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>({
     isOpen: false,
     targetAirport: "",
     targetSector: "delivery"
   });
 
-  // Re-introduce boardSectors and statusTitles
+  // --- Memo/Callback Hooks (These are also hooks!) ---
   const boardSectors = useMemo(() => {
     return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
   }, []);
@@ -101,93 +98,93 @@ export function AllFlightsPageClient() {
     []
   );
 
-const handleFileImport = useCallback(
-  async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileImport = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      // ... (Rest of handleFileImport implementation, which is correct)
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    try {
-      const text = await file.text();
-      const jsonData = JSON.parse(text);
-      const flightsToImport = Array.isArray(jsonData) ? jsonData : [jsonData];
+      try {
+        const text = await file.text();
+        const jsonData = JSON.parse(text);
+        const flightsToImport = Array.isArray(jsonData) ? jsonData : [jsonData];
 
-      const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] = [];
-      const invalidFlights: any[] = [];
+        const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] = [];
+        const invalidFlights: any[] = [];
 
-      flightsToImport.forEach((flight, index) => {
-        // Use a more robust check for `aircraft` or `aircraft_type`
-        if (
-          typeof flight.callsign === "string" &&
-          (typeof flight.aircraft_type === "string" || typeof flight.aircraft === "string") &&
-          typeof flight.departure === "string" &&
-          (typeof flight.arrival === "string" || typeof flight.destination === "string") &&
-          typeof flight.altitude === "string" &&
-          typeof flight.speed === "string"
-        ) {
-          const aircraft_type = flight.aircraft_type || flight.aircraft;
-          const arrival = flight.arrival || flight.destination;
-          const airport = flight.airport || "undefined";
+        flightsToImport.forEach((flight, index) => {
+          if (
+            typeof flight.callsign === "string" &&
+            (typeof flight.aircraft_type === "string" || typeof flight.aircraft === "string") &&
+            typeof flight.departure === "string" &&
+            (typeof flight.arrival === "string" || typeof flight.destination === "string") &&
+            typeof flight.altitude === "string" &&
+            typeof flight.speed === "string"
+          ) {
+            const aircraft_type = flight.aircraft_type || flight.aircraft;
+            const arrival = flight.arrival || flight.destination;
+            const airport = flight.airport || "undefined";
 
-          const normalizedFlight: Omit<Flight, "id" | "created_at" | "updated_at"> = {
-            airport: airport,
-            callsign: flight.callsign || "",
-            geofs_callsign: flight.geofs_callsign || null,
-            discord_username: flight.discord_username || " ",
-            aircraft_type: aircraft_type, // This is now safe
-            departure: flight.departure || "",
-            departure_time: flight.departure_time ?? " ",
-            arrival: arrival,
-            altitude: flight.altitude || "",
-            speed: flight.speed || "",
-            status: selectedImportStatus,
-            notes: flight.notes || "",
-          };
-          validFlights.push(normalizedFlight);
-        } else {
-          invalidFlights.push({ index, flight });
-        }
-      });
-
-        if (validFlights.length > 0) {
-          let successCount = 0;
-          let errorCount = 0;
-
-          const batchSize = 5;
-          for (let i = 0; i < validFlights.length; i += batchSize) {
-            const batch = validFlights.slice(i, i + batchSize);
-            const promises = batch.map(async (flight) => {
-              try {
-                await createFlight(flight);
-                return { success: true };
-              } catch (error) {
-                return { success: false };
-              }
-            });
-
-            const results = await Promise.all(promises);
-            successCount += results.filter((r) => r.success).length;
-            errorCount += results.filter((r) => !r.success).length;
+            const normalizedFlight: Omit<Flight, "id" | "created_at" | "updated_at"> = {
+              airport: airport,
+              callsign: flight.callsign || "",
+              geofs_callsign: flight.geofs_callsign || null,
+              discord_username: flight.discord_username || " ",
+              aircraft_type: aircraft_type,
+              departure: flight.departure || "",
+              departure_time: flight.departure_time ?? " ",
+              arrival: arrival,
+              altitude: flight.altitude || "",
+              speed: flight.speed || "",
+              status: selectedImportStatus,
+              notes: flight.notes || "",
+            };
+            validFlights.push(normalizedFlight);
+          } else {
+            invalidFlights.push({ index, flight });
           }
+        });
 
-          const message = `Successfully imported ${successCount} flight(s)${
-            errorCount > 0 ? `. ${errorCount} flights failed to import (possibly duplicates).` : "."
-          }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid entries were skipped.` : ""}`;
+          if (validFlights.length > 0) {
+            let successCount = 0;
+            let errorCount = 0;
 
-          showStatus(successCount > 0 ? "success" : "error", message, 5000);
-        } else {
-          showStatus("error", "No valid flights found in the JSON file. Please check the format.");
+            const batchSize = 5;
+            for (let i = 0; i < validFlights.length; i += batchSize) {
+              const batch = validFlights.slice(i, i + batchSize);
+              const promises = batch.map(async (flight) => {
+                try {
+                  await createFlight(flight);
+                  return { success: true };
+                } catch (error) {
+                  return { success: false };
+                }
+              });
+
+              const results = await Promise.all(promises);
+              successCount += results.filter((r) => r.success).length;
+              errorCount += results.filter((r) => !r.success).length;
+            }
+
+            const message = `Successfully imported ${successCount} flight(s)${
+              errorCount > 0 ? `. ${errorCount} flights failed to import (possibly duplicates).` : "."
+            }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid entries were skipped.` : ""}`;
+
+            showStatus(successCount > 0 ? "success" : "error", message, 5000);
+          } else {
+            showStatus("error", "No valid flights found in the JSON file. Please check the format.");
+          }
+        } catch (error) {
+          showStatus("error", "Failed to parse JSON file. Please ensure it's a valid JSON format.");
         }
-      } catch (error) {
-        showStatus("error", "Failed to parse JSON file. Please ensure it's a valid JSON format.");
-      }
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    },
-    [createFlight, showStatus, selectedImportStatus]
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      },
+      [createFlight, showStatus, selectedImportStatus]
   );
-
+  
   const sampleFlights = useMemo(
       () => [
         {
@@ -375,7 +372,6 @@ const handleFileImport = useCallback(
     }
   }, [selectedFlights, flights, deleteFlight, showStatus]);
 
-  // Re-add the transfer click handler
   const handleTransferClick = useCallback(() => {
     if (selectedFlights.length === 0) {
       showStatus("error", "No flights selected for transfer.");
@@ -395,7 +391,6 @@ const handleFileImport = useCallback(
     });
   }, [selectedFlights, flights, showStatus]);
 
-  // Re-add the transfer confirmation handler
   const handleTransferConfirm = useCallback(async () => {
     if (selectedFlights.length === 0 || !transferDialog.targetAirport) {
       return;
@@ -444,7 +439,6 @@ const handleFileImport = useCallback(
     }
   }, [selectedFlights, flights, transferDialog, updateFlight, showStatus, statusTitles]);
 
-  // Re-add the transfer cancel handler
   const handleTransferCancel = useCallback(() => {
     setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" });
   }, []);
@@ -453,11 +447,28 @@ const handleFileImport = useCallback(
     return flights.slice().sort((a, b) => a.callsign.localeCompare(b.callsign));
   }, [flights]);
 
+
+  // --- Conditional Logic/Early Return ---
+  useEffect(() => {
+    if (isLoaded) {
+      if (!isSignedIn) {
+        router.push('/sign-up');
+      } else if (!user?.publicMetadata || user.publicMetadata.controller !== true) {
+        router.push('/become-controller');
+      }
+    }
+  }, [isLoaded, isSignedIn, user, router]); 
+
+  if (!isLoaded || !isSignedIn || !user || user.publicMetadata.controller !== true) {
+    return (
+      <Loading />
+    );
+  }
+
+  // --- JSX Render ---
   return (
-    // Change 1: Set the main container to a column layout with `min-h-screen`
-    // to occupy the full viewport height.
+    // ... (rest of your component's JSX, which is now correct)
     <div className="flex flex-col min-h-screen bg-black text-white">
-      {/* Change 2: Ensure header content doesn't shrink and stays fixed. */}
       <div className="flex-shrink-0 p-6">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" passHref>
@@ -692,21 +703,14 @@ const handleFileImport = useCallback(
         </DialogContent>
       </Dialog>
       
-      {/* Change 3: Apply `flex-grow` to the main element to make it fill the remaining vertical space. */}
-      {/* This ensures the card has a defined height to enable its internal scrolling. */}
       <main className="flex-grow p-6 pt-0 overflow-hidden">
         <div className="flex justify-center h-full">
-          {/* Change 4: The Card container itself should be a flexbox column and have `h-full` */}
-          {/* so it fills the available height from the parent `main` element. */}
           <Card className="bg-gray-900 border-gray-700 flex flex-col w-150 h-[85vh]">
-            {/* Change 5: `CardHeader` should be `flex-shrink-0` so it doesn't get squashed. */}
             <CardHeader className="flex-shrink-0">
               <CardTitle className="text-white text-center text-sm">
                 All Flights ({flights.length})
               </CardTitle>
             </CardHeader>
-            {/* Change 6: `CardContent` gets `flex-grow` and `overflow-y-auto` which makes it */}
-            {/* the scrollable area. */}
             <CardContent className="flex-grow space-y-2 p-4 overflow-y-auto">
               {sortedFlights.length === 0 ? (
                 <p className="text-gray-400 text-center py-8 text-sm">No flights</p>

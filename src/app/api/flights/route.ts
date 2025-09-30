@@ -80,7 +80,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       data: {
         airport: airport.toUpperCase(),
         callsign: callsign.toUpperCase(),
-        discord_username: discord_username.toUpperCase(),
+        discord_username: discord_username,
         geofs_callsign: geofs_callsign,
         aircraft_type: aircraft_type ? aircraft_type.toUpperCase() : null,
         departure: departure.toUpperCase(),

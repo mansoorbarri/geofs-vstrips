@@ -17,9 +17,10 @@ import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { airports } from "~/constants/airports";
+import Loading from "~/components/loading";
 
 export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
 
@@ -57,23 +58,11 @@ interface BoardPageClientProps {
 }
 
 export function BoardPageClient({ airportName }: BoardPageClientProps) {
-  const { user, isSignedIn } = useUser();
-  if (!isSignedIn) {
-    redirect('/sign-up');
-  }
-
-  if (!user.publicMetadata || user.publicMetadata.controller !== true) {
-    redirect('/become-controller');
-  }
-
+  const router = useRouter();
+  const { isLoaded, isSignedIn, user } = useUser();
   const params = useParams();
   const airportNameFromURL = params.airportName;
   
-  useEffect(() => {
-    console.log("Value of airportName prop:", airportName);
-    console.log("Value from URL (useParams):", airportNameFromURL);
-  }, [airportName, airportNameFromURL]);
-
   const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true, airportName);
 
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
@@ -81,7 +70,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
   const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>({
@@ -122,6 +110,67 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     }),
     []
   );
+
+  const statusTitles: Record<FlightStatus, string> = useMemo(
+    () => ({
+      delivery: "Delivery",
+      ground: "Ground",
+      tower: "Tower",
+      departure: "Departure",
+      approach: "Approach",
+      control: "Control",
+    }),
+    []
+  );
+
+  const gridClasses = useMemo(() => {
+    return "grid-cols-3";
+  }, []);
+
+  const sampleFlights = useMemo(
+      () => [
+        {
+          airport: airportName,
+          callsign: "DAL456",
+          geofs_callsign: "featherway",
+          discord_username: "featherway",
+          departure_time: "1300",
+          aircraft_type: "A320",
+          departure: "KORD",
+          arrival: "KDEN",
+          altitude: "37000",
+          speed: "420",
+          notes: "Weather deviation requested",
+        },
+        {
+          airport: airportName,
+          callsign: "UAL789",
+          geofs_callsign: "user2",
+          discord_username: "user2",
+          departure_time: "1400",
+          aircraft_type: "B737",
+          departure: "KDEN",
+          arrival: "KLAX",
+          altitude: "29000",
+          speed: "380",
+          notes: "Holding for runway 25L",
+        },
+        {
+          airport: airportName,
+          callsign: "SWA123",
+          geofs_callsign: "user3",
+          discord_username: "user3",
+          departure_time: "1500",
+          aircraft_type: "B777",
+          departure: "KLAX",
+          arrival: "KJFK",
+          altitude: "41000",
+          speed: "450",
+          notes: "Direct to destination",
+        },
+      ],
+      [airportName]
+    );
 
   const showStatus = useCallback((type: "success" | "error", message: string, duration = 3000) => {
     setImportStatus({ type, message });
@@ -203,10 +252,10 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 callsign: flight.callsign || "",
                 geofs_callsign: flight.geofs_callsign || null,
                 discord_username: flight.discord_username || " ",
-                aircraft_type: flight.aircraft_type || "",
+                aircraft_type: aircraft_type || "",
                 departure: flight.departure || "",
                 departure_time: flight.departure_time ?? " ",
-                arrival: flight.arrival || "",
+                arrival: arrival || "",
                 altitude: flight.altitude || "",
                 speed: flight.speed || "",
                 status: selectedImportStatus,
@@ -260,51 +309,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     },
     [validateFlight, createFlight, showStatus, selectedImportStatus, airportName]
   );
-
-  const sampleFlights = useMemo(
-      () => [
-        {
-          airport: airportName,
-          callsign: "DAL456",
-          geofs_callsign: "featherway",
-          discord_username: "featherway",
-          departure_time: "1300",
-          aircraft_type: "A320",
-          departure: "KORD",
-          arrival: "KDEN",
-          altitude: "37000",
-          speed: "420",
-          notes: "Weather deviation requested",
-        },
-        {
-          airport: airportName,
-          callsign: "DAL456",
-          geofs_callsign: "featherway",
-          discord_username: "featherway",
-          departure_time: "1300",
-          aircraft_type: "A320",
-          departure: "KORD",
-          arrival: "KDEN",
-          altitude: "37000",
-          speed: "420",
-          notes: "Weather deviation requested",
-        },
-        {
-          airport: airportName,
-          callsign: "DAL456",
-          geofs_callsign: "featherway",
-          discord_username: "featherway",
-          departure_time: "1300",
-          aircraft_type: "A320",
-          departure: "KORD",
-          arrival: "KDEN",
-          altitude: "37000",
-          speed: "420",
-          notes: "Weather deviation requested",
-        },
-      ],
-      [airportName]
-    );
 
   const generateSampleJSON = useCallback(() => {
     const dataStr = JSON.stringify(sampleFlights, null, 2);
@@ -460,7 +464,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       targetAirport: otherAirports.length > 0 ? otherAirports[0]!.id : "",
       targetSector: "delivery"
     });
-  }, [selectedFlights, airportName]);
+  }, [selectedFlights, airportName, showStatus]);
 
   const handleTransferConfirm = useCallback(async () => {
     if (selectedFlights.length === 0 || !transferDialog.targetAirport) {
@@ -508,27 +512,32 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     } catch (error) {
       showStatus("error", "Failed to transfer selected flights. Please try again.");
     }
-  }, [selectedFlights, flights, transferDialog, updateFlight, showStatus]);
+  }, [selectedFlights, flights, transferDialog, updateFlight, showStatus, statusTitles]);
 
   const handleTransferCancel = useCallback(() => {
     setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" });
   }, []);
+  
+  useEffect(() => {
+    console.log("Value of airportName prop:", airportName);
+    console.log("Value from URL (useParams):", airportNameFromURL);
+  }, [airportName, airportNameFromURL]);
 
-  const gridClasses = useMemo(() => {
-    return "grid-cols-3";
-  }, []);
+  useEffect(() => {
+    if (isLoaded) {
+      if (!isSignedIn) {
+        router.push('/sign-up');
+      } else if (!user?.publicMetadata || user.publicMetadata.controller !== true) {
+        router.push('/become-controller');
+      }
+    }
+  }, [isLoaded, isSignedIn, user, router]); 
 
-  const statusTitles: Record<FlightStatus, string> = useMemo(
-    () => ({
-      delivery: "Delivery",
-      ground: "Ground",
-      tower: "Tower",
-      departure: "Departure",
-      approach: "Approach",
-      control: "Control",
-    }),
-    []
-  );
+  if (!isLoaded || !isSignedIn || !user || user.publicMetadata.controller !== true) {
+    return (
+      <Loading />
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
