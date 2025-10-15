@@ -167,16 +167,21 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
     const formData = new FormData(event.currentTarget);
     const formValues = {
-      airport: "OPLA",
+      // airport: selectedAirport,
+      airport: "VECC",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      departure: "OPLA",
-      departure_time: "0500",
-      arrival: "OPKC",
+      // departure: formData.get("departure") as string,
+      departure: "VECC",
+      // departure_time: formData.get("departure_time") as string,
+      departure_time: "2200",
+      // arrival: formData.get("arrival") as string,
+      arrival: "VOMM",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      notes: "OPLA/36R MIMA2D MIMAL G214 RK J112 NH NH1C OPKC/25L",
+      // notes: formData.get("notes") as string,
+      notes: "VECC TARUK LEGOS KAKID PALKO LEMEX SADGU KAGUL POTAS NODAX KASRO GURAS RUPKU WISAT MM503 MM513 VOMM",
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -371,7 +376,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 type="text"
                 defaultValue={flight.departure_time}
                 placeholder="e.g., 1300"
-                value="0500"
+                value="2200"
                 disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -392,7 +397,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 type="text"
                 defaultValue={flight.departure}
                 placeholder="e.g., KLAX"
-                value="OPLA"
+                value="VECC"
                 disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -406,7 +411,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 type="text"
                 defaultValue={flight.arrival}
                 placeholder="e.g., KJFK"
-                value="OPKC"
+                value="VOMM"
                 disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
@@ -450,8 +455,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   <SelectValue placeholder="Select an airport" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                  <SelectItem value="OPLA">
-                    Lahore (OPLA)
+                  <SelectItem value="VECC">
+                    {`Kolkata International Airport (VECC)`}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -463,7 +468,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 name="notes"
                 defaultValue={flight.notes}
                 placeholder="e.g., DCT VOR VOR STAR"
-                value="OPLA/36R MIMA2D MIMAL G214 RK J112 NH NH1C OPKC/25L"
+                value="VECC TARUK LEGOS KAKID PALKO LEMEX SADGU KAGUL POTAS NODAX KASRO GURAS RUPKU WISAT MM503 MM513 VOMM"
                 disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"

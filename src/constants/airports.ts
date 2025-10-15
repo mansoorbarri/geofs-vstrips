@@ -1,6 +1,6 @@
 export const airports = [
-  { id: "OPLA", name: "Lahore" },
-  { id: "OPKC", name: "karachi"}
+  { id: "VECC", name: "Kolkata International Airport" },
+  { id: "VOMM", name: "Chennai International Airport" },
 ] as const;
 
 export type AirportCode = typeof airports[number]['id'];
