@@ -450,7 +450,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="airport_atc">Where do you want ATC?</Label>
-              <Select name="airport_atc" onValueChange={setSelectedAirport} value={`OPLA`} disabled>
+              <Select name="airport_atc" onValueChange={setSelectedAirport} value={`VECC`} disabled>
                 <SelectTrigger className="w-full bg-gray-800 text-white border-gray-700">
                   <SelectValue placeholder="Select an airport" />
                 </SelectTrigger>
