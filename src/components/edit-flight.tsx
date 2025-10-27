@@ -462,8 +462,6 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 name="notes"
                 defaultValue={flight.notes}
                 placeholder="e.g., DCT VOR VOR STAR"
-                value="VECC TARUK LEGOS KAKID PALKO LEMEX SADGU KAGUL POTAS NODAX KASRO GURAS RUPKU WISAT MM503 MM513 VOMM"
-                disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
