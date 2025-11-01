@@ -393,6 +393,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 id="departure_time"
                 name="departure_time"
                 type="text"
+                defaultValue={flight.departure_time}
                 placeholder="e.g., 1720"
                 required
                 className="bg-gray-800 border-gray-700 text-white font-mono"
@@ -488,6 +489,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
               <Textarea
                 id="notes"
                 name="notes"
+                defaultValue={flight.notes}
                 placeholder="e.g., DCT VOR VOR STAR"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
