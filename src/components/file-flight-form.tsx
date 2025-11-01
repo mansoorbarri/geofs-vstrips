@@ -7,7 +7,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -22,12 +22,12 @@ import Link from "next/link";
 
 const flightSchema = z.object({
   airport: z.string()
-  .min(1, "Airport is required")
-  .max(4, "Airport must be 4 characters or less")
-  .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
+    .min(1, "Airport is required")
+    .max(4, "Airport must be 4 characters or less")
+    .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
   callsign: z.string()
     .min(1, "Callsign is required")
-    .max(7, "Callsign must be 7 characters or less"),  
+    .max(7, "Callsign must be 7 characters or less"),
   geofs_callsign: z.string()
     .min(1, "GeoFS Callsign is required")
     .max(24, "GeoFS Callsign must be 23 characters or less"),
@@ -42,7 +42,15 @@ const flightSchema = z.object({
   departure_time: z.string()
     .min(1, "Departure time is required")
     .max(4, "Departure time must be 4 characters or less")
-    .regex(/^\d{4}$/, "Must be a 4-digit time (e.g., 1300)"),
+    .regex(/^\d{4}$/, "Must be a 4-digit time (e.g., 1720)")
+    .refine((v) => {
+      const hh = Number(v.slice(0, 2));
+      const mm = Number(v.slice(2, 4));
+      return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+    }, { message: "Invalid time – minutes must be 00-59" })
+    .refine((v) => Number(v.slice(0, 2)) >= 16 && Number(v.slice(0, 2)) <= 19, {
+      message: "Departure time must be between 1600 and 1900 (4 PM – 7 PM)",
+    }),
   arrival: z.string()
     .min(1, "Arrival is required")
     .max(4, "Arrival must be 4 characters or less")
@@ -213,15 +221,26 @@ export function FileFlightForm() {
                 className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="departure_time">Departure Time</Label>
+           <div className="space-y-2">
+              <Label htmlFor="departure_time" className="flex items-center gap-1">
+                Time (CEST <span className="text-gray-400">UTC+2</span>)
+                <div
+                  className="group relative inline-block"
+                  // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
+                >
+                  <Info className="h-3.5 w-3.5 text-blue-400 cursor-help" />
+                  <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
+                    The time you will enter the airspace — whether departing, arriving, or overflying the field.
+                </span>
+                </div>
+              </Label>
               <Input
                 id="departure_time"
                 name="departure_time"
                 type="text"
-                placeholder="e.g., 1300"
+                placeholder="e.g., 1720"
                 required
-                className="bg-gray-800 border-gray-700 text-white"
+                className="bg-gray-800 border-gray-700 text-white font-mono"
               />
             </div>
           </div>
