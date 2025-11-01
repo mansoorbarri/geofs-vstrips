@@ -322,7 +322,17 @@ export function FileFlightForm() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Flight Route</Label>
+              <Label htmlFor="notes">Flight Route
+                <div
+                  className="group relative inline-block"
+                  // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
+                >
+                  <Info className="h-3.5 w-3.5 text-blue-400 cursor-help" />
+                  <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
+                    Must include a SID or STAR from approved SID/STARs
+                </span>
+                </div>
+              </Label>
               <Textarea
                 id="notes"
                 name="notes"
