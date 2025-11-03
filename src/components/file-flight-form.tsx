@@ -123,7 +123,7 @@ export function FileFlightForm() {
 
     const flightData = {
       ...validation.data,
-      discord_username: user.username,
+      discord_username: user.externalAccounts[0]?.username,
       status: "delivery",
     };
 

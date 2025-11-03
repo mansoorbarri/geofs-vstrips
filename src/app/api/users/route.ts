@@ -26,7 +26,7 @@ export async function GET() {
         const userList = response.data.map((user) => ({
             id: user.id,
             email: user.emailAddresses[0]?.emailAddress,
-            username: user.username,
+            username: user.externalAccounts[0]?.username,
             isController: user.publicMetadata.controller ?? false,
         }));
         return NextResponse.json(userList, { status: 200 });
