@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { AlertCircle, Edit, Plane } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Footer from "~/components/footer";
+import Header from "./header";
 
 interface Flight {
   id: string;
@@ -137,7 +138,8 @@ export function FlightsList() {
 
 return (
     <div className="flex flex-col min-h-screen">
-      <div className="container mx-auto p-6 max-w-4xl bg-gray-900 rounded-lg shadow-xl text-white">
+      <Header />
+      <div className="container mx-auto p-6 max-w-4xl bg-gray-900 rounded-lg shadow-xl text-white mt-10">
       <div className="flex items-center justify-center mb-6">
         <h1 className="text-3xl font-bold">Edit Your Flights</h1>
       </div>

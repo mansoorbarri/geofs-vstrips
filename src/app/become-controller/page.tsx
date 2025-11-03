@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs"
 import { redirect } from "next/navigation";
 import Footer from "~/components/footer";
+import Header from "~/components/header";
 
 export default function BecomeControllerPage() {
   const { user } = useUser();
@@ -14,6 +15,7 @@ export default function BecomeControllerPage() {
   
   return (
     <div className="min-h-screen bg-black text-white p-8 flex flex-col">
+      <Header />
       <div className="flex-1 flex items-center justify-center">
         <div className="max-w-xl mx-auto py-12 text-center">
           <header className="mb-8">

@@ -8,6 +8,7 @@ import { AirportSelector } from "~/components/airport-selector";
 import Footer from "~/components/footer";
 import { airports } from "~/constants/airports";
 import Loading from "~/components/loading";
+import Header from "~/components/header";
 
 export default function HomePage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function HomePage() {
       if (!isSignedIn) {
         router.push('/sign-up');
       } else if (!user?.publicMetadata || user.publicMetadata.controller !== true) {
-        router.push('/file-flight');
+        router.push('/become-controller');
       }
     }
   }, [isLoaded, isSignedIn, user, router]); 
@@ -31,6 +32,7 @@ export default function HomePage() {
     
   return (
     <div className="min-h-screen bg-black text-white p-8 flex flex-col">
+      <Header />
       <div className="flex-1 flex items-center justify-center">
         <div className="max-w-xl mx-auto py-12 text-center">
           <header className="mb-8">

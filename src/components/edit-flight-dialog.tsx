@@ -16,6 +16,7 @@ import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
+import Header from "./header";
 
 // Import the correct Flight type from the single source of truth
 import { type Flight } from "~/hooks/use-flights"
@@ -92,6 +93,7 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <Header />
       <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Flight Strip</DialogTitle>

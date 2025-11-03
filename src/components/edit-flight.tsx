@@ -19,6 +19,7 @@ import { redirect, useRouter } from "next/navigation";
 import { z } from "zod";
 import { airports } from "~/constants/airports";
 import Footer from "~/components/footer";
+import Header from "./header";
 
 const flightSchema = z.object({
   airport: z.string()
@@ -253,6 +254,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
   if (!flight) {
     return (
       <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
+        <Header />
         <AlertCircle className="h-16 w-16 mx-auto text-red-500 mb-4" />
         <h1 className="text-3xl font-bold mb-4">Flight Not Found</h1>
         <p className="text-lg text-gray-300 mb-6">
@@ -269,7 +271,9 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
   if (submissionResult?.success) {
     return (
-      <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
+      <>
+        <Header />
+      <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center mt-10">
         <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
         <h1 className="text-3xl font-bold mb-4">Flight Plan Updated!</h1>
         <p className="text-lg text-gray-300 mb-6">
@@ -288,12 +292,14 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
           View All Flights
         </Button>
       </div>
+      </>
     );
   }
 
   if (!isEditable) {
     return (
       <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white text-center">
+        <Header />
         <Lock className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
         <h1 className="text-3xl font-bold mb-4">Flight Plan Locked</h1>
         <p className="text-lg text-gray-300 mb-2">
@@ -314,7 +320,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
   return (
     <div className="flex flex-col min-h-screen">
-    <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white">
+      <Header />
+    <div className="container mx-auto p-6 max-w-lg bg-gray-900 rounded-lg shadow-xl text-white mt-10">
       <div className="flex flex-col items-center mb-6">
         <h1 className="text-3xl font-bold">Edit Flight Plan</h1>
         <p className="text-gray-400 mt-2">Callsign: {flight.callsign}</p>

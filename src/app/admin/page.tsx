@@ -6,6 +6,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 import { UserList } from '~/components/user-list';
 import Footer from '~/components/footer';
 import Loading from '~/components/loading';
+import Header from '~/components/header';
 
 interface AppUser {
   id: string;
@@ -17,7 +18,6 @@ interface AppUser {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { isLoaded: authLoaded, isSignedIn, user } = useUser();
-  const { getToken } = useAuth();
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +33,9 @@ export default function AdminDashboardPage() {
       router.push('/sign-up');
       return;
     }
-
-    const isController = Boolean(user?.publicMetadata?.controller);
-    if (!isController) {
-      router.push('/become-controller');
+    const isAdmin = Boolean(user?.publicMetadata?.admin);
+    if (!isAdmin) {
+      router.push('https://www.youtube.com/watch?v=dQw4w9WgXcQ'); 
     }
   }, [authLoaded, isSignedIn, user, router]);
 
@@ -104,8 +103,9 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-4">Controller Dashboard</h1>
+    <div className="px-8">
+      <Header />
+      <h1 className="text-3xl font-bold mb-4 mt-5">Controller Dashboard</h1>
       <p className="text-gray-600 mb-6">
         Manage controller access for users below.
       </p>
