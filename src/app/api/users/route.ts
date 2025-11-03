@@ -28,6 +28,7 @@ export async function GET() {
             email: user.emailAddresses[0]?.emailAddress,
             username: user.externalAccounts[0]?.username,
             isController: user.publicMetadata.controller ?? false,
+            profile: user.imageUrl ?? null,
         }));
         return NextResponse.json(userList, { status: 200 });
     } catch (error) {

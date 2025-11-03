@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { useState } from 'react';
 
 interface AppUser {
@@ -5,6 +6,7 @@ interface AppUser {
   email: string;
   username: string;
   isController: boolean;
+  profile: string
 }
 
 interface UserListProps {
@@ -43,7 +45,7 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
         setIsUpdating(null);
     }
   };
-
+  console.log(users)
   return (
     <div className="overflow-x-auto shadow-md sm:rounded-lg">
       <table className="min-w-full divide-y divide-gray-200">
@@ -53,10 +55,10 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
               Email
             </th> */}
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Username
+              Profile
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Current Role
+              Username
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Is Controller? 
@@ -70,14 +72,15 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
 
             return (
               <tr key={user.id}>
-                {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.email}
-                </td> */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {/* <Image src={"user.profile"} alt="Profile" width={32} height={32} /> */}
+                  <img src={user.profile} alt={user.username} className="rounded-full w-15" />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {user.username}
                   {isSelf && <span className="ml-1 text-xs text-blue-600">(You)</span>}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                {/* <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       user.isController
@@ -87,7 +90,7 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
                   >
                     {user.isController ? 'Controller' : 'User'}
                   </span>
-                </td>
+                </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {isSelf ? (
                     <span className="text-gray-400 text-xs">Cannot self-toggle</span>

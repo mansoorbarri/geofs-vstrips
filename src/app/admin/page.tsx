@@ -13,6 +13,7 @@ interface AppUser {
   email: string;
   username: string;
   isController: boolean;
+  profile: string;
 }
 
 export default function AdminDashboardPage() {
@@ -64,6 +65,7 @@ export default function AdminDashboardPage() {
             `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
             'Unknown',
           isController: Boolean(user.isController),
+          profile: user.profile,
         }));
         setUsers(userList);
       } else {
