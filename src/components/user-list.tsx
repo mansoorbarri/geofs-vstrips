@@ -56,10 +56,10 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
               Username
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Controller
+              Current Role
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Toggle Access
+              Is Controller? 
             </th>
           </tr>
         </thead>
@@ -109,7 +109,7 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
                           ${user.isController ? 'bg-indigo-600' : 'bg-gray-400'}`}
                       ></div>
                       <span className="ml-2 text-xs text-gray-600">
-                        {isUpdating === user.id ? 'Saving...' : user.isController ? 'On' : 'Off'}
+                        {isUpdating === user.id ? 'Saving...' : user.isController ? 'True' : 'False'}
                       </span>
                     </label>
                   )}
