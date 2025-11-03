@@ -21,7 +21,7 @@ export async function GET() {
         const client = await clerkClient();
         const response = await client.users.getUserList({
             limit: 500,
-            orderBy: '-created_at',
+            orderBy: '-updated_at',
         });
         const userList = response.data.map((user) => ({
             id: user.id,

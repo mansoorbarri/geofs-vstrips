@@ -49,9 +49,9 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            {/* <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Email
-            </th>
+            </th> */}
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Username
             </th>
@@ -70,9 +70,9 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
 
             return (
               <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {user.email}
-                </td>
+                </td> */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {user.username}
                   {isSelf && <span className="ml-1 text-xs text-blue-600">(You)</span>}
