@@ -51,13 +51,13 @@ export async function PATCH(request: NextRequest) {
         const user = await client.users?.getUser(body.userId)
         const isController = user?.publicMetadata?.controller === true
         if (!isController) {
-            client.users?.updateUserMetadata(body.userId, {
+            await client.users?.updateUserMetadata(body.userId, {
                 publicMetadata: {
                     controller: true,
                 }
             })
         } else {
-            client.users?.updateUserMetadata(body.userId, {
+            await client.users?.updateUserMetadata(body.userId, {
                 publicMetadata: {
                     controller: null,
                 }

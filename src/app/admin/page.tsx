@@ -80,10 +80,12 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Load users when ready
   useEffect(() => {
     if (authLoaded && isSignedIn && user?.publicMetadata?.controller) {
-      fetchUsers();
+      const loadUsers = async () => {
+        await fetchUsers();
+      };
+      void loadUsers();
     }
   }, [authLoaded, isSignedIn, user?.publicMetadata?.controller]);
 
