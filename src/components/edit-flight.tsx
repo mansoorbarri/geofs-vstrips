@@ -43,15 +43,15 @@ const flightSchema = z.object({
   departure_time: z.string()
     .min(1, "Departure time is required")
     .max(4, "Departure time must be 4 characters or less")
-    .regex(/^\d{4}$/, "Must be a 4-digit time (e.g., 1720)")
-    .refine((v) => {
-      const hh = Number(v.slice(0, 2));
-      const mm = Number(v.slice(2, 4));
-      return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
-    }, { message: "Invalid time – minutes must be 00-59" })
-    .refine((v) => Number(v.slice(0, 2)) >= 16 && Number(v.slice(0, 2)) <= 19, {
-      message: "Departure time must be between 1600 and 1900 (4 PM – 7 PM)",
-    }),
+    .regex(/^\d{4}$/, "Must be a 4-digit time (e.g., 1720)"),
+    // .refine((v) => {
+    //   const hh = Number(v.slice(0, 2));
+    //   const mm = Number(v.slice(2, 4));
+    //   return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+    // }, { message: "Invalid time – minutes must be 00-59" })
+    // .refine((v) => Number(v.slice(0, 2)) >= 16 && Number(v.slice(0, 2)) <= 19, {
+    //   message: "Departure time must be between 1600 and 1900 (4 PM – 7 PM)",
+    // }),
   arrival: z.string()
     .min(1, "Arrival is required")
     .max(4, "Arrival must be 4 characters or less")
@@ -90,7 +90,7 @@ interface EditFlightFormProps {
 };
 
 const CACHE_KEY = 'flights_cache';
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = 1 * 60 * 1000;
 
 export function EditFlightForm({ flightId }: EditFlightFormProps) {
   const { isLoaded, isSignedIn } = useUser();
@@ -177,20 +177,20 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     const formData = new FormData(event.currentTarget);
     const formValues = {
       // airport: selectedAirport,
-      airport: "EDDF",
+      airport: "LTFM",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      departure: formData.get("departure") as string,
-      // departure: "VECC",
-      departure_time: formData.get("departure_time") as string,
-      // departure_time: "2200",
-      arrival: formData.get("arrival") as string,
-      // arrival: "VOMM",
+      // departure: formData.get("departure") as string,
+      departure: "LFTM",
+      // departure_time: formData.get("departure_time") as string,
+      departure_time: "1830",
+      // arrival: formData.get("arrival") as string,
+      arrival: "OLBA",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      notes: formData.get("notes") as string,
-      // notes: "VECC TARUK LEGOS KAKID PALKO LEMEX SADGU KAGUL POTAS NODAX KASRO GURAS RUPKU WISAT MM503 MM513 VOMM",
+      // notes: formData.get("notes") as string,
+      notes: "RATVU4D RATVU UT35 UNEPI UT38 VESAR DCT DESPO M31 KUKLA KUKLA1R",
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -385,8 +385,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="departure_time" className="flex items-center gap-1">
-                Time (CEST <span className="text-gray-400">UTC+2</span>)
-                <div
+                Time 
+                {/* <div
                   className="group relative inline-block"
                   // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
                 >
@@ -394,7 +394,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
                     The time you will enter the airspace — whether departing, arriving, or overflying the field.
                 </span>
-                </div>
+                </div> */}
               </Label>
               <Input
                 id="departure_time"
@@ -402,6 +402,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 type="text"
                 defaultValue={flight.departure_time}
                 placeholder="e.g., 1720"
+                disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white font-mono"
               />
@@ -421,6 +422,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 type="text"
                 defaultValue={flight.departure}
                 placeholder="e.g., KLAX"
+                disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
@@ -433,6 +435,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 type="text"
                 defaultValue={flight.arrival}
                 placeholder="e.g., KJFK"
+                disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
@@ -498,6 +501,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 name="notes"
                 defaultValue={flight.notes}
                 placeholder="e.g., DCT VOR VOR STAR"
+                value="RATVU4D RATVU UT35 UNEPI UT38 VESAR DCT DESPO M31 KUKLA KUKLA1R"
+                disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />

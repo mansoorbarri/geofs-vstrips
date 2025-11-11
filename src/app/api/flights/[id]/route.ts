@@ -74,9 +74,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const isPilotOwner = currentFlight.discord_username === clerk_discord_username;
     const canEdit = isController || (isPilotOwner && currentFlight.status === "delivery");
-
-    console.log("Valid status:", status);
-    console.log(isPilotOwner, currentFlight.status);
+    
     if (!canEdit) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
