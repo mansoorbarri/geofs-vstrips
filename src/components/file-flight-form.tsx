@@ -344,6 +344,7 @@ export function FileFlightForm() {
                 name="notes"
                 placeholder="e.g., DCT VOR VOR STAR"
                 value="RATVU4D RATVU UT35 UNEPI UT38 VESAR DCT DESPO M31 KUKLA KUKLA1R"
+                disabled
                 required
                 className="bg-gray-800 border-gray-700 text-white"
               />
