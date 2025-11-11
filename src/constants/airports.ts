@@ -1,5 +1,5 @@
 export const airports = [
-  { id: "LFTM", name: "Istanbul Atatürk Airport" },
+  { id: "LTFM", name: "Istanbul Atatürk Airport" },
   {id: "OLBA", name: "Beirut-Rafic Hariri International Airport"}
 ] as const;
 
