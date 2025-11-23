@@ -4,8 +4,8 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
-import {
-  ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
+import { Toaster } from "~/components/ui/sonner"
 import "~/styles/globals.css"
 import SessionManager from "~/components/session-manager"
 
@@ -27,6 +27,7 @@ export default function RootLayout({
           <SessionManager />
           <Suspense fallback={null}>{children}</Suspense>
           <Analytics />
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>
