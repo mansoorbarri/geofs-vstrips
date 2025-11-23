@@ -6,16 +6,14 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Upload,
-  FileText,
-  Copy,
-  Download,
   ArrowLeft,
   XCircle,
   Send,
   X,
   Plus,
   CheckCircle,
-} from "lucide-react"; // Added CheckCircle for success icons
+  Download, // Keep Download for general export
+} from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
@@ -30,6 +28,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  // Removed Copy and FileText since sample functions are gone
 } from "~/components/ui/select";
 import {
   Dialog,
@@ -169,50 +168,51 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     return "grid-cols-3";
   }, []);
 
-  const sampleFlights = useMemo(
-    () => [
-      {
-        airport: airportName,
-        callsign: "DAL456",
-        geofs_callsign: "featherway",
-        discord_username: "featherway",
-        departure_time: "1300",
-        aircraft_type: "A320",
-        departure: "KORD",
-        arrival: "KDEN",
-        altitude: "37000",
-        speed: "420",
-        notes: "Weather deviation requested",
-      },
-      {
-        airport: airportName,
-        callsign: "UAL789",
-        geofs_callsign: "user2",
-        discord_username: "user2",
-        departure_time: "1400",
-        aircraft_type: "B737",
-        departure: "KDEN",
-        arrival: "KLAX",
-        altitude: "29000",
-        speed: "380",
-        notes: "Holding for runway 25L",
-      },
-      {
-        airport: airportName,
-        callsign: "SWA123",
-        geofs_callsign: "user3",
-        discord_username: "user3",
-        departure_time: "1500",
-        aircraft_type: "B777",
-        departure: "KLAX",
-        arrival: "KJFK",
-        altitude: "41000",
-        speed: "450",
-        notes: "Direct to destination",
-      },
-    ],
-    [airportName],
-  );
+  // Removed sampleFlights since sample functions are gone
+  // const sampleFlights = useMemo(
+  //   () => [
+  //     {
+  //       airport: airportName,
+  //       callsign: "DAL456",
+  //       geofs_callsign: "featherway",
+  //       discord_username: "featherway",
+  //       departure_time: "1300",
+  //       aircraft_type: "A320",
+  //       departure: "KORD",
+  //       arrival: "KDEN",
+  //       altitude: "37000",
+  //       speed: "420",
+  //       notes: "Weather deviation requested",
+  //     },
+  //     {
+  //       airport: airportName,
+  //       callsign: "UAL789",
+  //       geofs_callsign: "user2",
+  //       discord_username: "user2",
+  //       departure_time: "1400",
+  //       aircraft_type: "B737",
+  //       departure: "KDEN",
+  //       arrival: "KLAX",
+  //       altitude: "29000",
+  //       speed: "380",
+  //       notes: "Holding for runway 25L",
+  //     },
+  //     {
+  //       airport: airportName,
+  //       callsign: "SWA123",
+  //       geofs_callsign: "user3",
+  //       discord_username: "user3",
+  //       departure_time: "1500",
+  //       aircraft_type: "B777",
+  //       departure: "KLAX",
+  //       arrival: "KJFK",
+  //       altitude: "41000",
+  //       speed: "450",
+  //       notes: "Direct to destination",
+  //     },
+  //   ],
+  //   [airportName],
+  // );
 
   const handleFlightClick = useCallback(
     async (flightId: string) => {
@@ -374,12 +374,19 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               : ""
           }`;
 
-          if (successCount > 0 && errorCount === 0 && invalidFlights.length === 0) {
+          if (
+            successCount > 0 &&
+            errorCount === 0 &&
+            invalidFlights.length === 0
+          ) {
             toast.success("Import Success", {
               description: message,
               duration: 5000,
             });
-          } else if (successCount > 0 && (errorCount > 0 || invalidFlights.length > 0)) {
+          } else if (
+            successCount > 0 &&
+            (errorCount > 0 || invalidFlights.length > 0)
+          ) {
             toast.warning("Import with Issues", {
               description: message,
               duration: 5000,
@@ -391,14 +398,20 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             });
           }
         } else {
-          toast.error("No valid flights found in the JSON file. Please check the format.", {
-            duration: 3000,
-          });
+          toast.error(
+            "No valid flights found in the JSON file. Please check the format.",
+            {
+              duration: 3000,
+            },
+          );
         }
       } catch (error) {
-        toast.error("Failed to parse JSON file. Please ensure it's a valid JSON format.", {
-          duration: 3000,
-        });
+        toast.error(
+          "Failed to parse JSON file. Please ensure it's a valid JSON format.",
+          {
+            duration: 3000,
+          },
+        );
       }
 
       if (fileInputRef.current) {
@@ -408,39 +421,41 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     [validateFlight, createFlight, selectedImportStatus, airportName],
   );
 
-  const generateSampleJSON = useCallback(() => {
-    const dataStr = JSON.stringify(sampleFlights, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `sample_flights_${airportName}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.info(`A sample JSON file for ${airportName} has been downloaded.`, {
-      duration: 3000,
-    });
-  }, [sampleFlights, airportName]);
+  // Removed generateSampleJSON
+  // const generateSampleJSON = useCallback(() => {
+  //   const dataStr = JSON.stringify(sampleFlights, null, 2);
+  //   const dataBlob = new Blob([dataStr], { type: "application/json" });
+  //   const url = URL.createObjectURL(dataBlob);
+  //   const link = document.createElement("a");
+  //   link.href = url;
+  //   link.download = `sample_flights_${airportName}.json`;
+  //   link.click();
+  //   URL.revokeObjectURL(url);
+  //   toast.info(`A sample JSON file for ${airportName} has been downloaded.`, {
+  //     duration: 3000,
+  //   });
+  // }, [sampleFlights, airportName]);
 
-  const copySampleJSON = useCallback(async () => {
-    const jsonString = JSON.stringify(sampleFlights, null, 2);
-    try {
-      await navigator.clipboard.writeText(jsonString);
-      toast.success(
-        "Sample JSON copied to clipboard! You can paste it into a .json file.",
-        {
-          duration: 3000,
-        },
-      );
-    } catch (error) {
-      toast.error(
-        "Failed to copy to clipboard. Please try the download option instead.",
-        {
-          duration: 3000,
-        },
-      );
-    }
-  }, [sampleFlights]);
+  // Removed copySampleJSON
+  // const copySampleJSON = useCallback(async () => {
+  //   const jsonString = JSON.stringify(sampleFlights, null, 2);
+  //   try {
+  //     await navigator.clipboard.writeText(jsonString);
+  //     toast.success(
+  //       "Sample JSON copied to clipboard! You can paste it into a .json file.",
+  //       {
+  //         duration: 3000,
+  //       },
+  //     );
+  //   } catch (error) {
+  //     toast.error(
+  //       "Failed to copy to clipboard. Please try the download option instead.",
+  //       {
+  //         duration: 3000,
+  //       },
+  //     );
+  //   }
+  // }, [sampleFlights]);
 
   const handleEditFlight = useCallback((flight: Flight) => {
     setEditingFlight(flight);
@@ -855,22 +870,24 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             <Send className="mr-2 h-4 w-4" />
             Transfer Selected
           </Button>
-          <Button
+          {/* Removed Copy Sample JSON Button */}
+          {/* <Button
             variant="outline"
-            className="cursor-pointer border-blue-500 bg-black text-blue-400 hover:bg-blue-900 hover:text-blue-300"
+            className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300 hover:cursor-pointer"
             onClick={copySampleJSON}
           >
-            <Copy className="mr-2 h-4 w-4" />
+            <Copy className="w-4 h-4 mr-2" />
             Copy Sample JSON
-          </Button>
-          <Button
+          </Button> */}
+          {/* Removed Download Sample Button */}
+          {/* <Button
             variant="outline"
-            className="cursor-pointer border-gray-500 bg-black text-gray-300 hover:bg-gray-800 hover:text-white"
+            className="bg-black border-gray-500 text-gray-300 hover:bg-gray-800 hover:text-white hover:cursor-pointer"
             onClick={generateSampleJSON}
           >
-            <FileText className="mr-2 h-4 w-4" />
+            <FileText className="w-4 h-4 mr-2" />
             Download Sample
-          </Button>
+          </Button> */}
         </div>
         <input
           ref={fileInputRef}
