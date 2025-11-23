@@ -63,6 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const altitude = body['1_altitude'] || body.altitude;
     const speed = body['1_speed'] || body.speed;
     const status = body['1_status'] || body.status;
+    const route = body['1_route'] || body.route;
     const notes = body['1_notes'] || body.notes;
 
     if (!airport || !callsign || !geofs_callsign || !departure || !arrival || !status || !discord_username) {
@@ -89,15 +90,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         altitude: altitude || null,
         speed: speed || null,
         status: status,
-        notes: notes || '',
-      },
-    });
-
-    await prisma.flight_history.create({
-      data: {
-        flight_id: flight.id,
-        old_status: '',
-        new_status: status,
+        route: route || "",
+        notes: notes || "",
       },
     });
 

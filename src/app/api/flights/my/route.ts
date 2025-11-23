@@ -34,21 +34,6 @@ export async function GET() {
           mode: 'insensitive'
         }
       },
-      select: {
-        id: true,
-        airport: true,
-        callsign: true,
-        geofs_callsign: true,
-        aircraft_type: true,
-        departure: true,
-        departure_time: true,
-        arrival: true,
-        altitude: true,
-        speed: true,
-        status: true,
-        notes: true,
-        discord_username: true,
-      },
       orderBy: {
         departure_time: 'asc'
       }

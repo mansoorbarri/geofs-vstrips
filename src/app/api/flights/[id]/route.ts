@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const body = await request.json();
-    const { airport, callsign, aircraft_type, departure, arrival, altitude, speed, status, notes } = body;
+    const { airport, callsign, aircraft_type, departure, arrival, altitude, speed, status, route, notes } = body;
     const { id: flightId } = await params;
 
     const currentFlight = await prisma.flights.findUnique({

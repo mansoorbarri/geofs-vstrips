@@ -44,6 +44,7 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
     altitude: "",
     speed: "",
     status: "delivery" as FlightStatus,
+    route: "",
     notes: "",
   })
 
@@ -63,6 +64,7 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
         altitude: flight.altitude,
         speed: flight.speed,
         status: flight.status as FlightStatus,
+        route: flight.route || "",
         notes: flight.notes || "",
       })
     }
@@ -213,6 +215,17 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-route">Route</Label>
+            <Textarea
+              id="edit-route"
+              value={formData.route}
+              onChange={(e) => handleInputChange("route", e.target.value)}
+              placeholder="edit route for this flight..."
+              className="bg-gray-800 border-gray-600 text-white min-h-[80px]"
+            />
           </div>
 
           <div className="space-y-2">

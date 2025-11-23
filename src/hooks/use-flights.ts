@@ -21,6 +21,7 @@ export interface Flight {
   altitude: string;
   speed: string;
   status: string;
+  route: string | null;
   notes: string | null;
 }
 

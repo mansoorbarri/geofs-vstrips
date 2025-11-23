@@ -21,12 +21,12 @@ interface Flight {
   altitude: string;
   speed: string;
   status: string;
-  notes: string;
+  route: string;
   discord_username: string;
 }
 
 const CACHE_KEY = 'flights_cache';
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = 60 * 1000;
 
 export function FlightsList() {
   const { isLoaded, isSignedIn } = useUser();
@@ -220,8 +220,8 @@ return (
                       <p className="text-white">{flight.speed}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Notes</p>
-                      <p className="text-white">{flight.notes}</p>
+                      <p className="text-gray-400">Route</p>
+                      <p className="text-white">{flight.route}</p>
                     </div>
                   </div>
                 </div>

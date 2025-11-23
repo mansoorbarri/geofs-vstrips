@@ -32,6 +32,7 @@ model flights {
   altitude         String          @db.VarChar(5)
   speed            String          @db.VarChar(4)
   status           FlightStatus
+  route            String?         @db.Text
   notes            String          @db.Text
   created_at       DateTime        @default(now()) @db.Timestamptz(6)
   updated_at       DateTime        @updatedAt @db.Timestamptz(6)

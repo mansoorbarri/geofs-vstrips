@@ -115,7 +115,6 @@ export function FlightStrip({
         </Button>
       </div>
 
-      {/* REORGANIZED CONTENT FOR BETTER READABILITY */}
       <div className="font-mono text-sm text-white pr-16 pl-6 space-y-2">
         {/* Row 1: Callsign & Status */}
         <div className="flex justify-between items-center">
@@ -135,19 +134,12 @@ export function FlightStrip({
         {/* Row 3: Aircraft Type */}
         <div className="text-gray-200">{flight.aircraft_type}</div>
 
-        {/* Row 4: Route & Time */}
-        <div className="flex justify-between items-center text-gray-200">
-          <div>
-            <span className="font-medium">{flight.departure}</span>
-            <span className="mx-2 text-gray-400">→</span>
-            <span className="font-medium">{flight.arrival}</span>
+        {/* Row 4: Departure Time */}
+        {flight.departure_time && (
+          <div className="text-xs text-gray-300">
+            <span className="font-semibold">ETD:</span> {flight.departure_time}
           </div>
-          {flight.departure_time && (
-            <div className="text-xs text-gray-300">
-              <span className="font-semibold">ETD:</span> {flight.departure_time}
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Row 5: Altitude & Speed */}
         <div className="flex justify-between text-xs text-gray-300">
@@ -159,7 +151,15 @@ export function FlightStrip({
           </span>
         </div>
 
-        {/* Notes block remains the same */}
+        {/* Route Section */}
+        {flight.route && (
+          <div className="text-xs text-blue-300 bg-gray-800 bg-opacity-50 p-2 rounded mt-2">
+            <div className="font-semibold mb-1">ROUTE:</div>
+            <div className="break-words">{flight.route}</div>
+          </div>
+        )}
+
+        {/* Notes Section */}
         {flight.notes && (
           <div className="text-xs text-yellow-300 bg-gray-800 bg-opacity-50 p-2 rounded mt-2">
             <div className="font-semibold mb-1">NOTES:</div>

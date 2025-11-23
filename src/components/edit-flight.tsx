@@ -64,9 +64,9 @@ const flightSchema = z.object({
     .min(1, "Speed is required")
     .max(4, "Speed must be 4 characters or less")
     .regex(/^0\.\d{1,2}$/, "Must be in Mach (e.g., 0.82)"),
-  notes: z.string()
+  route: z.string()
     .min(1, "Flight Route is required")
-    .max(2000, "Notes are too long"),
+    .max(2000, "route are too long"),
 });
 
 interface Flight {
@@ -81,7 +81,7 @@ interface Flight {
   altitude: string;
   speed: string;
   status: string;
-  notes: string;
+  route: string;
   discord_username: string;
 }
 
@@ -189,8 +189,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
       arrival: "OLBA",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      // notes: formData.get("notes") as string,
-      notes: "RATVU4D RATVU UT35 UNEPI UT38 VESAR DCT DESPO M31 KUKLA KUKLA1R",
+      // route: formData.get("route") as string,
+      route: "RATVU4D RATVU UT35 UNEPI UT38 VESAR DCT DESPO M31 KUKLA KUKLA1R",
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -485,7 +485,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Flight Route
+              <Label htmlFor="route">Flight Route
                 <div
                   className="group relative inline-block"
                   // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
@@ -497,9 +497,9 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 </div>
               </Label>
               <Textarea
-                id="notes"
-                name="notes"
-                defaultValue={flight.notes}
+                id="route"
+                name="route"
+                defaultValue={flight.route}
                 placeholder="e.g., DCT VOR VOR STAR"
                 value="RATVU4D RATVU UT35 UNEPI UT38 VESAR DCT DESPO M31 KUKLA KUKLA1R"
                 disabled
