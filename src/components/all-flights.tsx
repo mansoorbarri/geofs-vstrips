@@ -137,6 +137,7 @@ export function AllFlightsPageClient() {
               altitude: flight.altitude || "",
               speed: flight.speed || "",
               status: selectedImportStatus,
+              route: flight.route || "",
               notes: flight.notes || "",
             };
             validFlights.push(normalizedFlight);
