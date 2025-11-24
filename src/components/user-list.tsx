@@ -49,34 +49,34 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
   return (
     <div className="overflow-x-auto shadow-md sm:rounded-lg">
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+        <thead className="bg-slate-600">
           <tr>
             {/* <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Email
             </th> */}
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
               Profile
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
               Username
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
               Is Controller? 
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-gray-900 divide-y divide-gray-200">
           {users.map((user) => {
             const isSelf = user.id === currentUserId;
             const disabled = isSelf || isUpdating === user.id;
 
             return (
               <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   {/* <Image src={"user.profile"} alt="Profile" width={32} height={32} /> */}
                   <img src={user.profile} alt={user.username} className="rounded-full w-15" />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   {user.username}
                   {isSelf && <span className="ml-1 text-xs text-blue-600">(You)</span>}
                 </td>
@@ -101,7 +101,7 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
                         checked={user.isController}
                         onChange={() => handleToggle(user.id, !user.isController)}
                         disabled={disabled}
-                        className="sr-only peer"
+                        className="sr-only peer text-white"
                       />
                       <div
                         className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer 
@@ -111,7 +111,7 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
                           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                           ${user.isController ? 'bg-indigo-600' : 'bg-gray-400'}`}
                       ></div>
-                      <span className="ml-2 text-xs text-gray-600">
+                      <span className="ml-2 text-xs text-white">
                         {isUpdating === user.id ? 'Saving...' : user.isController ? 'True' : 'False'}
                       </span>
                     </label>
