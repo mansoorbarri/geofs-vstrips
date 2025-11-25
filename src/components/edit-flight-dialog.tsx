@@ -123,8 +123,7 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
-            {/* NEW FIELD for Discord Username */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="edit-discord_username">Discord Username</Label>
               <Input
                 id="edit-discord_username"
@@ -132,7 +131,7 @@ export function EditFlightDialog({ flight, open, onOpenChange, onUpdateFlight }:
                 onChange={(e) => handleInputChange("discord_username", e.target.value)}
                 className="bg-gray-800 border-gray-600 text-white"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

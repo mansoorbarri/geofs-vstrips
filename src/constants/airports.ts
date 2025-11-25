@@ -1,6 +1,7 @@
 export const airports = [
-  { id: "LTFM", name: "Istanbul Atatürk Airport" },
-  {id: "OLBA", name: "Beirut-Rafic Hariri International Airport"}
+  { id: "MGGT", name: "La Aurora International Airport" },
+  { id: "MHTG", name: "Huehuetenango Airport" },
+
 ] as const;
 
 export type AirportCode = typeof airports[number]['id'];
