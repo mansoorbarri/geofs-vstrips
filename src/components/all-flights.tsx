@@ -186,71 +186,71 @@ export function AllFlightsPageClient() {
       [createFlight, showStatus, selectedImportStatus]
   );
   
-  const sampleFlights = useMemo(
-      () => [
-        {
-          airport: "KORD",
-          callsign: "DAL456",
-          geofs_callsign: "featherway",
-          discord_username: "featherway",
-          departure_time: "1300",
-          aircraft_type: "A320",
-          departure: "KORD",
-          arrival: "KDEN",
-          altitude: "37000",
-          speed: "420",
-          notes: "Weather deviation requested",
-        },
-        {
-          airport: "KDEN",
-          callsign: "UAL789",
-          geofs_callsign: "user2",
-          discord_username: "user2",
-          departure_time: "1400",
-          aircraft_type: "B737",
-          departure: "KDEN",
-          arrival: "KLAX",
-          altitude: "29000",
-          speed: "380",
-          notes: "Holding for runway 25L",
-        },
-        {
-          airport: "KLAX",
-          callsign: "SWA123",
-          geofs_callsign: "user3",
-          discord_username: "user3",
-          departure_time: "1500",
-          aircraft_type: "B777",
-          departure: "KLAX",
-          arrival: "KJFK",
-          altitude: "41000",
-          speed: "450",
-          notes: "Direct to destination",
-        },
-      ],
-      []
-    );
+  // const sampleFlights = useMemo(
+  //     () => [
+  //       {
+  //         airport: "KORD",
+  //         callsign: "DAL456",
+  //         geofs_callsign: "featherway",
+  //         discord_username: "featherway",
+  //         departure_time: "1300",
+  //         aircraft_type: "A320",
+  //         departure: "KORD",
+  //         arrival: "KDEN",
+  //         altitude: "37000",
+  //         speed: "420",
+  //         notes: "Weather deviation requested",
+  //       },
+  //       {
+  //         airport: "KDEN",
+  //         callsign: "UAL789",
+  //         geofs_callsign: "user2",
+  //         discord_username: "user2",
+  //         departure_time: "1400",
+  //         aircraft_type: "B737",
+  //         departure: "KDEN",
+  //         arrival: "KLAX",
+  //         altitude: "29000",
+  //         speed: "380",
+  //         notes: "Holding for runway 25L",
+  //       },
+  //       {
+  //         airport: "KLAX",
+  //         callsign: "SWA123",
+  //         geofs_callsign: "user3",
+  //         discord_username: "user3",
+  //         departure_time: "1500",
+  //         aircraft_type: "B777",
+  //         departure: "KLAX",
+  //         arrival: "KJFK",
+  //         altitude: "41000",
+  //         speed: "450",
+  //         notes: "Direct to destination",
+  //       },
+  //     ],
+  //     []
+  //   );
 
-  const generateSampleJSON = useCallback(() => {
-    const dataStr = JSON.stringify(sampleFlights, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `sample_flights_all_airports.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, [sampleFlights]);
+  // const generateSampleJSON = useCallback(() => {
+  //   const dataStr = JSON.stringify(sampleFlights, null, 2);
+  //   const dataBlob = new Blob([dataStr], { type: "application/json" });
+  //   const url = URL.createObjectURL(dataBlob);
+  //   const link = document.createElement("a");
+  //   link.href = url;
+  //   link.download = `sample_flights_all_airports.json`;
+  //   link.click();
+  //   URL.revokeObjectURL(url);
+  // }, [sampleFlights]);
 
-  const copySampleJSON = useCallback(async () => {
-    const jsonString = JSON.stringify(sampleFlights, null, 2);
-    try {
-      await navigator.clipboard.writeText(jsonString);
-      showStatus("success", "Sample JSON copied to clipboard! You can paste it into a .json file.");
-    } catch (error) {
-      showStatus("error", "Failed to copy to clipboard. Please try the download option instead.");
-    }
-  }, [sampleFlights, showStatus]);
+  // const copySampleJSON = useCallback(async () => {
+  //   const jsonString = JSON.stringify(sampleFlights, null, 2);
+  //   try {
+  //     await navigator.clipboard.writeText(jsonString);
+  //     showStatus("success", "Sample JSON copied to clipboard! You can paste it into a .json file.");
+  //   } catch (error) {
+  //     showStatus("error", "Failed to copy to clipboard. Please try the download option instead.");
+  //   }
+  // }, [sampleFlights, showStatus]);
 
   const handleEditFlight = useCallback((flight: Flight) => {
     setEditingFlight(flight);
@@ -571,7 +571,7 @@ export function AllFlightsPageClient() {
             Transfer Selected
           </Button>
           
-          <Button
+          {/* <Button
             variant="outline"
             className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300 hover:cursor-pointer"
             onClick={copySampleJSON}
@@ -586,7 +586,7 @@ export function AllFlightsPageClient() {
           >
             <FileText className="w-4 h-4 mr-2" />
             Download Sample
-          </Button>
+          </Button> */}
         </div>
         <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
       </div>
