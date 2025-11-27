@@ -73,8 +73,13 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
             return (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {/* <Image src={"user.profile"} alt="Profile" width={32} height={32} /> */}
-                  <img src={user.profile} alt={user.username} className="rounded-full w-15" />
+                  <Image
+                    src={user.profile}
+                    alt={user.username}
+                    width={50}
+                    height={50}
+                    className="rounded-full"
+                    ></Image>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   {user.username}
