@@ -30,6 +30,7 @@ model flights {
   departure_time   String          @db.VarChar(4)
   arrival          String          @db.VarChar(4)
   altitude         String          @db.VarChar(5)
+  squawk           String?          @db.VarChar(4)
   speed            String          @db.VarChar(4)
   status           FlightStatus
   route            String?         @db.Text

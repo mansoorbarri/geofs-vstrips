@@ -43,10 +43,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const rateLimitResult = checkRateLimit(userId);
-  if (rateLimitResult.limited) {
-    return rateLimitResult.response || NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-  }
+  // const rateLimitResult = checkRateLimit(userId);
+  // if (rateLimitResult.limited) {
+  //   return rateLimitResult.response || NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  // }
 
   try {
     const body = await request.json();
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const departure_time = body['1_departure_time'] || body.departure_time;
     const arrival = body['1_arrival'] || body.arrival;
     const altitude = body['1_altitude'] || body.altitude;
+    const squawk = ""
     const speed = body['1_speed'] || body.speed;
     const status = body['1_status'] || body.status;
     const route = body['1_route'] || body.route;
@@ -88,10 +89,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         departure_time: departure_time || "",
         arrival: arrival.toUpperCase(),
         altitude: altitude || null,
+        squawk: "",
         speed: speed || null,
         status: status,
         route: route || "",
-        notes: notes || "",
+        notes: ""
       },
     });
 

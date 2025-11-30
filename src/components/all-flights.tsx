@@ -1,26 +1,53 @@
-// src/components/all-flights.tsx (AllFlightsPageClient)
+// src/components/all-flights.tsx
 "use client";
 
-import type React from "react";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Upload, FileText, AlertCircle, CheckCircle, Copy, Download, ArrowLeft, XCircle, Plus, Send, X } from "lucide-react";
+import {
+  Upload,
+  AlertCircle,
+  CheckCircle,
+  Download,
+  ArrowLeft,
+  XCircle,
+  Plus,
+  Send,
+  X,
+} from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
 import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { useFlights } from "~/hooks/use-flights";
-import { type Flight } from "~/hooks/use-flights";
+import { useFlights, type Flight } from "~/hooks/use-flights";
 import Link from "next/link";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
 import { airports } from "~/constants/airports";
 import Loading from "~/components/loading";
 import { useRouter } from "next/navigation";
 
-export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
+export type FlightStatus =
+  | "delivery"
+  | "ground"
+  | "tower"
+  | "departure"
+  | "approach"
+  | "control";
 
 interface ImportStatus {
   type: "success" | "error" | null;
@@ -34,33 +61,46 @@ interface TransferDialogState {
 }
 
 export function AllFlightsPageClient() {
-  // 🚀 ALL HOOKS MUST BE DEFINED HERE, BEFORE ANY CONDITIONAL RETURNS
-
-  // --- Auth/Router Hooks ---
   const router = useRouter();
   const { isLoaded, isSignedIn, user } = useUser();
-  
-  // --- Data Hook ---
-  // Ensure the second argument of useFlights is 'undefined' if you want it to fetch all flights
-  const { flights, isLoading, error, lastUpdate, createFlight, updateFlight, deleteFlight } = useFlights(true, undefined);
+  const {
+    flights,
+    isLoading,
+    error,
+    lastUpdate,
+    createFlight,
+    updateFlight,
+    deleteFlight,
+  } = useFlights(true, undefined);
 
-  // --- State Hooks ---
-  const [importStatus, setImportStatus] = useState<ImportStatus>({ type: null, message: "" });
+  const [importStatus, setImportStatus] = useState<ImportStatus>({
+    type: null,
+    message: "",
+  });
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFlights, setSelectedFlights] = useState<string[]>([]);
-  const [selectedImportStatus, setSelectedImportStatus] = useState<FlightStatus>("delivery");
+  const [selectedImportStatus, setSelectedImportStatus] =
+    useState<FlightStatus>("delivery");
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>({
     isOpen: false,
     targetAirport: "",
-    targetSector: "delivery"
+    targetSector: "delivery",
   });
 
-  // --- Memo/Callback Hooks (These are also hooks!) ---
-  const boardSectors = useMemo(() => {
-    return ["delivery", "ground", "tower", "departure", "approach", "control"] as const;
-  }, []);
+  const boardSectors = useMemo(
+    () =>
+      [
+        "delivery",
+        "ground",
+        "tower",
+        "departure",
+        "approach",
+        "control",
+      ] as const,
+    []
+  );
 
   const statusTitles: Record<FlightStatus, string> = useMemo(
     () => ({
@@ -74,33 +114,21 @@ export function AllFlightsPageClient() {
     []
   );
 
-  const showStatus = useCallback((type: "success" | "error", message: string, duration = 3000) => {
-    setImportStatus({ type, message });
-    setTimeout(() => setImportStatus({ type: null, message: "" }), duration);
-  }, []);
-
-  const handleImportClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const validateFlight = useCallback(
-    (flight: any): flight is Omit<Flight, "id" | "created_at" | "updated_at"> => {
-      return (
-        typeof flight === "object" &&
-        typeof flight.callsign === "string" &&
-        (typeof flight.aircraft_type === "string" || typeof flight.aircraft === "string") &&
-        typeof flight.departure === "string" &&
-        (typeof flight.arrival === "string" || typeof flight.destination === "string") &&
-        typeof flight.altitude === "string" &&
-        typeof flight.speed === "string"
-      );
+  const showStatus = useCallback(
+    (type: "success" | "error", message: string, duration = 3000) => {
+      setImportStatus({ type, message });
+      setTimeout(() => setImportStatus({ type: null, message: "" }), duration);
     },
+    []
+  );
+
+  const triggerFileInput = useCallback(
+    () => fileInputRef.current?.click(),
     []
   );
 
   const handleFileImport = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
-      // ... (Rest of handleFileImport implementation, which is correct)
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -108,149 +136,93 @@ export function AllFlightsPageClient() {
         const text = await file.text();
         const jsonData = JSON.parse(text);
         const flightsToImport = Array.isArray(jsonData) ? jsonData : [jsonData];
+        const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] =
+          [];
+        const invalidFlights: unknown[] = [];
 
-        const validFlights: Omit<Flight, "id" | "created_at" | "updated_at">[] = [];
-        const invalidFlights: any[] = [];
-
-        flightsToImport.forEach((flight, index) => {
+        flightsToImport.forEach((flight) => {
           if (
             typeof flight.callsign === "string" &&
-            (typeof flight.aircraft_type === "string" || typeof flight.aircraft === "string") &&
+            (typeof flight.aircraft_type === "string" ||
+              typeof flight.aircraft === "string") &&
             typeof flight.departure === "string" &&
-            (typeof flight.arrival === "string" || typeof flight.destination === "string") &&
+            (typeof flight.arrival === "string" ||
+              typeof flight.destination === "string") &&
             typeof flight.altitude === "string" &&
             typeof flight.speed === "string"
           ) {
-            const aircraft_type = flight.aircraft_type || flight.aircraft;
-            const arrival = flight.arrival || flight.destination;
-            const airport = flight.airport || "undefined";
-
-            const normalizedFlight: Omit<Flight, "id" | "created_at" | "updated_at"> = {
-              airport: airport,
-              callsign: flight.callsign || "",
+            const normalizedFlight: Omit<
+              Flight,
+              "id" | "created_at" | "updated_at"
+            > = {
+              airport: flight.airport || "undefined",
+              callsign: flight.callsign,
               geofs_callsign: flight.geofs_callsign || null,
               discord_username: flight.discord_username || " ",
-              aircraft_type: aircraft_type,
-              departure: flight.departure || "",
+              aircraft_type: flight.aircraft_type || flight.aircraft,
+              departure: flight.departure,
               departure_time: flight.departure_time ?? " ",
-              arrival: arrival,
-              altitude: flight.altitude || "",
-              speed: flight.speed || "",
+              arrival: flight.arrival || flight.destination,
+              altitude: flight.altitude,
+              squawk: flight.squawk || "",
+              speed: flight.speed,
               status: selectedImportStatus,
               route: flight.route || "",
               notes: flight.notes || "",
             };
             validFlights.push(normalizedFlight);
           } else {
-            invalidFlights.push({ index, flight });
+            invalidFlights.push(flight);
           }
         });
 
-          if (validFlights.length > 0) {
-            let successCount = 0;
-            let errorCount = 0;
-
-            const batchSize = 5;
-            for (let i = 0; i < validFlights.length; i += batchSize) {
-              const batch = validFlights.slice(i, i + batchSize);
-              const promises = batch.map(async (flight) => {
-                try {
-                  await createFlight(flight);
-                  return { success: true };
-                } catch (error) {
-                  return { success: false };
-                }
-              });
-
-              const results = await Promise.all(promises);
-              successCount += results.filter((r) => r.success).length;
-              errorCount += results.filter((r) => !r.success).length;
-            }
-
-            const message = `Successfully imported ${successCount} flight(s)${
-              errorCount > 0 ? `. ${errorCount} flights failed to import (possibly duplicates).` : "."
-            }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid entries were skipped.` : ""}`;
-
-            showStatus(successCount > 0 ? "success" : "error", message, 5000);
-          } else {
-            showStatus("error", "No valid flights found in the JSON file. Please check the format.");
-          }
-        } catch (error) {
-          showStatus("error", "Failed to parse JSON file. Please ensure it's a valid JSON format.");
+        if (validFlights.length === 0) {
+          showStatus(
+            "error",
+            "No valid flights found in the JSON file. Please check the format."
+          );
+          return;
         }
 
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
+        const batchSize = 5;
+        let successCount = 0,
+          errorCount = 0;
+        for (let i = 0; i < validFlights.length; i += batchSize) {
+          const batch = validFlights.slice(i, i + batchSize);
+          const results = await Promise.all(
+            batch.map(async (flight) => {
+              try {
+                await createFlight(flight);
+                return true;
+              } catch {
+                return false;
+              }
+            })
+          );
+          successCount += results.filter(Boolean).length;
+          errorCount += results.filter((r) => !r).length;
         }
-      },
-      [createFlight, showStatus, selectedImportStatus]
+
+        showStatus(
+          successCount > 0 ? "success" : "error",
+          `Successfully imported ${successCount} flight(s)${
+            errorCount > 0
+              ? `. ${errorCount} failed (duplicates?).`
+              : "."
+          }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid skipped.` : ""}`,
+          5000
+        );
+      } catch {
+        showStatus(
+          "error",
+          "Failed to parse JSON file. Please ensure it's valid JSON."
+        );
+      }
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [createFlight, showStatus, selectedImportStatus]
   );
-  
-  // const sampleFlights = useMemo(
-  //     () => [
-  //       {
-  //         airport: "KORD",
-  //         callsign: "DAL456",
-  //         geofs_callsign: "featherway",
-  //         discord_username: "featherway",
-  //         departure_time: "1300",
-  //         aircraft_type: "A320",
-  //         departure: "KORD",
-  //         arrival: "KDEN",
-  //         altitude: "37000",
-  //         speed: "420",
-  //         notes: "Weather deviation requested",
-  //       },
-  //       {
-  //         airport: "KDEN",
-  //         callsign: "UAL789",
-  //         geofs_callsign: "user2",
-  //         discord_username: "user2",
-  //         departure_time: "1400",
-  //         aircraft_type: "B737",
-  //         departure: "KDEN",
-  //         arrival: "KLAX",
-  //         altitude: "29000",
-  //         speed: "380",
-  //         notes: "Holding for runway 25L",
-  //       },
-  //       {
-  //         airport: "KLAX",
-  //         callsign: "SWA123",
-  //         geofs_callsign: "user3",
-  //         discord_username: "user3",
-  //         departure_time: "1500",
-  //         aircraft_type: "B777",
-  //         departure: "KLAX",
-  //         arrival: "KJFK",
-  //         altitude: "41000",
-  //         speed: "450",
-  //         notes: "Direct to destination",
-  //       },
-  //     ],
-  //     []
-  //   );
-
-  // const generateSampleJSON = useCallback(() => {
-  //   const dataStr = JSON.stringify(sampleFlights, null, 2);
-  //   const dataBlob = new Blob([dataStr], { type: "application/json" });
-  //   const url = URL.createObjectURL(dataBlob);
-  //   const link = document.createElement("a");
-  //   link.href = url;
-  //   link.download = `sample_flights_all_airports.json`;
-  //   link.click();
-  //   URL.revokeObjectURL(url);
-  // }, [sampleFlights]);
-
-  // const copySampleJSON = useCallback(async () => {
-  //   const jsonString = JSON.stringify(sampleFlights, null, 2);
-  //   try {
-  //     await navigator.clipboard.writeText(jsonString);
-  //     showStatus("success", "Sample JSON copied to clipboard! You can paste it into a .json file.");
-  //   } catch (error) {
-  //     showStatus("error", "Failed to copy to clipboard. Please try the download option instead.");
-  //   }
-  // }, [sampleFlights, showStatus]);
 
   const handleEditFlight = useCallback((flight: Flight) => {
     setEditingFlight(flight);
@@ -260,12 +232,17 @@ export function AllFlightsPageClient() {
   const handleUpdateFlight = useCallback(
     async (updatedFlightData: Flight) => {
       try {
-        const { id, created_at, updated_at, ...updateData } = updatedFlightData;
-        await updateFlight(id, updateData);
-
-        showStatus("success", `Flight strip ${updatedFlightData.callsign} updated successfully!`);
+        const { id, created_at, updated_at, ...data } = updatedFlightData;
+        await updateFlight(id, data);
+        showStatus(
+          "success",
+          `Flight strip ${updatedFlightData.callsign} updated successfully!`
+        );
       } catch (error: any) {
-        showStatus("error", error.message || "Failed to update flight. Please try again.");
+        showStatus(
+          "error",
+          error.message || "Failed to update flight. Please try again."
+        );
       }
     },
     [updateFlight, showStatus]
@@ -273,207 +250,182 @@ export function AllFlightsPageClient() {
 
   const handleDeleteFlight = useCallback(
     async (flightId: string) => {
-      const flightToDelete = flights.find((f) => f.id === flightId);
-
+      const flight = flights.find((f) => f.id === flightId);
       try {
         await deleteFlight(flightId);
-        if (flightToDelete) {
-          showStatus("success", `Flight strip ${flightToDelete.callsign} deleted successfully!`);
-        }
-      } catch (error: any) {
-        showStatus("error", error.message || "Failed to delete flight. Please try again.");
+        if (flight)
+          showStatus("success", `Flight strip ${flight.callsign} deleted.`);
+      } catch {
+        showStatus("error", "Failed to delete flight.");
       }
     },
     [flights, deleteFlight, showStatus]
   );
-  
-  const handleFlightSelection = useCallback((flightId: string) => {
-    setSelectedFlights(prevSelected =>
-      prevSelected.includes(flightId)
-        ? prevSelected.filter(id => id !== flightId)
-        : [...prevSelected, flightId]
+
+  const toggleFlightSelection = useCallback((flightId: string) => {
+    setSelectedFlights((prev) =>
+      prev.includes(flightId)
+        ? prev.filter((id) => id !== flightId)
+        : [...prev, flightId]
     );
   }, []);
 
-  const handleSelectAll = useCallback(() => {
-    setSelectedFlights(flights.map(flight => flight.id));
-  }, [flights]);
+  const handleSelectAll = useCallback(
+    () => setSelectedFlights(flights.map((f) => f.id)),
+    [flights]
+  );
 
-  const handleClearSelection = useCallback(() => {
-    setSelectedFlights([]);
-  }, []);
+  const handleClearSelection = useCallback(() => setSelectedFlights([]), []);
 
   const handleExportFlights = useCallback(() => {
-    if (selectedFlights.length === 0) {
-      showStatus("error", "No flights selected for export.");
-      return;
-    }
+    if (selectedFlights.length === 0)
+      return showStatus("error", "No flights selected for export.");
 
-    const flightsToExport = flights.filter(f => selectedFlights.includes(f.id));
-
+    const flightsToExport = flights.filter((f) =>
+      selectedFlights.includes(f.id)
+    );
     const dataStr = JSON.stringify(flightsToExport, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `atc_flights_all_airports_${new Date().toISOString().split("T")[0]}.json`;
+    link.download = `atc_flights_${new Date().toISOString().split("T")[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
-
-    showStatus("success", `Exported ${flightsToExport.length} selected flight(s) successfully!`);
+    showStatus(
+      "success",
+      `Exported ${flightsToExport.length} selected flight(s)!`
+    );
   }, [flights, selectedFlights, showStatus]);
 
-  const handleDeleteSelected = useCallback(async () => {
-    if (selectedFlights.length === 0) {
-      showStatus("error", "No flights selected for deletion.");
-      return;
+  const batchProcessFlights = async <T,>(
+    items: T[],
+    batchSize: number,
+    fn: (item: T) => Promise<boolean>
+  ) => {
+    let success = 0;
+    let failed = 0;
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(fn));
+      success += results.filter(Boolean).length;
+      failed += results.filter((r) => !r).length;
     }
+    return { success, failed };
+  };
 
-    const flightsToDelete = flights.filter(f => selectedFlights.includes(f.id));
-    const flightCallsigns = flightsToDelete.map(f => f.callsign).join(", ");
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedFlights.length === 0)
+      return showStatus("error", "No flights selected for deletion.");
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedFlights.length} selected flight strip(s)?\n\nCallsigns: ${flightCallsigns}\n\nThis action cannot be undone.`
+      `Delete ${selectedFlights.length} selected flight(s)?`
+    );
+    if (!confirmDelete) return;
+
+    const { success, failed } = await batchProcessFlights(
+      selectedFlights,
+      5,
+      async (id) => {
+        try {
+          await deleteFlight(id);
+          return true;
+        } catch {
+          return false;
+        }
+      }
     );
 
-    if (!confirmDelete) {
-      return;
-    }
-
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-
-      const batchSize = 5;
-      for (let i = 0; i < selectedFlights.length; i += batchSize) {
-        const batch = selectedFlights.slice(i, i + batchSize);
-        const promises = batch.map(async (flightId) => {
-          try {
-            await deleteFlight(flightId);
-            return { success: true };
-          } catch (error) {
-            return { success: false };
-          }
-        });
-
-        const results = await Promise.all(promises);
-        successCount += results.filter((r) => r.success).length;
-        errorCount += results.filter((r) => !r.success).length;
-      }
-
-      setSelectedFlights([]);
-
-      const message = `Successfully deleted ${successCount} flight strip(s)${
-        errorCount > 0 ? `. ${errorCount} flights failed to delete.` : "."
-      }`;
-
-      showStatus(successCount > 0 ? "success" : "error", message, 5000);
-    } catch (error) {
-      showStatus("error", "Failed to delete selected flights. Please try again.");
-    }
-  }, [selectedFlights, flights, deleteFlight, showStatus]);
+    setSelectedFlights([]);
+    showStatus(
+      success > 0 ? "success" : "error",
+      `Deleted ${success} flight(s)${
+        failed > 0 ? `, ${failed} failed.` : "."
+      }`,
+      5000
+    );
+  }, [selectedFlights, deleteFlight, showStatus]);
 
   const handleTransferClick = useCallback(() => {
-    if (selectedFlights.length === 0) {
-      showStatus("error", "No flights selected for transfer.");
-      return;
-    }
-    
-    // Find a default target airport
-    const otherAirports = airports.filter(airport => {
-      const selectedFlight = flights.find(f => f.id === selectedFlights[0]);
-      return selectedFlight && airport.id !== selectedFlight.airport;
-    });
-    
+    if (selectedFlights.length === 0)
+      return showStatus("error", "No flights selected for transfer.");
+
+    const selectedFlight = flights.find((f) => f.id === selectedFlights[0]);
+    const defaultAirport =
+      airports.find((a) => a.id !== selectedFlight?.airport)?.id || "";
     setTransferDialog({
       isOpen: true,
-      targetAirport: otherAirports.length > 0 ? otherAirports[0]!.id : "",
-      targetSector: "delivery"
+      targetAirport: defaultAirport,
+      targetSector: "delivery",
     });
   }, [selectedFlights, flights, showStatus]);
 
   const handleTransferConfirm = useCallback(async () => {
-    if (selectedFlights.length === 0 || !transferDialog.targetAirport) {
-      return;
-    }
+    if (!transferDialog.targetAirport || selectedFlights.length === 0) return;
 
-    const flightsToTransfer = flights.filter(f => selectedFlights.includes(f.id));
-    
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-
-      const batchSize = 5;
-      for (let i = 0; i < flightsToTransfer.length; i += batchSize) {
-        const batch = flightsToTransfer.slice(i, i + batchSize);
-        const promises = batch.map(async (flight) => {
-          try {
-            await updateFlight(flight.id, {
-              airport: transferDialog.targetAirport,
-              status: transferDialog.targetSector,
-            });
-            
-            return { success: true };
-          } catch (error) {
-            return { success: false };
-          }
-        });
-
-        const results = await Promise.all(promises);
-        successCount += results.filter((r) => r.success).length;
-        errorCount += results.filter((r) => !r.success).length;
+    const toTransfer = flights.filter((f) =>
+      selectedFlights.includes(f.id)
+    );
+    const { success, failed } = await batchProcessFlights(
+      toTransfer,
+      5,
+      async (flight) => {
+        try {
+          await updateFlight(flight.id, {
+            airport: transferDialog.targetAirport,
+            status: transferDialog.targetSector,
+          });
+          return true;
+        } catch {
+          return false;
+        }
       }
+    );
 
-      setSelectedFlights([]);
-      setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" });
+    const airportName =
+      airports.find((a) => a.id === transferDialog.targetAirport)?.name ??
+      transferDialog.targetAirport;
+    const sectorName = statusTitles[transferDialog.targetSector];
 
-      const targetAirportName = airports.find(a => a.id === transferDialog.targetAirport)?.name || transferDialog.targetAirport;
-      const sectorName = statusTitles[transferDialog.targetSector];
+    setSelectedFlights([]);
+    setTransferDialog({
+      isOpen: false,
+      targetAirport: "",
+      targetSector: "delivery",
+    });
 
-      const message = `Successfully transferred ${successCount} flight strip(s) to ${targetAirportName} ${sectorName}${
-        errorCount > 0 ? `. ${errorCount} flights failed to transfer.` : "."
-      }`;
+    showStatus(
+      success > 0 ? "success" : "error",
+      `Transferred ${success} flight(s) to ${airportName} ${sectorName}${
+        failed > 0 ? `, ${failed} failed.` : "."
+      }`,
+      5000
+    );
+  }, [selectedFlights, transferDialog, flights, updateFlight, showStatus, statusTitles]);
 
-      showStatus(successCount > 0 ? "success" : "error", message, 5000);
-    } catch (error) {
-      showStatus("error", "Failed to transfer selected flights. Please try again.");
-    }
-  }, [selectedFlights, flights, transferDialog, updateFlight, showStatus, statusTitles]);
-
-  const handleTransferCancel = useCallback(() => {
-    setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" });
-  }, []);
-
-  const sortedFlights = useMemo(() => {
-    return flights.slice().sort((a, b) => a.callsign.localeCompare(b.callsign));
-  }, [flights]);
-
-
-  // --- Conditional Logic/Early Return ---
   useEffect(() => {
     if (isLoaded) {
-      if (!isSignedIn) {
-        router.push('/sign-up');
-      } else if (!user?.publicMetadata || user.publicMetadata.controller !== true) {
-        router.push('/become-controller');
-      }
+      if (!isSignedIn) router.push("/sign-up");
+      else if (!user?.publicMetadata?.controller)
+        router.push("/become-controller");
     }
-  }, [isLoaded, isSignedIn, user, router]); 
+  }, [isLoaded, isSignedIn, user, router]);
+  
+  const sortedFlights = useMemo(
+    () => flights.slice().sort((a, b) => a.callsign.localeCompare(b.callsign)),
+    [flights]
+  );
 
-  if (!isLoaded || !isSignedIn || !user || user.publicMetadata.controller !== true) {
-    return (
-      <Loading />
-    );
-  }
+  if (!isLoaded || !isSignedIn || !user?.publicMetadata?.controller)
+    return <Loading />;
 
-  // --- JSX Render ---
+
   return (
-    // ... (rest of your component's JSX, which is now correct)
     <div className="flex flex-col min-h-screen bg-black text-white">
       <div className="flex-shrink-0 p-6">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" passHref>
-            <Button variant="outline" className="mr-4 bg-black border-gray-700 text-gray-400 hover:bg-gray-800 hover:cursor-pointer">
+            <Button variant="outline" className="mr-4 bg-black border-gray-700 text-gray-400 hover:bg-gray-800">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
@@ -481,124 +433,119 @@ export function AllFlightsPageClient() {
           <h1 className="text-3xl font-bold flex-grow text-center">
             All Flights
           </h1>
-          <RealTimeIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
+          <RealTimeIndicator
+            lastUpdate={lastUpdate}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
         <div className="flex gap-4 flex-wrap">
           <Link href="/file-flight" target="_blank" passHref>
-            <Button
-              variant="outline"
-              className="bg-black border-green-500 text-green-400 hover:bg-green-900 hover:text-green-300 hover:cursor-pointer shine-button"
-            >
+            <Button variant="outline" className="bg-black border-green-500 text-green-400 hover:bg-green-900">
               <Plus className="w-4 h-4 mr-2" />
               Create Flight Strip
             </Button>
-          </Link>          
-          <div className="h-8 border-l ml-1 border-gray-700"></div>      
+          </Link>
           {flights.length > 0 && (
             <Button
               variant="outline"
-              className="bg-black border-yellow-500 text-yellow-400 hover:bg-yellow-900 hover:text-yellow-300 hover:cursor-pointer"
+              className="bg-black border-yellow-500 text-yellow-400 hover:bg-yellow-900"
               onClick={handleSelectAll}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               Select All
             </Button>
           )}
-
           {selectedFlights.length > 0 && (
             <Button
               variant="outline"
-              className="bg-black border-red-500 text-red-400 hover:bg-red-900 hover:text-red-300 hover:cursor-pointer"
+              className="bg-black border-red-500 text-red-400 hover:bg-red-900"
               onClick={handleClearSelection}
             >
               <XCircle className="w-4 h-4 mr-2" />
               Clear Selection
             </Button>
           )}
-          
           <div className="flex items-center space-x-2">
             <Select
               value={selectedImportStatus}
-              onValueChange={(value) => setSelectedImportStatus(value as FlightStatus)}
+              onValueChange={(v) =>
+                setSelectedImportStatus(v as FlightStatus)
+              }
             >
-              <SelectTrigger className="bg-black border-grey-700 text-white w-[110px]">
+              <SelectTrigger className="bg-black border-gray-700 text-white w-[110px]">
                 <SelectValue placeholder="Import to" />
               </SelectTrigger>
               <SelectContent className="bg-gray-900 border-gray-700">
-                {boardSectors.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {statusTitles[status]}
+                {boardSectors.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {statusTitles[s]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Button
               variant="outline"
-              className="bg-black border-white text-white hover:bg-white hover:text-white hover:cursor-pointer"
-              onClick={handleImportClick}
+              className="bg-black border-white text-white hover:bg-white hover:text-white"
+              onClick={triggerFileInput}
             >
               <Upload className="w-4 h-4 mr-2" />
               Import JSON
             </Button>
           </div>
-          
           <Button
             variant="outline"
-            className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900 hover:text-purple-300 hover:cursor-pointer"
+            className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900"
             onClick={handleExportFlights}
-            disabled={selectedFlights.length === 0}
+            disabled={!selectedFlights.length}
           >
             <Download className="w-4 h-4 mr-2" />
             Export Selected
           </Button>
           <Button
             variant="outline"
-            className="bg-black border-red-500 text-red-400 hover:bg-red-900 hover:text-red-300 hover:cursor-pointer"
+            className="bg-black border-red-500 text-red-400 hover:bg-red-900"
             onClick={handleDeleteSelected}
-            disabled={selectedFlights.length === 0}
+            disabled={!selectedFlights.length}
           >
             <XCircle className="w-4 h-4 mr-2" />
             Delete Selected
           </Button>
-          
           <Button
             variant="outline"
-            className="bg-black border-orange-500 text-orange-400 hover:bg-orange-900 hover:text-orange-300 hover:cursor-pointer"
+            className="bg-black border-orange-500 text-orange-400 hover:bg-orange-900"
             onClick={handleTransferClick}
-            disabled={selectedFlights.length === 0}
+            disabled={!selectedFlights.length}
           >
             <Send className="w-4 h-4 mr-2" />
             Transfer Selected
           </Button>
-          
-          {/* <Button
-            variant="outline"
-            className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300 hover:cursor-pointer"
-            onClick={copySampleJSON}
-          >
-            <Copy className="w-4 h-4 mr-2" />
-            Copy Sample JSON
-          </Button>
-          <Button
-            variant="outline"
-            className="bg-black border-gray-500 text-gray-300 hover:bg-gray-800 hover:text-white hover:cursor-pointer"
-            onClick={generateSampleJSON}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Download Sample
-          </Button> */}
         </div>
-        <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleFileImport}
+          className="hidden"
+        />
       </div>
 
       {importStatus.type && (
-        <Alert className={`mx-6 my-4 ${importStatus.type === "success" ? "border-green-600" : "border-red-600"}`}>
+        <Alert
+          className={`mx-6 my-4 ${
+            importStatus.type === "success"
+              ? "border-green-600"
+              : "border-red-600"
+          }`}
+        >
           {importStatus.type === "success" ? (
             <CheckCircle className="h-4 w-4 text-green-400" />
           ) : (
             <AlertCircle className="h-4 w-4 text-red-400" />
           )}
-          <AlertDescription className="text-white">{importStatus.message}</AlertDescription>
+          <AlertDescription className="text-white">
+            {importStatus.message}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -609,15 +556,14 @@ export function AllFlightsPageClient() {
         onUpdateFlight={handleUpdateFlight}
       />
 
-      <Dialog open={transferDialog.isOpen} onOpenChange={handleTransferCancel}>
+      <Dialog open={transferDialog.isOpen} onOpenChange={() => setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" })}>
         <DialogContent className="bg-gray-900 border-gray-700 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Transfer Selected Flights</DialogTitle>
-            <DialogDescription className="text-gray-300">
-              Transfer {selectedFlights.length} selected flight strip(s) to another board and sector.
+            <DialogTitle>Transfer Selected Flights</DialogTitle>
+            <DialogDescription>
+              Transfer {selectedFlights.length} selected flights.
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
@@ -625,68 +571,58 @@ export function AllFlightsPageClient() {
               </label>
               <Select
                 value={transferDialog.targetAirport}
-                onValueChange={(value) => 
-                  setTransferDialog(prev => ({ ...prev, targetAirport: value }))
+                onValueChange={(v) =>
+                  setTransferDialog((p) => ({ ...p, targetAirport: v }))
                 }
               >
                 <SelectTrigger className="bg-black border-gray-700 text-white">
                   <SelectValue placeholder="Select target airport" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-900 border-gray-700">
-                  {airports.map((airport) => (
-                      <SelectItem key={airport.id} value={airport.id}>
-                        {airport.id} - {airport.name}
-                      </SelectItem>
-                    ))
-                  }
+                  {airports.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.id} - {a.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
                 Target Sector
               </label>
               <Select
                 value={transferDialog.targetSector}
-                onValueChange={(value) => 
-                  setTransferDialog(prev => ({ ...prev, targetSector: value as FlightStatus }))
+                onValueChange={(v) =>
+                  setTransferDialog((p) => ({
+                    ...p,
+                    targetSector: v as FlightStatus,
+                  }))
                 }
               >
                 <SelectTrigger className="bg-black border-gray-700 text-white">
                   <SelectValue placeholder="Select target sector" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-900 border-gray-700">
-                  {boardSectors.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {statusTitles[status]}
+                  {boardSectors.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {statusTitles[s]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {transferDialog.targetAirport && (
-              <div className="p-3 bg-gray-800 rounded-lg border border-gray-600">
-                <p className="text-sm text-gray-300">
-                  <strong>Transfer Summary:</strong><br />
-                  Moving {selectedFlights.length} flight(s) from their current boards to{" "}
-                  <strong>
-                    {airports.find(a => a.id === transferDialog.targetAirport)?.name || transferDialog.targetAirport}
-                  </strong>{" "}
-                  under <strong>{statusTitles[transferDialog.targetSector]}</strong> sector.
-                </p>
-                <p className="text-xs text-yellow-400 mt-2">
-                  Note: This will remove the flights from their current boards and create them in the target board.
-                </p>
-              </div>
-            )}
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={handleTransferCancel}
+              onClick={() =>
+                setTransferDialog({
+                  isOpen: false,
+                  targetAirport: "",
+                  targetSector: "delivery",
+                })
+              }
               className="bg-black border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               <X className="w-4 h-4 mr-2" />
@@ -703,7 +639,7 @@ export function AllFlightsPageClient() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <main className="flex-grow p-6 pt-0 overflow-hidden">
         <div className="flex justify-center h-full">
           <Card className="bg-gray-900 border-gray-700 flex flex-col w-150 h-[85vh]">
@@ -714,7 +650,9 @@ export function AllFlightsPageClient() {
             </CardHeader>
             <CardContent className="flex-grow space-y-2 p-4 overflow-y-auto">
               {sortedFlights.length === 0 ? (
-                <p className="text-gray-400 text-center py-8 text-sm">No flights</p>
+                <p className="text-gray-400 text-center py-8 text-sm">
+                  No flights
+                </p>
               ) : (
                 sortedFlights.map((flight) => (
                   <FlightStrip
@@ -722,7 +660,7 @@ export function AllFlightsPageClient() {
                     flight={flight}
                     onEdit={handleEditFlight}
                     onDelete={handleDeleteFlight}
-                    onSelect={handleFlightSelection}
+                    onSelect={toggleFlightSelection}
                     isSelected={selectedFlights.includes(flight.id)}
                   />
                 ))

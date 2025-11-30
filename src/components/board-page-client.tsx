@@ -64,6 +64,7 @@ type ImportedFlight = {
   arrival?: string;
   destination?: string;
   altitude: string;
+  squawk: string | null;
   speed: string;
   status: FlightStatus;
   route: string;
@@ -168,51 +169,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     return "grid-cols-3";
   }, []);
 
-  // Removed sampleFlights since sample functions are gone
-  // const sampleFlights = useMemo(
-  //   () => [
-  //     {
-  //       airport: airportName,
-  //       callsign: "DAL456",
-  //       geofs_callsign: "featherway",
-  //       discord_username: "featherway",
-  //       departure_time: "1300",
-  //       aircraft_type: "A320",
-  //       departure: "KORD",
-  //       arrival: "KDEN",
-  //       altitude: "37000",
-  //       speed: "420",
-  //       notes: "Weather deviation requested",
-  //     },
-  //     {
-  //       airport: airportName,
-  //       callsign: "UAL789",
-  //       geofs_callsign: "user2",
-  //       discord_username: "user2",
-  //       departure_time: "1400",
-  //       aircraft_type: "B737",
-  //       departure: "KDEN",
-  //       arrival: "KLAX",
-  //       altitude: "29000",
-  //       speed: "380",
-  //       notes: "Holding for runway 25L",
-  //     },
-  //     {
-  //       airport: airportName,
-  //       callsign: "SWA123",
-  //       geofs_callsign: "user3",
-  //       discord_username: "user3",
-  //       departure_time: "1500",
-  //       aircraft_type: "B777",
-  //       departure: "KLAX",
-  //       arrival: "KJFK",
-  //       altitude: "41000",
-  //       speed: "450",
-  //       notes: "Direct to destination",
-  //     },
-  //   ],
-  //   [airportName],
-  // );
 
   const handleFlightClick = useCallback(
     async (flightId: string) => {
@@ -325,6 +281,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                   departure_time: flight.departure_time ?? " ",
                   arrival: arrival || "",
                   altitude: flight.altitude || "",
+                  squawk: flight.squawk || "",
                   speed: flight.speed || "",
                   status: selectedImportStatus,
                   route: flight.route || "",

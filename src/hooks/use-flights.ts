@@ -19,6 +19,7 @@ export interface Flight {
   departure_time: string | null; // NEW: Departure time
   arrival: string;
   altitude: string;
+  squawk: string | null;
   speed: string;
   status: string;
   route: string | null;
