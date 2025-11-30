@@ -5,9 +5,9 @@ import Header from "~/components/header";
 
 export default function FileFlightPage() {
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col p-6">
+    <div className="flex min-h-screen flex-col bg-black p-6 text-white">
       <Header />
-      <main className="flex-1 flex items-center justify-center">
+      <main className="flex flex-1 items-center justify-center">
         <FileFlightForm />
       </main>
       <Footer />

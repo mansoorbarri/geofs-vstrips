@@ -25,7 +25,7 @@ interface Flight {
   discord_username: string;
 }
 
-const CACHE_KEY = 'flights_cache';
+const CACHE_KEY = "flights_cache";
 const CACHE_DURATION = 60 * 1000;
 
 export function FlightsList() {
@@ -35,14 +35,14 @@ export function FlightsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const editableFlights = useMemo(() => 
-    flights.filter(flight => flight.status === "delivery"), 
-    [flights]
+  const editableFlights = useMemo(
+    () => flights.filter((flight) => flight.status === "delivery"),
+    [flights],
   );
 
-  const nonEditableFlights = useMemo(() => 
-    flights.filter(flight => flight.status !== "delivery"), 
-    [flights]
+  const nonEditableFlights = useMemo(
+    () => flights.filter((flight) => flight.status !== "delivery"),
+    [flights],
   );
 
   const getCachedFlights = () => {
@@ -63,12 +63,15 @@ export function FlightsList() {
 
   const setCachedFlights = (flightsData: Flight[]) => {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        data: flightsData,
-        timestamp: Date.now()
-      }));
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          data: flightsData,
+          timestamp: Date.now(),
+        }),
+      );
     } catch (error) {
-      console.error('Failed to cache flights:', error);
+      console.error("Failed to cache flights:", error);
     }
   };
 
@@ -81,24 +84,24 @@ export function FlightsList() {
     }
 
     try {
-      const response = await fetch('/api/flights/my', {
+      const response = await fetch("/api/flights/my", {
         headers: {
-          'Cache-Control': 'no-cache',
+          "Cache-Control": "no-cache",
         },
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch flights');
+        throw new Error(errorData.error || "Failed to fetch flights");
       }
-      
+
       const data = await response.json();
       const flightsData = data.flights || [];
-      
+
       setFlights(flightsData);
       setCachedFlights(flightsData);
     } catch (error: any) {
-      setError(error.message || 'Failed to load flights');
+      setError(error.message || "Failed to load flights");
     } finally {
       setLoading(false);
     }
@@ -106,9 +109,9 @@ export function FlightsList() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    
+
     if (!isSignedIn) {
-      router.push('/sign-up');
+      router.push("/sign-up");
       return;
     }
 
@@ -117,8 +120,8 @@ export function FlightsList() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl bg-gray-900 rounded-lg shadow-xl text-white text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+      <div className="container mx-auto max-w-4xl rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
         <p className="mt-4">Loading your flights...</p>
       </div>
     );
@@ -126,8 +129,8 @@ export function FlightsList() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl bg-gray-900 rounded-lg shadow-xl text-white">
-        <Alert variant="destructive" className="bg-red-900 border-red-600">
+      <div className="container mx-auto max-w-4xl rounded-lg bg-gray-900 p-6 text-white shadow-xl">
+        <Alert variant="destructive" className="border-red-600 bg-red-900">
           <AlertCircle className="h-4 w-4 text-red-400" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="text-red-200">{error}</AlertDescription>
@@ -136,140 +139,157 @@ export function FlightsList() {
     );
   }
 
-return (
-    <div className="flex flex-col min-h-screen">
+  return (
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <div className="container mx-auto p-6 max-w-4xl bg-gray-900 rounded-lg shadow-xl text-white mt-10">
-      <div className="flex items-center justify-center mb-6">
-        <h1 className="text-3xl font-bold">Edit Your Flights</h1>
-      </div>
-
-      {flights.length === 0 ? (
-        <div className="text-center py-8">
-          <AlertCircle className="h-16 w-16 mx-auto text-gray-500 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No flights found</h2>
-          <p className="text-gray-400 mb-6">{`You haven't created any flight plans yet.`}</p>
-          <Button 
-            onClick={() => router.push('/file-flight')} 
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Create Your First Flight
-          </Button>
+      <div className="container mx-auto mt-10 max-w-4xl rounded-lg bg-gray-900 p-6 text-white shadow-xl">
+        <div className="mb-6 flex items-center justify-center">
+          <h1 className="text-3xl font-bold">Edit Your Flights</h1>
         </div>
-      ) : editableFlights.length === 0 ? (
-        <div className="text-center py-8">
-          <AlertCircle className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No Editable Flights</h2>
-          <p className="text-gray-400 mb-2">
-            You have {flights.length} flight(s), but none can be edited.
-          </p>
-          <p className="text-sm text-gray-500 mb-6">
-            {`Only flights with "DELIVERY" status can be edited.`}
-          </p>
-          <div className="flex justify-center items-center gap-4">
-            <Button 
-              onClick={() => router.push('/flights')} 
-              className="bg-gray-600 hover:bg-gray-700"
-            >
-              View All Flights
-            </Button>
-            <Button 
-              onClick={() => router.push('/file-flight')} 
+
+        {flights.length === 0 ? (
+          <div className="py-8 text-center">
+            <AlertCircle className="mx-auto mb-4 h-16 w-16 text-gray-500" />
+            <h2 className="mb-2 text-xl font-semibold">No flights found</h2>
+            <p className="mb-6 text-gray-400">{`You haven't created any flight plans yet.`}</p>
+            <Button
+              onClick={() => router.push("/file-flight")}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              File Another Flight
+              Create Your First Flight
             </Button>
           </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <p className="text-gray-300 text-center mb-6">
-            Select a flight to edit ({editableFlights.length} of {flights.length} flights are editable)
-          </p>
-          
-          {editableFlights.map((flight) => (
-            <div key={flight.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-2">
-                    <h3 className="text-xl font-semibold text-blue-500">{flight.callsign}</h3>
-                    <span className="px-2 py-1 bg-green-800 text-green-200 rounded text-sm">
-                      {flight.status.toUpperCase()}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-400">Route</p>
-                      <p className="text-white">{flight.departure} → {flight.arrival}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Aircraft</p>
-                      <p className="text-white">{flight.aircraft_type}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Departure Time</p>
-                      <p className="text-white">{flight.departure_time}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Altitude</p>
-                      <p className="text-white">{flight.altitude}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Speed</p>
-                      <p className="text-white">{flight.speed}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Route</p>
-                      <p className="text-white">{flight.route}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => router.push(`/edit-flight?id=${flight.id}`)}
-                  className="border-1 fill-none bg-grey-900 border-white  hover:bg-white hover:text-black text-white  flex items-center gap-2 hover:cursor-pointer"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-              </div>
+        ) : editableFlights.length === 0 ? (
+          <div className="py-8 text-center">
+            <AlertCircle className="mx-auto mb-4 h-16 w-16 text-yellow-500" />
+            <h2 className="mb-2 text-xl font-semibold">No Editable Flights</h2>
+            <p className="mb-2 text-gray-400">
+              You have {flights.length} flight(s), but none can be edited.
+            </p>
+            <p className="mb-6 text-sm text-gray-500">
+              {`Only flights with "DELIVERY" status can be edited.`}
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                onClick={() => router.push("/flights")}
+                className="bg-gray-600 hover:bg-gray-700"
+              >
+                View All Flights
+              </Button>
+              <Button
+                onClick={() => router.push("/file-flight")}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                File Another Flight
+              </Button>
             </div>
-          ))}
-          
-          {flights.length > editableFlights.length && (
-            <div className="mt-8 pt-6 border-t border-gray-700">
-              <h3 className="text-lg font-semibold mb-4 text-gray-300">Non-Editable Flights</h3>
-              <div className="space-y-2">
-                {nonEditableFlights.map((flight) => (
-                  <div key={flight.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700 opacity-60">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-semibold text-gray-400">{flight.callsign}</span>
-                        <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-sm">
-                          {flight.status.toUpperCase()}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="mb-6 text-center text-gray-300">
+              Select a flight to edit ({editableFlights.length} of{" "}
+              {flights.length} flights are editable)
+            </p>
+
+            {editableFlights.map((flight) => (
+              <div
+                key={flight.id}
+                className="rounded-lg border border-gray-700 bg-gray-800 p-4 transition-colors hover:border-gray-600"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="mb-2 flex items-center gap-4">
+                      <h3 className="text-xl font-semibold text-blue-500">
+                        {flight.callsign}
+                      </h3>
+                      <span className="rounded bg-green-800 px-2 py-1 text-sm text-green-200">
+                        {flight.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <p className="text-gray-400">Route</p>
+                        <p className="text-white">
+                          {flight.departure} → {flight.arrival}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Aircraft</p>
+                        <p className="text-white">{flight.aircraft_type}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Departure Time</p>
+                        <p className="text-white">{flight.departure_time}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Altitude</p>
+                        <p className="text-white">{flight.altitude}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Speed</p>
+                        <p className="text-white">{flight.speed}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Route</p>
+                        <p className="text-white">{flight.route}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => router.push(`/edit-flight?id=${flight.id}`)}
+                    className="bg-grey-900 flex items-center gap-2 border-1 border-white fill-none text-white hover:cursor-pointer hover:bg-white hover:text-black"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {flights.length > editableFlights.length && (
+              <div className="mt-8 border-t border-gray-700 pt-6">
+                <h3 className="mb-4 text-lg font-semibold text-gray-300">
+                  Non-Editable Flights
+                </h3>
+                <div className="space-y-2">
+                  {nonEditableFlights.map((flight) => (
+                    <div
+                      key={flight.id}
+                      className="rounded-lg border border-gray-700 bg-gray-800 p-3 opacity-60"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <span className="text-lg font-semibold text-gray-400">
+                            {flight.callsign}
+                          </span>
+                          <span className="rounded bg-gray-700 px-2 py-1 text-sm text-gray-300">
+                            {flight.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {flight.departure} → {flight.arrival}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-500">{flight.departure} → {flight.arrival}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
+            )}
+
+            <div className="mt-6 flex justify-center">
+              <Button
+                onClick={() => router.push("/file-flight")}
+                className="bg-blue-600 text-white hover:cursor-pointer hover:bg-blue-700"
+              >
+                File Another Flight
+              </Button>
             </div>
-          )}
-          
-          <div className="mt-6 flex justify-center">
-            <Button
-              onClick={() => router.push('/file-flight')}
-              className="bg-blue-600 text-white hover:bg-blue-700 hover:cursor-pointer"
-            >
-              File Another Flight
-            </Button>
           </div>
-        </div>
-      )}
-    </div>
-    <Footer />
+        )}
+      </div>
+      <Footer />
     </div>
   );
 }

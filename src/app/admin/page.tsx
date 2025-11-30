@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@clerk/nextjs';
-import { UserList } from '~/components/user-list';
-import Footer from '~/components/footer';
-import Loading from '~/components/loading';
-import Header from '~/components/header';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser, useAuth } from "@clerk/nextjs";
+import { UserList } from "~/components/user-list";
+import Footer from "~/components/footer";
+import Loading from "~/components/loading";
+import Header from "~/components/header";
 
 interface AppUser {
   id: string;
@@ -31,12 +31,12 @@ export default function AdminDashboardPage() {
     if (!authLoaded) return;
 
     if (!isSignedIn) {
-      router.push('/sign-up');
+      router.push("/sign-up");
       return;
     }
     const isAdmin = Boolean(user?.publicMetadata?.admin);
     if (!isAdmin) {
-      router.push('https://www.youtube.com/watch?v=dQw4w9WgXcQ'); 
+      router.push("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
     }
   }, [authLoaded, isSignedIn, user, router]);
 
@@ -48,10 +48,10 @@ export default function AdminDashboardPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/users', {
-        method: 'GET',
+      const response = await fetch("/api/users", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -62,8 +62,8 @@ export default function AdminDashboardPage() {
           email: user.email,
           username:
             user.username ||
-            `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-            'Unknown',
+            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+            "Unknown",
           isController: Boolean(user.isController),
           profile: user.profile,
         }));
@@ -74,8 +74,8 @@ export default function AdminDashboardPage() {
         setUsers([]);
       }
     } catch (e) {
-      console.error('Fetch users error:', e);
-      setError('Failed to load users. Please try again.');
+      console.error("Fetch users error:", e);
+      setError("Failed to load users. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -107,14 +107,14 @@ export default function AdminDashboardPage() {
   return (
     <div className="px-8">
       <Header />
-      <h1 className="text-3xl font-bold mb-4 mt-5">Controller Dashboard</h1>
-      <p className="text-gray-600 mb-6">
+      <h1 className="mt-5 mb-4 text-3xl font-bold">Controller Dashboard</h1>
+      <p className="mb-6 text-gray-600">
         Manage controller access for users below.
       </p>
 
       {error && (
         <div
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6"
+          className="relative mb-6 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700"
           role="alert"
         >
           <strong className="font-bold">Error! </strong>

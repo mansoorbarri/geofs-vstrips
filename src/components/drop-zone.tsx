@@ -1,44 +1,45 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { cn } from "~/lib/utils"
+import { useState } from "react";
+import { cn } from "~/lib/utils";
 
 interface DropZoneProps {
-  onDrop: (flightId: string) => void
-  children: React.ReactNode
-  className?: string
+  onDrop: (flightId: string) => void;
+  children: React.ReactNode;
+  className?: string;
 }
 
 export function DropZone({ onDrop, children, className }: DropZoneProps) {
-  const [isDragOver, setIsDragOver] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-    setIsDragOver(true)
-  }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDragOver(true);
+  };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
+    e.preventDefault();
+    setIsDragOver(false);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const flightId = e.dataTransfer.getData("text/plain")
+    e.preventDefault();
+    const flightId = e.dataTransfer.getData("text/plain");
     if (flightId) {
-      onDrop(flightId)
+      onDrop(flightId);
     }
-    setIsDragOver(false)
-  }
+    setIsDragOver(false);
+  };
 
   return (
     <div
       className={cn(
         "transition-all duration-200",
-        isDragOver && "bg-gray-800/50 border-2 border-dashed border-white/30 rounded-lg",
+        isDragOver &&
+          "rounded-lg border-2 border-dashed border-white/30 bg-gray-800/50",
         className,
       )}
       onDragOver={handleDragOver}
@@ -47,5 +48,5 @@ export function DropZone({ onDrop, children, className }: DropZoneProps) {
     >
       {children}
     </div>
-  )
+  );
 }

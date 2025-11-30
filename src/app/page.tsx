@@ -1,5 +1,5 @@
 // src/app/page.tsx
-"use client"
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -13,33 +13,44 @@ import Header from "~/components/header";
 export default function HomePage() {
   const router = useRouter();
   const { isLoaded, isSignedIn, user } = useUser();
-  
+
   useEffect(() => {
     if (isLoaded) {
       if (!isSignedIn) {
-        router.push('/sign-up');
-      } else if (!user?.publicMetadata || user.publicMetadata.controller !== true) {
-        router.push('/become-controller');
+        router.push("/sign-up");
+      } else if (
+        !user?.publicMetadata ||
+        user.publicMetadata.controller !== true
+      ) {
+        router.push("/become-controller");
       }
     }
-  }, [isLoaded, isSignedIn, user, router]); 
+  }, [isLoaded, isSignedIn, user, router]);
 
-  if (!isLoaded || !isSignedIn || !user || user.publicMetadata.controller !== true) {
-    return (
-      <Loading />
-    );
+  if (
+    !isLoaded ||
+    !isSignedIn ||
+    !user ||
+    user.publicMetadata.controller !== true
+  ) {
+    return <Loading />;
   }
-    
+
   return (
-    <div className="min-h-screen bg-black text-white p-8 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-black p-8 text-white">
       <Header />
-      <div className="flex-1 flex items-center justify-center">
-        <div className="max-w-xl mx-auto py-12 text-center">
+      <div className="flex flex-1 items-center justify-center">
+        <div className="mx-auto max-w-xl py-12 text-center">
           <header className="mb-8">
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2">
-              ATC <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500">Flight Board</span>
+            <h1 className="mb-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
+              ATC{" "}
+              <span className="bg-gradient-to-r from-blue-200 to-blue-500 bg-clip-text text-transparent">
+                Flight Board
+              </span>
             </h1>
-            <p className="text-xl text-gray-400">Select an airport to manage flights.</p>
+            <p className="text-xl text-gray-400">
+              Select an airport to manage flights.
+            </p>
           </header>
           <main>
             <AirportSelector airports={airports} />

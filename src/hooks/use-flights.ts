@@ -1,8 +1,8 @@
 // src/hooks/use-flights.ts
-"use client"
-import useSWR from "swr"
-import { useState, useCallback, useMemo, useEffect } from "react"
-import type { Prisma } from "@prisma/client"
+"use client";
+import useSWR from "swr";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import type { Prisma } from "@prisma/client";
 
 // src/hooks/use-flights.ts
 
@@ -26,49 +26,56 @@ export interface Flight {
   notes: string | null;
 }
 
-
 interface UseFlightsResult {
-  flights: Flight[]
-  isLoading: boolean
-  error: any
-  lastUpdate: string | null
-  createFlight: (flightData: Omit<Flight, "id" | "created_at" | "updated_at">) => Promise<Flight>
-  updateFlight: (id: string, flightData: Partial<Omit<Flight, "id" | "created_at" | "updated_at">>) => Promise<Flight>
-  deleteFlight: (id: string) => Promise<void>
+  flights: Flight[];
+  isLoading: boolean;
+  error: any;
+  lastUpdate: string | null;
+  createFlight: (
+    flightData: Omit<Flight, "id" | "created_at" | "updated_at">,
+  ) => Promise<Flight>;
+  updateFlight: (
+    id: string,
+    flightData: Partial<Omit<Flight, "id" | "created_at" | "updated_at">>,
+  ) => Promise<Flight>;
+  deleteFlight: (id: string) => Promise<void>;
 }
 
 // Custom fetcher for SWR
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
+  const res = await fetch(url);
   if (!res.ok) {
-    const error = new Error("An error occurred while fetching the data.")
-    throw error
+    const error = new Error("An error occurred while fetching the data.");
+    throw error;
   }
-  return res.json()
-}
+  return res.json();
+};
 
 // UPDATED: Added optional airport parameter
-export function useFlights(realtime = false, airport?: string): UseFlightsResult {
+export function useFlights(
+  realtime = false,
+  airport?: string,
+): UseFlightsResult {
   // UPDATED: Build URL with airport query parameter if provided
   const apiUrl = useMemo(() => {
-    const baseUrl = "/api/flights"
+    const baseUrl = "/api/flights";
     if (airport) {
-      return `${baseUrl}?airport=${encodeURIComponent(airport)}`
+      return `${baseUrl}?airport=${encodeURIComponent(airport)}`;
     }
-    return baseUrl
-  }, [airport])
+    return baseUrl;
+  }, [airport]);
 
   const { data, error, isLoading, mutate } = useSWR<{ flights: Flight[] }>(
-    apiUrl,  // UPDATED: Use dynamic URL
+    apiUrl, // UPDATED: Use dynamic URL
     fetcher,
     {
       refreshInterval: realtime ? 5000 : 0,
       revalidateOnFocus: realtime,
       fallbackData: { flights: [] },
-    }
-  )
+    },
+  );
 
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null)
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   useEffect(() => {
     if (data?.flights && data.flights.length > 0) {
@@ -90,34 +97,36 @@ export function useFlights(realtime = false, airport?: string): UseFlightsResult
     }
   }, [data]);
 
-  const flights = useMemo(() => data?.flights || [], [data])
+  const flights = useMemo(() => data?.flights || [], [data]);
 
   // UPDATED: Include airport in createFlight
   const createFlight = useCallback(
-    async (flightData: Omit<Flight, "id" | "created_at" | "updated_at">): Promise<Flight> => {
+    async (
+      flightData: Omit<Flight, "id" | "created_at" | "updated_at">,
+    ): Promise<Flight> => {
       // Ensure airport is included in the flight data
       const flightDataWithAirport = {
         ...flightData,
         airport: flightData.airport || airport || "", // Use provided airport as fallback
-      }
+      };
 
       const res = await fetch("/api/flights/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(flightDataWithAirport),
-      })
+      });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.message || "Failed to create flight.")
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create flight.");
       }
 
-      const newFlight = await res.json()
-      void mutate() // Revalidate the SWR cache
-      return newFlight
+      const newFlight = await res.json();
+      void mutate(); // Revalidate the SWR cache
+      return newFlight;
     },
     [mutate, airport],
-  )
+  );
 
   const updateFlight = useCallback(
     async (
@@ -128,32 +137,35 @@ export function useFlights(realtime = false, airport?: string): UseFlightsResult
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(flightData),
-      })
+      });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.message || "Failed to update flight.")
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update flight.");
       }
 
-      const updatedFlight = await res.json()
-      void mutate() // Revalidate the SWR cache
-      return updatedFlight
+      const updatedFlight = await res.json();
+      void mutate(); // Revalidate the SWR cache
+      return updatedFlight;
     },
     [mutate],
-  )
+  );
 
-  const deleteFlight = useCallback(async (id: string): Promise<void> => {
-    const res = await fetch(`/api/flights/${id}`, {
-      method: "DELETE",
-    })
+  const deleteFlight = useCallback(
+    async (id: string): Promise<void> => {
+      const res = await fetch(`/api/flights/${id}`, {
+        method: "DELETE",
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}))
-      throw new Error(errorData.message || "Failed to delete flight.")
-    }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete flight.");
+      }
 
-    void mutate() // Revalidate the SWR cache
-  }, [mutate])
+      void mutate(); // Revalidate the SWR cache
+    },
+    [mutate],
+  );
 
   return {
     flights,
@@ -163,5 +175,5 @@ export function useFlights(realtime = false, airport?: string): UseFlightsResult
     createFlight,
     updateFlight,
     deleteFlight,
-  }
+  };
 }

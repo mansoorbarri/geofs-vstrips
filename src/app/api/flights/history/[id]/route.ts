@@ -13,7 +13,8 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isController = (sessionClaims?.publicMetadata as UserPublicMetadata)?.controller === true;
+  const isController =
+    (sessionClaims?.publicMetadata as UserPublicMetadata)?.controller === true;
   if (!isController) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -22,7 +23,7 @@ export async function GET(
     // Await the params Promise in Next.js 15
     const resolvedParams = await params;
     const flightId = resolvedParams.id;
-    
+
     const history = await prisma.flight_history.findMany({
       where: { flight_id: flightId },
       orderBy: { changed_at: "desc" },

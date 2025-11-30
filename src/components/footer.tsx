@@ -2,14 +2,14 @@ export default function Footer() {
   return (
     <footer className="mt-auto w-full">
       <div className="w-full px-8 py-6">
-        <div className="flex flex-col items-center justify-center space-y-2 text-center border-t border-gray-800 pt-6">
+        <div className="flex flex-col items-center justify-center space-y-2 border-t border-gray-800 pt-6 text-center">
           <p className="text-sm text-gray-400">
             {`Designed by`}
-              <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300">
-                {` luvhummers`}
-              </span>
+            <span className="bg-gradient-to-r from-blue-200 to-blue-500 bg-clip-text font-semibold text-transparent transition-all duration-300 hover:from-purple-500 hover:to-blue-400">
+              {` luvhummers`}
+            </span>
             {` & developed by`}
-            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-500 hover:from-purple-500 hover:to-blue-400 transition-all duration-300">
+            <span className="bg-gradient-to-r from-blue-200 to-blue-500 bg-clip-text font-semibold text-transparent transition-all duration-300 hover:from-purple-500 hover:to-blue-400">
               {` xyzmani`}
             </span>
           </p>

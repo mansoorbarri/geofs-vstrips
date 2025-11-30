@@ -13,12 +13,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { userId, sessionClaims } = await auth();
-  
+
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
+  const isController =
+    (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
   // console.log(isController);
   if (!isController) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -50,18 +51,34 @@ export async function GET(
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { userId, sessionClaims } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
-  const clerk_discord_username = (sessionClaims?.discord_username as string);
+  const isController =
+    (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
+  const clerk_discord_username = sessionClaims?.discord_username as string;
 
   try {
     const body = await request.json();
-    const { airport, callsign, aircraft_type, departure, arrival, altitude, squawk, speed, status, route, notes } = body;
+    const {
+      airport,
+      callsign,
+      aircraft_type,
+      departure,
+      arrival,
+      altitude,
+      squawk,
+      speed,
+      status,
+      route,
+      notes,
+    } = body;
     const { id: flightId } = await params;
 
     const currentFlight = await prisma.flights.findUnique({
@@ -72,9 +89,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Flight not found" }, { status: 404 });
     }
 
-    const isPilotOwner = currentFlight.discord_username === clerk_discord_username;
-    const canEdit = isController || (isPilotOwner && currentFlight.status === "delivery");
-    
+    const isPilotOwner =
+      currentFlight.discord_username === clerk_discord_username;
+    const canEdit =
+      isController || (isPilotOwner && currentFlight.status === "delivery");
+
     if (!canEdit) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -89,7 +108,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updateData: any = {};
     if (airport !== undefined) updateData.airport = airport.toUpperCase();
     if (callsign !== undefined) updateData.callsign = callsign.toUpperCase();
-    if (aircraft_type !== undefined) updateData.aircraft_type = aircraft_type.toUpperCase();
+    if (aircraft_type !== undefined)
+      updateData.aircraft_type = aircraft_type.toUpperCase();
     if (departure !== undefined) updateData.departure = departure.toUpperCase();
     if (arrival !== undefined) updateData.arrival = arrival.toUpperCase();
     if (altitude !== undefined) updateData.altitude = altitude;
@@ -116,24 +136,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ flight: updatedFlight });
   } catch (error: any) {
     console.error("Error updating flight:", error);
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Flight with this callsign already exists" }, { status: 409 });
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Flight with this callsign already exists" },
+        { status: 409 },
+      );
     }
-    return NextResponse.json({ error: "Failed to update flight" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update flight" },
+      { status: 500 },
+    );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { userId, sessionClaims } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isController = (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
+  const isController =
+    (sessionClaims?.publicMetadata as PublicMetadata)?.controller === true;
   if (!isController) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  
+
   try {
     const { id: flightId } = await params;
 
@@ -153,16 +183,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       where: { id: flightId },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "Flight deleted successfully",
       deletedFlight: {
         id: flight.id,
         callsign: flight.callsign,
-        airport: flight.airport
-      }
+        airport: flight.airport,
+      },
     });
   } catch (error) {
     console.error("Error deleting flight:", error);
-    return NextResponse.json({ error: "Failed to delete flight" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete flight" },
+      { status: 500 },
+    );
   }
 }

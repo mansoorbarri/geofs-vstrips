@@ -134,11 +134,11 @@ export function FlightStrip({
   return (
     <div
       className={cn(
-        "p-3 rounded border cursor-pointer transition-all duration-200 select-none relative group",
+        "group relative cursor-pointer rounded border p-3 transition-all duration-200 select-none",
         getStatusColors(flight.status as FlightStatus),
-        isDragging && "opacity-50 scale-95 rotate-1",
+        isDragging && "scale-95 rotate-1 opacity-50",
         isSelected && "ring-2 ring-white",
-        className
+        className,
       )}
       onClick={onClick}
       draggable
@@ -146,9 +146,9 @@ export function FlightStrip({
     >
       <div
         className={cn(
-          "absolute top-2 left-2 z-10 w-5 h-5 transition-all duration-300 flex items-center justify-center cursor-pointer",
-          "hover:border hover:border-gray-400 hover:rounded-sm",
-          isSelected ? "border-blue-600 bg-blue-600 rounded-sm" : ""
+          "absolute top-2 left-2 z-10 flex h-5 w-5 cursor-pointer items-center justify-center transition-all duration-300",
+          "hover:rounded-sm hover:border hover:border-gray-400",
+          isSelected ? "rounded-sm border-blue-600 bg-blue-600" : "",
         )}
         onClick={handleSelect}
         role="checkbox"
@@ -157,12 +157,12 @@ export function FlightStrip({
         {isSelected && <Check className="h-4 w-4 text-white" />}
       </div>
 
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <Button
           size="sm"
           variant="ghost"
           onClick={handleEdit}
-          className="h-6 w-6 p-0 hover:bg-blue-600 text-white"
+          className="h-6 w-6 p-0 text-white hover:bg-blue-600"
         >
           <Edit className="h-3 w-3" />
         </Button>
@@ -170,16 +170,16 @@ export function FlightStrip({
           size="sm"
           variant="ghost"
           onClick={handleDelete}
-          className="h-6 w-6 p-0 hover:bg-red-600 text-white"
+          className="h-6 w-6 p-0 text-white hover:bg-red-600"
         >
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
 
-      <div className="font-mono text-sm text-white pr-16 pl-6 space-y-2">
-        <div className="flex justify-between items-center">
-          <div className="font-bold text-base">{flight.callsign}</div>
-          <div className="text-xs text-gray-300 font-semibold">
+      <div className="space-y-2 pr-16 pl-6 font-mono text-sm text-white">
+        <div className="flex items-center justify-between">
+          <div className="text-base font-bold">{flight.callsign}</div>
+          <div className="text-xs font-semibold text-gray-300">
             {flight.status.toUpperCase()}
           </div>
         </div>
@@ -222,12 +222,12 @@ export function FlightStrip({
                 onKeyDown={handleSquawkKeyDown}
                 maxLength={4}
                 onClick={(e) => e.stopPropagation()}
-                className="w-14 bg-gray-700 text-white text-xs px-1 py-0.5 rounded outline-none border border-gray-600 focus:border-blue-500"
+                className="w-14 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs text-white outline-none focus:border-blue-500"
               />
             ) : (
               <span
                 onClick={handleSquawkClick}
-                className="text-white cursor-pointer hover:bg-gray-700 px-1 py-0.5 rounded"
+                className="cursor-pointer rounded px-1 py-0.5 text-white hover:bg-gray-700"
               >
                 {flight.squawk || "----"}
               </span>
@@ -245,15 +245,15 @@ export function FlightStrip({
         </div>
 
         {flight.route && (
-          <div className="text-xs text-blue-300 bg-gray-800 bg-opacity-50 p-2 rounded mt-2">
-            <div className="font-semibold mb-1">ROUTE:</div>
+          <div className="bg-opacity-50 mt-2 rounded bg-gray-800 p-2 text-xs text-blue-300">
+            <div className="mb-1 font-semibold">ROUTE:</div>
             <div className="break-words">{flight.route}</div>
           </div>
         )}
 
         {flight.notes && (
-          <div className="text-xs text-yellow-300 bg-gray-800 bg-opacity-50 p-2 rounded mt-2">
-            <div className="font-semibold mb-1">NOTES:</div>
+          <div className="bg-opacity-50 mt-2 rounded bg-gray-800 p-2 text-xs text-yellow-300">
+            <div className="mb-1 font-semibold">NOTES:</div>
             <div className="break-words">{flight.notes}</div>
           </div>
         )}

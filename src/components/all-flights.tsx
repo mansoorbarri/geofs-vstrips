@@ -99,7 +99,7 @@ export function AllFlightsPageClient() {
         "approach",
         "control",
       ] as const,
-    []
+    [],
   );
 
   const statusTitles: Record<FlightStatus, string> = useMemo(
@@ -111,7 +111,7 @@ export function AllFlightsPageClient() {
       approach: "Approach",
       control: "Control",
     }),
-    []
+    [],
   );
 
   const showStatus = useCallback(
@@ -119,13 +119,10 @@ export function AllFlightsPageClient() {
       setImportStatus({ type, message });
       setTimeout(() => setImportStatus({ type: null, message: "" }), duration);
     },
-    []
+    [],
   );
 
-  const triggerFileInput = useCallback(
-    () => fileInputRef.current?.click(),
-    []
-  );
+  const triggerFileInput = useCallback(() => fileInputRef.current?.click(), []);
 
   const handleFileImport = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,7 +176,7 @@ export function AllFlightsPageClient() {
         if (validFlights.length === 0) {
           showStatus(
             "error",
-            "No valid flights found in the JSON file. Please check the format."
+            "No valid flights found in the JSON file. Please check the format.",
           );
           return;
         }
@@ -197,7 +194,7 @@ export function AllFlightsPageClient() {
               } catch {
                 return false;
               }
-            })
+            }),
           );
           successCount += results.filter(Boolean).length;
           errorCount += results.filter((r) => !r).length;
@@ -206,22 +203,20 @@ export function AllFlightsPageClient() {
         showStatus(
           successCount > 0 ? "success" : "error",
           `Successfully imported ${successCount} flight(s)${
-            errorCount > 0
-              ? `. ${errorCount} failed (duplicates?).`
-              : "."
+            errorCount > 0 ? `. ${errorCount} failed (duplicates?).` : "."
           }${invalidFlights.length > 0 ? ` ${invalidFlights.length} invalid skipped.` : ""}`,
-          5000
+          5000,
         );
       } catch {
         showStatus(
           "error",
-          "Failed to parse JSON file. Please ensure it's valid JSON."
+          "Failed to parse JSON file. Please ensure it's valid JSON.",
         );
       }
 
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
-    [createFlight, showStatus, selectedImportStatus]
+    [createFlight, showStatus, selectedImportStatus],
   );
 
   const handleEditFlight = useCallback((flight: Flight) => {
@@ -236,16 +231,16 @@ export function AllFlightsPageClient() {
         await updateFlight(id, data);
         showStatus(
           "success",
-          `Flight strip ${updatedFlightData.callsign} updated successfully!`
+          `Flight strip ${updatedFlightData.callsign} updated successfully!`,
         );
       } catch (error: any) {
         showStatus(
           "error",
-          error.message || "Failed to update flight. Please try again."
+          error.message || "Failed to update flight. Please try again.",
         );
       }
     },
-    [updateFlight, showStatus]
+    [updateFlight, showStatus],
   );
 
   const handleDeleteFlight = useCallback(
@@ -259,20 +254,20 @@ export function AllFlightsPageClient() {
         showStatus("error", "Failed to delete flight.");
       }
     },
-    [flights, deleteFlight, showStatus]
+    [flights, deleteFlight, showStatus],
   );
 
   const toggleFlightSelection = useCallback((flightId: string) => {
     setSelectedFlights((prev) =>
       prev.includes(flightId)
         ? prev.filter((id) => id !== flightId)
-        : [...prev, flightId]
+        : [...prev, flightId],
     );
   }, []);
 
   const handleSelectAll = useCallback(
     () => setSelectedFlights(flights.map((f) => f.id)),
-    [flights]
+    [flights],
   );
 
   const handleClearSelection = useCallback(() => setSelectedFlights([]), []);
@@ -282,7 +277,7 @@ export function AllFlightsPageClient() {
       return showStatus("error", "No flights selected for export.");
 
     const flightsToExport = flights.filter((f) =>
-      selectedFlights.includes(f.id)
+      selectedFlights.includes(f.id),
     );
     const dataStr = JSON.stringify(flightsToExport, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -294,14 +289,14 @@ export function AllFlightsPageClient() {
     URL.revokeObjectURL(url);
     showStatus(
       "success",
-      `Exported ${flightsToExport.length} selected flight(s)!`
+      `Exported ${flightsToExport.length} selected flight(s)!`,
     );
   }, [flights, selectedFlights, showStatus]);
 
   const batchProcessFlights = async <T,>(
     items: T[],
     batchSize: number,
-    fn: (item: T) => Promise<boolean>
+    fn: (item: T) => Promise<boolean>,
   ) => {
     let success = 0;
     let failed = 0;
@@ -319,7 +314,7 @@ export function AllFlightsPageClient() {
       return showStatus("error", "No flights selected for deletion.");
 
     const confirmDelete = window.confirm(
-      `Delete ${selectedFlights.length} selected flight(s)?`
+      `Delete ${selectedFlights.length} selected flight(s)?`,
     );
     if (!confirmDelete) return;
 
@@ -333,16 +328,14 @@ export function AllFlightsPageClient() {
         } catch {
           return false;
         }
-      }
+      },
     );
 
     setSelectedFlights([]);
     showStatus(
       success > 0 ? "success" : "error",
-      `Deleted ${success} flight(s)${
-        failed > 0 ? `, ${failed} failed.` : "."
-      }`,
-      5000
+      `Deleted ${success} flight(s)${failed > 0 ? `, ${failed} failed.` : "."}`,
+      5000,
     );
   }, [selectedFlights, deleteFlight, showStatus]);
 
@@ -363,9 +356,7 @@ export function AllFlightsPageClient() {
   const handleTransferConfirm = useCallback(async () => {
     if (!transferDialog.targetAirport || selectedFlights.length === 0) return;
 
-    const toTransfer = flights.filter((f) =>
-      selectedFlights.includes(f.id)
-    );
+    const toTransfer = flights.filter((f) => selectedFlights.includes(f.id));
     const { success, failed } = await batchProcessFlights(
       toTransfer,
       5,
@@ -379,7 +370,7 @@ export function AllFlightsPageClient() {
         } catch {
           return false;
         }
-      }
+      },
     );
 
     const airportName =
@@ -399,9 +390,16 @@ export function AllFlightsPageClient() {
       `Transferred ${success} flight(s) to ${airportName} ${sectorName}${
         failed > 0 ? `, ${failed} failed.` : "."
       }`,
-      5000
+      5000,
     );
-  }, [selectedFlights, transferDialog, flights, updateFlight, showStatus, statusTitles]);
+  }, [
+    selectedFlights,
+    transferDialog,
+    flights,
+    updateFlight,
+    showStatus,
+    statusTitles,
+  ]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -410,27 +408,29 @@ export function AllFlightsPageClient() {
         router.push("/become-controller");
     }
   }, [isLoaded, isSignedIn, user, router]);
-  
+
   const sortedFlights = useMemo(
     () => flights.slice().sort((a, b) => a.callsign.localeCompare(b.callsign)),
-    [flights]
+    [flights],
   );
 
   if (!isLoaded || !isSignedIn || !user?.publicMetadata?.controller)
     return <Loading />;
 
-
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
+    <div className="flex min-h-screen flex-col bg-black text-white">
       <div className="flex-shrink-0 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <Link href="/" passHref>
-            <Button variant="outline" className="mr-4 bg-black border-gray-700 text-gray-400 hover:bg-gray-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button
+              variant="outline"
+              className="mr-4 border-gray-700 bg-black text-gray-400 hover:bg-gray-800"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold flex-grow text-center">
+          <h1 className="flex-grow text-center text-3xl font-bold">
             All Flights
           </h1>
           <RealTimeIndicator
@@ -439,44 +439,45 @@ export function AllFlightsPageClient() {
             error={error}
           />
         </div>
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex flex-wrap gap-4">
           <Link href="/file-flight" target="_blank" passHref>
-            <Button variant="outline" className="bg-black border-green-500 text-green-400 hover:bg-green-900">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button
+              variant="outline"
+              className="border-green-500 bg-black text-green-400 hover:bg-green-900"
+            >
+              <Plus className="mr-2 h-4 w-4" />
               Create Flight Strip
             </Button>
           </Link>
           {flights.length > 0 && (
             <Button
               variant="outline"
-              className="bg-black border-yellow-500 text-yellow-400 hover:bg-yellow-900"
+              className="border-yellow-500 bg-black text-yellow-400 hover:bg-yellow-900"
               onClick={handleSelectAll}
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
+              <CheckCircle className="mr-2 h-4 w-4" />
               Select All
             </Button>
           )}
           {selectedFlights.length > 0 && (
             <Button
               variant="outline"
-              className="bg-black border-red-500 text-red-400 hover:bg-red-900"
+              className="border-red-500 bg-black text-red-400 hover:bg-red-900"
               onClick={handleClearSelection}
             >
-              <XCircle className="w-4 h-4 mr-2" />
+              <XCircle className="mr-2 h-4 w-4" />
               Clear Selection
             </Button>
           )}
           <div className="flex items-center space-x-2">
             <Select
               value={selectedImportStatus}
-              onValueChange={(v) =>
-                setSelectedImportStatus(v as FlightStatus)
-              }
+              onValueChange={(v) => setSelectedImportStatus(v as FlightStatus)}
             >
-              <SelectTrigger className="bg-black border-gray-700 text-white w-[110px]">
+              <SelectTrigger className="w-[110px] border-gray-700 bg-black text-white">
                 <SelectValue placeholder="Import to" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectContent className="border-gray-700 bg-gray-900">
                 {boardSectors.map((s) => (
                   <SelectItem key={s} value={s}>
                     {statusTitles[s]}
@@ -486,38 +487,38 @@ export function AllFlightsPageClient() {
             </Select>
             <Button
               variant="outline"
-              className="bg-black border-white text-white hover:bg-white hover:text-white"
+              className="border-white bg-black text-white hover:bg-white hover:text-white"
               onClick={triggerFileInput}
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="mr-2 h-4 w-4" />
               Import JSON
             </Button>
           </div>
           <Button
             variant="outline"
-            className="bg-black border-purple-500 text-purple-400 hover:bg-purple-900"
+            className="border-purple-500 bg-black text-purple-400 hover:bg-purple-900"
             onClick={handleExportFlights}
             disabled={!selectedFlights.length}
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Export Selected
           </Button>
           <Button
             variant="outline"
-            className="bg-black border-red-500 text-red-400 hover:bg-red-900"
+            className="border-red-500 bg-black text-red-400 hover:bg-red-900"
             onClick={handleDeleteSelected}
             disabled={!selectedFlights.length}
           >
-            <XCircle className="w-4 h-4 mr-2" />
+            <XCircle className="mr-2 h-4 w-4" />
             Delete Selected
           </Button>
           <Button
             variant="outline"
-            className="bg-black border-orange-500 text-orange-400 hover:bg-orange-900"
+            className="border-orange-500 bg-black text-orange-400 hover:bg-orange-900"
             onClick={handleTransferClick}
             disabled={!selectedFlights.length}
           >
-            <Send className="w-4 h-4 mr-2" />
+            <Send className="mr-2 h-4 w-4" />
             Transfer Selected
           </Button>
         </div>
@@ -556,8 +557,17 @@ export function AllFlightsPageClient() {
         onUpdateFlight={handleUpdateFlight}
       />
 
-      <Dialog open={transferDialog.isOpen} onOpenChange={() => setTransferDialog({ isOpen: false, targetAirport: "", targetSector: "delivery" })}>
-        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+      <Dialog
+        open={transferDialog.isOpen}
+        onOpenChange={() =>
+          setTransferDialog({
+            isOpen: false,
+            targetAirport: "",
+            targetSector: "delivery",
+          })
+        }
+      >
+        <DialogContent className="border-gray-700 bg-gray-900 text-white">
           <DialogHeader>
             <DialogTitle>Transfer Selected Flights</DialogTitle>
             <DialogDescription>
@@ -566,7 +576,7 @@ export function AllFlightsPageClient() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-300 mb-2 block">
+              <label className="mb-2 block text-sm font-medium text-gray-300">
                 Target Airport/Board
               </label>
               <Select
@@ -575,10 +585,10 @@ export function AllFlightsPageClient() {
                   setTransferDialog((p) => ({ ...p, targetAirport: v }))
                 }
               >
-                <SelectTrigger className="bg-black border-gray-700 text-white">
+                <SelectTrigger className="border-gray-700 bg-black text-white">
                   <SelectValue placeholder="Select target airport" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectContent className="border-gray-700 bg-gray-900">
                   {airports.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.id} - {a.name}
@@ -588,7 +598,7 @@ export function AllFlightsPageClient() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300 mb-2 block">
+              <label className="mb-2 block text-sm font-medium text-gray-300">
                 Target Sector
               </label>
               <Select
@@ -600,10 +610,10 @@ export function AllFlightsPageClient() {
                   }))
                 }
               >
-                <SelectTrigger className="bg-black border-gray-700 text-white">
+                <SelectTrigger className="border-gray-700 bg-black text-white">
                   <SelectValue placeholder="Select target sector" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectContent className="border-gray-700 bg-gray-900">
                   {boardSectors.map((s) => (
                     <SelectItem key={s} value={s}>
                       {statusTitles[s]}
@@ -623,34 +633,34 @@ export function AllFlightsPageClient() {
                   targetSector: "delivery",
                 })
               }
-              className="bg-black border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="border-gray-600 bg-black text-gray-300 hover:bg-gray-800"
             >
-              <X className="w-4 h-4 mr-2" />
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
             <Button
               onClick={handleTransferConfirm}
               disabled={!transferDialog.targetAirport}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="bg-orange-600 text-white hover:bg-orange-700"
             >
-              <Send className="w-4 h-4 mr-2" />
+              <Send className="mr-2 h-4 w-4" />
               Transfer Flights
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <main className="flex-grow p-6 pt-0 overflow-hidden">
-        <div className="flex justify-center h-full">
-          <Card className="bg-gray-900 border-gray-700 flex flex-col w-150 h-[85vh]">
+      <main className="flex-grow overflow-hidden p-6 pt-0">
+        <div className="flex h-full justify-center">
+          <Card className="flex h-[85vh] w-150 flex-col border-gray-700 bg-gray-900">
             <CardHeader className="flex-shrink-0">
-              <CardTitle className="text-white text-center text-sm">
+              <CardTitle className="text-center text-sm text-white">
                 All Flights ({flights.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow space-y-2 p-4 overflow-y-auto">
+            <CardContent className="flex-grow space-y-2 overflow-y-auto p-4">
               {sortedFlights.length === 0 ? (
-                <p className="text-gray-400 text-center py-8 text-sm">
+                <p className="py-8 text-center text-sm text-gray-400">
                   No flights
                 </p>
               ) : (

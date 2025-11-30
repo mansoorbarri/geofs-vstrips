@@ -1,12 +1,12 @@
-import Image from 'next/image';
-import { useState } from 'react';
+import Image from "next/image";
+import { useState } from "react";
 
 interface AppUser {
   id: string;
   email: string;
   username: string;
   isController: boolean;
-  profile: string
+  profile: string;
 }
 
 interface UserListProps {
@@ -15,37 +15,48 @@ interface UserListProps {
   currentUserId: string | null | undefined;
 }
 
-export function UserList({ users, onRoleChange, currentUserId }: UserListProps) {
+export function UserList({
+  users,
+  onRoleChange,
+  currentUserId,
+}: UserListProps) {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  const handleToggle = async (targetUserId: string, newIsController: boolean) => {
-    if (!window.confirm(`Are you sure you want to ${newIsController ? 'grant' : 'revoke'} controller access?`)) {
+  const handleToggle = async (
+    targetUserId: string,
+    newIsController: boolean,
+  ) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to ${newIsController ? "grant" : "revoke"} controller access?`,
+      )
+    ) {
       return;
     }
 
     setIsUpdating(targetUserId);
     try {
       const response = await fetch(`/api/users`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: targetUserId }),
         // body: JSON.stringify({ isController: newIsController }),
-    });
-    if (response.ok) {
+      });
+      if (response.ok) {
         await onRoleChange();
-    } else {
+      } else {
         const errorText = await response.text();
         alert(`Failed to update: ${errorText}`);
-    }
+      }
     } catch (e) {
-        alert('An unexpected error occurred. Please try again.');
+      alert("An unexpected error occurred. Please try again.");
     } finally {
-        setIsUpdating(null);
+      setIsUpdating(null);
     }
   };
-  console.log(users)
+  console.log(users);
   return (
     <div className="overflow-x-auto shadow-md sm:rounded-lg">
       <table className="min-w-full divide-y divide-gray-200">
@@ -54,36 +65,47 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
             {/* <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Email
             </th> */}
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium tracking-wider text-white uppercase"
+            >
               Profile
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium tracking-wider text-white uppercase"
+            >
               Username
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-              Is Controller? 
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium tracking-wider text-white uppercase"
+            >
+              Is Controller?
             </th>
           </tr>
         </thead>
-        <tbody className="bg-gray-900 divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 bg-gray-900">
           {users.map((user) => {
             const isSelf = user.id === currentUserId;
             const disabled = isSelf || isUpdating === user.id;
 
             return (
               <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                <td className="px-6 py-4 text-sm whitespace-nowrap text-white">
                   <Image
                     src={user.profile}
                     alt={user.username}
                     width={50}
                     height={50}
                     className="rounded-full"
-                    ></Image>
+                  ></Image>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                <td className="px-6 py-4 text-sm whitespace-nowrap text-white">
                   {user.username}
-                  {isSelf && <span className="ml-1 text-xs text-blue-600">(You)</span>}
+                  {isSelf && (
+                    <span className="ml-1 text-xs text-blue-600">(You)</span>
+                  )}
                 </td>
                 {/* <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <span
@@ -96,28 +118,31 @@ export function UserList({ users, onRoleChange, currentUserId }: UserListProps) 
                     {user.isController ? 'Controller' : 'User'}
                   </span>
                 </td> */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                   {isSelf ? (
-                    <span className="text-gray-400 text-xs">Cannot self-toggle</span>
+                    <span className="text-xs text-gray-400">
+                      Cannot self-toggle
+                    </span>
                   ) : (
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className="relative inline-flex cursor-pointer items-center">
                       <input
                         type="checkbox"
                         checked={user.isController}
-                        onChange={() => handleToggle(user.id, !user.isController)}
+                        onChange={() =>
+                          handleToggle(user.id, !user.isController)
+                        }
                         disabled={disabled}
-                        className="sr-only peer text-white"
+                        className="peer sr-only text-white"
                       />
                       <div
-                        className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer 
-                          ${user.isController ? 'peer-checked:after:translate-x-full peer-checked:after:border-white' : ''}
-                          after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full 
-                          after:h-5 after:w-5 after:transition-all after:duration-300
-                          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                          ${user.isController ? 'bg-indigo-600' : 'bg-gray-400'}`}
+                        className={`peer h-6 w-11 rounded-full bg-gray-200 peer-focus:ring-4 peer-focus:ring-indigo-300 peer-focus:outline-none ${user.isController ? "peer-checked:after:translate-x-full peer-checked:after:border-white" : ""} after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:duration-300 after:content-[''] ${disabled ? "cursor-not-allowed opacity-50" : ""} ${user.isController ? "bg-indigo-600" : "bg-gray-400"}`}
                       ></div>
                       <span className="ml-2 text-xs text-white">
-                        {isUpdating === user.id ? 'Saving...' : user.isController ? 'True' : 'False'}
+                        {isUpdating === user.id
+                          ? "Saving..."
+                          : user.isController
+                            ? "True"
+                            : "False"}
                       </span>
                     </label>
                   )}

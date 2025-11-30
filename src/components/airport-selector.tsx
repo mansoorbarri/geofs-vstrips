@@ -17,7 +17,11 @@ type Airport = {
   name: string;
 };
 
-export function AirportSelector({ airports }: { airports: readonly Airport[] }) {
+export function AirportSelector({
+  airports,
+}: {
+  airports: readonly Airport[];
+}) {
   const [selectedAirport, setSelectedAirport] = useState<string | null>(null);
   const router = useRouter();
 
@@ -29,12 +33,12 @@ export function AirportSelector({ airports }: { airports: readonly Airport[] }) 
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 w-full items-center">
+    <div className="flex w-full flex-col items-center gap-4 sm:flex-row">
       <Select onValueChange={(value) => setSelectedAirport(value)}>
-        <SelectTrigger className="w-full bg-gray-800 text-white border-gray-700 py-2">
+        <SelectTrigger className="w-full border-gray-700 bg-gray-800 py-2 text-white">
           <SelectValue placeholder="Select an airport" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 border-gray-700 text-white">
+        <SelectContent className="border-gray-700 bg-gray-800 text-white">
           {airports.map((airport) => (
             <SelectItem key={airport.id} value={airport.id}>
               {airport.name}
@@ -42,18 +46,16 @@ export function AirportSelector({ airports }: { airports: readonly Airport[] }) 
           ))}
         </SelectContent>
       </Select>
-      <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+      <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
         <Button
           onClick={handleGoToBoard}
           disabled={!selectedAirport}
-          className="w-full sm:w-auto px-4 py-2 text-lg  bg-blue-500 hover:bg-blue-600 transition-colors duration-300 hover:cursor-pointer"
+          className="w-full bg-blue-500 px-4 py-2 text-lg transition-colors duration-300 hover:cursor-pointer hover:bg-blue-600 sm:w-auto"
         >
           Go to Board
         </Button>
         <Link href="/all-flights" passHref>
-          <Button
-            className="w-full sm:w-auto px-4 py-2 text-md text-white bg-black border-1 border-white hover:bg-white hover:text-black transition-colors duration-300 hover:cursor-pointer"
-          >
+          <Button className="text-md w-full border-1 border-white bg-black px-4 py-2 text-white transition-colors duration-300 hover:cursor-pointer hover:bg-white hover:text-black sm:w-auto">
             All Flights
           </Button>
         </Link>

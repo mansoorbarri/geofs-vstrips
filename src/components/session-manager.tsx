@@ -1,8 +1,8 @@
 // app/components/SessionManager.tsx
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useClerk, useUser } from '@clerk/nextjs';
+import { useEffect, useRef } from "react";
+import { useClerk, useUser } from "@clerk/nextjs";
 
 export default function SessionManager() {
   // Get the current user and Clerk instance
@@ -15,7 +15,7 @@ export default function SessionManager() {
   useEffect(() => {
     // Check if the user is a "controller"
     const isController = user?.publicMetadata?.controller === true;
-    
+
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -27,14 +27,13 @@ export default function SessionManager() {
       const timeoutMilliseconds = timeoutMinutes * 60 * 1000;
 
       timeoutRef.current = setTimeout(() => {
-        console.log('User session timed out. Signing out...');
-        void signOut({ redirectUrl: '/sign-up' });
+        console.log("User session timed out. Signing out...");
+        void signOut({ redirectUrl: "/sign-up" });
       }, timeoutMilliseconds);
-      
     } else if (user && isController) {
       // If the user is a controller, their session is managed by Clerk's longer setting.
       // You don't need to do anything here, but you can add a log for clarity.
-      console.log('Controller user detected. Session will last for a day.');
+      console.log("Controller user detected. Session will last for a day.");
     }
 
     // Cleanup on unmount

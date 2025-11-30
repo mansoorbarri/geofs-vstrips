@@ -121,7 +121,7 @@ export function EditFlightDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <Header />
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
+      <DialogContent className="max-w-2xl border-gray-700 bg-gray-900 text-white">
         <DialogHeader>
           <DialogTitle>Edit Flight Strip</DialogTitle>
           <DialogDescription className="text-gray-400">
@@ -140,7 +140,7 @@ export function EditFlightDialog({
                 onChange={(e) =>
                   handleInputChange("callsign", e.target.value.toUpperCase())
                 }
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
                 required
               />
             </div>
@@ -152,7 +152,7 @@ export function EditFlightDialog({
                 onChange={(e) =>
                   handleInputChange("geofs_callsign", e.target.value)
                 }
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
               />
             </div>
           </div>
@@ -165,9 +165,12 @@ export function EditFlightDialog({
                 id="edit-aircraft_type"
                 value={formData.aircraft_type}
                 onChange={(e) =>
-                  handleInputChange("aircraft_type", e.target.value.toUpperCase())
+                  handleInputChange(
+                    "aircraft_type",
+                    e.target.value.toUpperCase(),
+                  )
                 }
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
                 required
               />
             </div>
@@ -179,7 +182,7 @@ export function EditFlightDialog({
                 onChange={(e) =>
                   handleInputChange("departure", e.target.value.toUpperCase())
                 }
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
                 required
               />
             </div>
@@ -191,7 +194,7 @@ export function EditFlightDialog({
                 onChange={(e) =>
                   handleInputChange("arrival", e.target.value.toUpperCase())
                 }
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
                 required
               />
             </div>
@@ -203,20 +206,20 @@ export function EditFlightDialog({
                 onChange={(e) =>
                   handleInputChange("departure_time", e.target.value)
                 }
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
               />
             </div>
           </div>
 
           {/* Altitude, Speed, Status, Squawk */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="edit-altitude">Altitude</Label>
               <Input
                 id="edit-altitude"
                 value={formData.altitude}
                 onChange={(e) => handleInputChange("altitude", e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
               />
             </div>
             <div className="space-y-2">
@@ -225,7 +228,7 @@ export function EditFlightDialog({
                 id="edit-speed"
                 value={formData.speed}
                 onChange={(e) => handleInputChange("speed", e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
               />
             </div>
             <div className="space-y-2">
@@ -236,10 +239,10 @@ export function EditFlightDialog({
                   handleInputChange("status", value)
                 }
               >
-                <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                <SelectTrigger className="border-gray-600 bg-gray-800 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
+                <SelectContent className="border-gray-600 bg-gray-800">
                   {statusOptions.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -257,7 +260,7 @@ export function EditFlightDialog({
                 value={formData.squawk}
                 onChange={(e) => handleSquawkChange(e.target.value)}
                 placeholder="e.g. 4721"
-                className="bg-gray-800 border-gray-600 text-white"
+                className="border-gray-600 bg-gray-800 text-white"
                 maxLength={4}
               />
             </div>
@@ -271,7 +274,7 @@ export function EditFlightDialog({
               value={formData.route}
               onChange={(e) => handleInputChange("route", e.target.value)}
               placeholder="edit route for this flight..."
-              className="bg-gray-800 border-gray-600 text-white min-h-[80px]"
+              className="min-h-[80px] border-gray-600 bg-gray-800 text-white"
             />
           </div>
 
@@ -282,7 +285,7 @@ export function EditFlightDialog({
               value={formData.notes}
               onChange={(e) => handleInputChange("notes", e.target.value)}
               placeholder="Add any notes for this flight..."
-              className="bg-gray-800 border-gray-600 text-white min-h-[80px]"
+              className="min-h-[80px] border-gray-600 bg-gray-800 text-white"
             />
           </div>
 
@@ -292,13 +295,13 @@ export function EditFlightDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+              className="border-gray-600 bg-gray-800 text-white hover:bg-gray-700"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 text-white hover:bg-blue-700"
             >
               Update Flight Strip
             </Button>

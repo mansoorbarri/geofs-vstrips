@@ -6,9 +6,9 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-    images: {
-        domains: ['img.clerk.com'],
-    },
+  images: {
+    domains: ["img.clerk.com"],
+  },
 };
 
 export default config;

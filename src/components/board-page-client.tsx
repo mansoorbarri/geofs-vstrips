@@ -127,7 +127,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         acc[status] = [];
         return acc;
       },
-      {} as Record<typeof boardSectors[number], Flight[]>,
+      {} as Record<(typeof boardSectors)[number], Flight[]>,
     );
 
     flights.forEach((flight) => {
@@ -168,7 +168,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const gridClasses = useMemo(() => {
     return "grid-cols-3";
   }, []);
-
 
   const handleFlightClick = useCallback(
     async (flightId: string) => {
@@ -239,9 +238,14 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         typeof flight.altitude === "string" &&
         typeof flight.speed === "string" &&
         (flight.status === undefined ||
-          ["delivery", "ground", "tower", "departure", "approach", "control"].includes(
-            flight.status,
-          ))
+          [
+            "delivery",
+            "ground",
+            "tower",
+            "departure",
+            "approach",
+            "control",
+          ].includes(flight.status))
       );
     },
     [],
@@ -270,23 +274,25 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               typeof aircraft_type === "string" &&
               typeof arrival === "string"
             ) {
-              const normalizedFlight: Omit<Flight, "id" | "created_at" | "updated_at"> =
-                {
-                  airport: airportName,
-                  callsign: flight.callsign || "",
-                  geofs_callsign: flight.geofs_callsign || null,
-                  discord_username: flight.discord_username || " ",
-                  aircraft_type: aircraft_type || "",
-                  departure: flight.departure || "",
-                  departure_time: flight.departure_time ?? " ",
-                  arrival: arrival || "",
-                  altitude: flight.altitude || "",
-                  squawk: flight.squawk || "",
-                  speed: flight.speed || "",
-                  status: selectedImportStatus,
-                  route: flight.route || "",
-                  notes: flight.notes || "",
-                };
+              const normalizedFlight: Omit<
+                Flight,
+                "id" | "created_at" | "updated_at"
+              > = {
+                airport: airportName,
+                callsign: flight.callsign || "",
+                geofs_callsign: flight.geofs_callsign || null,
+                discord_username: flight.discord_username || " ",
+                aircraft_type: aircraft_type || "",
+                departure: flight.departure || "",
+                departure_time: flight.departure_time ?? " ",
+                arrival: arrival || "",
+                altitude: flight.altitude || "",
+                squawk: flight.squawk || "",
+                speed: flight.speed || "",
+                status: selectedImportStatus,
+                route: flight.route || "",
+                notes: flight.notes || "",
+              };
               validFlights.push(normalizedFlight);
             } else {
               invalidFlights.push({
@@ -779,7 +785,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 setSelectedImportStatus(value as FlightStatus)
               }
             >
-              <SelectTrigger className="w-[110px] border-grey-700 bg-black text-white">
+              <SelectTrigger className="border-grey-700 w-[110px] bg-black text-white">
                 <SelectValue placeholder="Import to" />
               </SelectTrigger>
               <SelectContent className="border-gray-700 bg-gray-900">
@@ -882,7 +888,10 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               <Select
                 value={transferDialog.targetAirport}
                 onValueChange={(value) =>
-                  setTransferDialog((prev) => ({ ...prev, targetAirport: value }))
+                  setTransferDialog((prev) => ({
+                    ...prev,
+                    targetAirport: value,
+                  }))
                 }
               >
                 <SelectTrigger className="border-gray-700 bg-black text-white">
@@ -937,7 +946,8 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                     {airports.find((a) => a.id === transferDialog.targetAirport)
                       ?.name || transferDialog.targetAirport}
                   </strong>{" "}
-                  under <strong>{statusTitles[transferDialog.targetSector]}</strong>{" "}
+                  under{" "}
+                  <strong>{statusTitles[transferDialog.targetSector]}</strong>{" "}
                   sector.
                 </p>
                 <p className="mt-2 text-xs text-yellow-400">
@@ -972,7 +982,11 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       <main className="flex-grow overflow-hidden p-6 pt-0">
         <div className={`grid ${gridClasses} h-full gap-4`}>
           {boardSectors.map((status) => (
-            <DropZone key={status} onDrop={handleDrop(status)} className="h-full">
+            <DropZone
+              key={status}
+              onDrop={handleDrop(status)}
+              className="h-full"
+            >
               <Card className="flex h-[70vh] flex-col border-gray-700 bg-gray-900">
                 <CardHeader className="flex-shrink-0">
                   <CardTitle className="text-center text-sm text-white">

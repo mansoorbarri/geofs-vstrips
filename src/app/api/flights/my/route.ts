@@ -8,22 +8,25 @@ const globalForPrisma = globalThis as unknown as {
 
 const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export async function GET() {
   const { userId } = await auth();
   const user = await currentUser();
-  
+
   if (!userId || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const discordAccount = user.externalAccounts.find(
-    (account) => account.provider === 'oauth_discord'
+    (account) => account.provider === "oauth_discord",
   );
 
   if (!discordAccount) {
-    return NextResponse.json({ error: 'Discord account not linked' }, { status: 400 });
+    return NextResponse.json(
+      { error: "Discord account not linked" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -31,17 +34,20 @@ export async function GET() {
       where: {
         discord_username: {
           equals: discordAccount.username,
-          mode: 'insensitive'
-        }
+          mode: "insensitive",
+        },
       },
       orderBy: {
-        departure_time: 'asc'
-      }
+        departure_time: "asc",
+      },
     });
-    
+
     return NextResponse.json({ flights });
   } catch (error) {
     console.error("Error fetching user flights:", error);
-    return NextResponse.json({ error: "Failed to fetch flights" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch flights" },
+      { status: 500 },
+    );
   }
 }
