@@ -104,21 +104,20 @@ export function FileFlightForm() {
     const formData = new FormData(event.currentTarget);
     const formValues = {
       // airport: selectedAirport,
-      airport: "MGGT",
+      airport: "WIII",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
       // departure: formData.get("departure") as string,
-      departure: "MGGT",
+      departure: "WIII",
       // departure_time: formData.get("departure_time") as string,
-      departure_time: "1000",
+      departure_time: "2300",
       // arrival: formData.get("arrival") as string,
-      arrival: "MHTG",
+      arrival: "WADD",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
       // route: formData.get("route") as string,
-      route:
-        "MGGT VILDA D099O LAGOX GADAT NOVOG URNOS NAGEL LEPAX TNT KARAK MELVO TG017 TG015 TG014 TG013 TG012 TG011 TG010 MHTG",
+      route: "CA2C CA T3 MOVMO MOVM2F",
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -256,7 +255,7 @@ export function FileFlightForm() {
                 name="departure_time"
                 type="text"
                 placeholder="e.g., 1720"
-                value="1000"
+                value="2300"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 font-mono text-white"
@@ -277,7 +276,7 @@ export function FileFlightForm() {
                 name="departure"
                 type="text"
                 placeholder="e.g., KLAX"
-                value="MGGT"
+                value="WIII"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
@@ -290,7 +289,7 @@ export function FileFlightForm() {
                 name="arrival"
                 type="text"
                 placeholder="e.g., KJFK"
-                value="MHTG"
+                value="WADD"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
@@ -331,7 +330,7 @@ export function FileFlightForm() {
               <Select
                 name="airport_atc"
                 onValueChange={setSelectedAirport}
-                value={`MGGT`}
+                value={`WIII`}
                 disabled
               >
                 <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
@@ -343,8 +342,8 @@ export function FileFlightForm() {
                       {airport.name} ({airport.id})
                     </SelectItem>
                   ))} */}
-                  <SelectItem value="MGGT">
-                    {`La Aurora International Airport (MGGT)`}
+                  <SelectItem value="WIII">
+                    {`Soekarno–Hatta International Airport (WIII)`}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -366,7 +365,7 @@ export function FileFlightForm() {
                 id="route"
                 name="route"
                 placeholder="e.g., DCT VOR VOR STAR"
-                value="MGGT VILDA D099O LAGOX GADAT NOVOG URNOS NAGEL LEPAX TNT KARAK MELVO TG017 TG015 TG014 TG013 TG012 TG011 TG010 MHTG"
+                value="CA2C CA T3 MOVMO MOVM2F"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"

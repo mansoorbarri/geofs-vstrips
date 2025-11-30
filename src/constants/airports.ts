@@ -1,6 +1,6 @@
 export const airports = [
-  { id: "MGGT", name: "La Aurora International Airport" },
-  { id: "MHTG", name: "Huehuetenango Airport" },
+  { id: "WIII", name: "Soekarno–Hatta International Airport" },
+  { id: "WADD", name: "I Gusti Ngurah Rai International Airport" },
 ] as const;
 
 export type AirportCode = (typeof airports)[number]["id"];
