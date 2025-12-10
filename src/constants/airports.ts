@@ -1,6 +1,6 @@
 export const airports = [
-  { id: "WIII", name: "Soekarno–Hatta International Airport" },
-  { id: "WADD", name: "I Gusti Ngurah Rai International Airport" },
+  { id: "VGHS", name: "Hazrat Shahjalal International Airport" },
+  { id: "VQPR", name: "Paro International Airport" },
 ] as const;
 
 export type AirportCode = (typeof airports)[number]["id"];

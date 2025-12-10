@@ -104,20 +104,20 @@ export function FileFlightForm() {
     const formData = new FormData(event.currentTarget);
     const formValues = {
       // airport: selectedAirport,
-      airport: "WIII",
+      airport: "VGHS",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
       // departure: formData.get("departure") as string,
-      departure: "WIII",
+      departure: "VGHS",
       // departure_time: formData.get("departure_time") as string,
       departure_time: "2300",
       // arrival: formData.get("arrival") as string,
-      arrival: "WADD",
+      arrival: "VQPR",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
       // route: formData.get("route") as string,
-      route: "CA2C CA T3 MOVMO MOVM2F",
+      route: "TEGAK2 TEGAK W3 SDP BOGOP BOGO1B",
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -276,7 +276,7 @@ export function FileFlightForm() {
                 name="departure"
                 type="text"
                 placeholder="e.g., KLAX"
-                value="WIII"
+                value="VGHS"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
@@ -289,7 +289,7 @@ export function FileFlightForm() {
                 name="arrival"
                 type="text"
                 placeholder="e.g., KJFK"
-                value="WADD"
+                value="VQPR"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
@@ -330,7 +330,7 @@ export function FileFlightForm() {
               <Select
                 name="airport_atc"
                 onValueChange={setSelectedAirport}
-                value={`WIII`}
+                value={`VGHS`}
                 disabled
               >
                 <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
@@ -342,8 +342,8 @@ export function FileFlightForm() {
                       {airport.name} ({airport.id})
                     </SelectItem>
                   ))} */}
-                  <SelectItem value="WIII">
-                    {`Soekarno–Hatta International Airport (WIII)`}
+                  <SelectItem value="VGHS">
+                    {`Hazrat Shahjalal International Airport (VGHS)`}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -365,7 +365,7 @@ export function FileFlightForm() {
                 id="route"
                 name="route"
                 placeholder="e.g., DCT VOR VOR STAR"
-                value="CA2C CA T3 MOVMO MOVM2F"
+                value="TEGAK2 TEGAK W3 SDP BOGOP BOGO1B"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"

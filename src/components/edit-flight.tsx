@@ -196,22 +196,22 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     setSubmissionResult(null);
 
     const formData = new FormData(event.currentTarget);
-     const formValues = {
+    const formValues = {
       // airport: selectedAirport,
-      airport: "WIII",
+      airport: "VGHS",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
       // departure: formData.get("departure") as string,
-      departure: "WIII",
+      departure: "VGHS",
       // departure_time: formData.get("departure_time") as string,
       departure_time: "2300",
       // arrival: formData.get("arrival") as string,
-      arrival: "WADD",
+      arrival: "VQPR",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
       // route: formData.get("route") as string,
-      route: "CA2C CA T3 MOVMO MOVM2F",
+      route: "TEGAK2 TEGAK W3 SDP BOGOP BOGO1B",
     };
 
     const validation = flightSchema.safeParse(formValues);
