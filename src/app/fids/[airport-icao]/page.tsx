@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { FidsHeader } from "~/components/fids/fids-header";
 
 export default async function FidsPage({ params }: any) {
-  const airport = params["airport-icao"]?.toUpperCase?.();
+  const airport = await params["airport-icao"]?.toUpperCase?.();
 
   if (!airport) notFound();
 
