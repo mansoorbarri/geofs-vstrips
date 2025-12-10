@@ -117,7 +117,7 @@ export function FileFlightForm() {
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
       // route: formData.get("route") as string,
-      route: "TEGAK2 TEGAK W3 SDP BOGOP BOGO1B",
+      route: "TEGAK2 TEGAK W3 SDP/N0459F350 R598 PAGDA DCT BOGOP DCT PR782 DCT PR780 DCT PR777 DCT PR848 DCT PR830 DCT PR828 DCT PR826 DCT PR728 DCT PR730 DCT PR799 DCT PR818 DCT PR812 DCT PR810 DCT",
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -365,7 +365,7 @@ export function FileFlightForm() {
                 id="route"
                 name="route"
                 placeholder="e.g., DCT VOR VOR STAR"
-                value="TEGAK2 TEGAK W3 SDP BOGOP BOGO1B"
+                value="TEGAK2 TEGAK W3 SDP/N0459F350 R598 PAGDA DCT BOGOP DCT PR782 DCT PR780 DCT PR777 DCT PR848 DCT PR830 DCT PR828 DCT PR826 DCT PR728 DCT PR730 DCT PR799 DCT PR818 DCT PR812 DCT PR810 DCT"
                 disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
