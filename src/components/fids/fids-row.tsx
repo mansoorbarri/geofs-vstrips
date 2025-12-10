@@ -32,12 +32,13 @@ export const FidsRow: React.FC<FidsRowProps> = ({
     } else {
       switch (status) {
         case "delivery":
+          return "At Gate";
         case "ground":
           return "Inbound";
         case "tower":
           return "Landing";
         case "control":
-          return "Arrived";
+          return "Scheduled";
         default:
           return "Scheduled";
       }
