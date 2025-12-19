@@ -98,7 +98,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
       // Threshold changed to 10
-      if (flightCount >= 10) {
+      if (flightCount >= 5) {
         throw new Error("AIRPORT_FULL");
       }
 
