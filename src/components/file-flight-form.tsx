@@ -241,11 +241,10 @@ export function FileFlightForm() {
                 Time
                 <div
                   className="group relative inline-block"
-                  title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
                 >
                   <Info className="h-3.5 w-3.5 text-blue-400 cursor-help" />
                   <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
-                    The time you will enter the airspace — whether departing, arriving, or overflying the field.
+                    Put the appropriate departure slot time.
                 </span>
                 </div>
               </Label>
