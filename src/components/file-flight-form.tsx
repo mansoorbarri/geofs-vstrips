@@ -103,21 +103,20 @@ export function FileFlightForm() {
 
     const formData = new FormData(event.currentTarget);
     const formValues = {
-      // airport: selectedAirport,
-      airport: "VGHS",
+      airport: selectedAirport,
+      // airport: "VGHS",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      // departure: formData.get("departure") as string,
-      departure: "VGHS",
-      // departure_time: formData.get("departure_time") as string,
-      departure_time: "2300",
-      // arrival: formData.get("arrival") as string,
-      arrival: "VQPR",
+      departure: formData.get("departure") as string,
+      // departure: "VGHS",
+      departure_time: formData.get("departure_time") as string,
+      // departure_time: "2300",
+      arrival: formData.get("arrival") as string,
+      // arrival: "VQPR",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      // route: formData.get("route") as string,
-      route: "TEGAK2 TEGAK W3 SDP/N0459F350 R598 PAGDA DCT BOGOP DCT PR782 DCT PR780 DCT PR777 DCT PR848 DCT PR830 DCT PR828 DCT PR826 DCT PR728 DCT PR730 DCT PR799 DCT PR818 DCT PR812 DCT PR810 DCT",
+      route: formData.get("route") as string,
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -240,23 +239,21 @@ export function FileFlightForm() {
                 className="flex items-center gap-1"
               >
                 Time
-                {/* <div
+                <div
                   className="group relative inline-block"
-                  // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
+                  title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
                 >
                   <Info className="h-3.5 w-3.5 text-blue-400 cursor-help" />
                   <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
                     The time you will enter the airspace — whether departing, arriving, or overflying the field.
                 </span>
-                </div> */}
+                </div>
               </Label>
               <Input
                 id="departure_time"
                 name="departure_time"
                 type="text"
                 placeholder="e.g., 1720"
-                value="2300"
-                disabled
                 required
                 className="border-gray-700 bg-gray-800 font-mono text-white"
               />
@@ -276,8 +273,6 @@ export function FileFlightForm() {
                 name="departure"
                 type="text"
                 placeholder="e.g., KLAX"
-                value="VGHS"
-                disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
               />
@@ -289,8 +284,6 @@ export function FileFlightForm() {
                 name="arrival"
                 type="text"
                 placeholder="e.g., KJFK"
-                value="VQPR"
-                disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
               />
@@ -330,21 +323,19 @@ export function FileFlightForm() {
               <Select
                 name="airport_atc"
                 onValueChange={setSelectedAirport}
-                value={`VGHS`}
-                disabled
               >
                 <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
                   <SelectValue placeholder="Select an airport" />
                 </SelectTrigger>
                 <SelectContent className="border-gray-700 bg-gray-800 text-white">
-                  {/* {airports.map((airport) => (
+                  {airports.map((airport) => (
                     <SelectItem key={airport.id} value={airport.id}>
                       {airport.name} ({airport.id})
                     </SelectItem>
-                  ))} */}
-                  <SelectItem value="VGHS">
+                  ))}
+                  {/* <SelectItem value="VGHS">
                     {`Hazrat Shahjalal International Airport (VGHS)`}
-                  </SelectItem>
+                  </SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
@@ -365,8 +356,6 @@ export function FileFlightForm() {
                 id="route"
                 name="route"
                 placeholder="e.g., DCT VOR VOR STAR"
-                value="TEGAK2 TEGAK W3 SDP/N0459F350 R598 PAGDA DCT BOGOP DCT PR782 DCT PR780 DCT PR777 DCT PR848 DCT PR830 DCT PR828 DCT PR826 DCT PR728 DCT PR730 DCT PR799 DCT PR818 DCT PR812 DCT PR810 DCT"
-                disabled
                 required
                 className="border-gray-700 bg-gray-800 text-white"
               />

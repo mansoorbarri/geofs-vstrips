@@ -197,22 +197,22 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
     const formData = new FormData(event.currentTarget);
     const formValues = {
-      // airport: selectedAirport,
-      airport: "VGHS",
+      airport: selectedAirport,
+      // airport: "VGHS",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      // departure: formData.get("departure") as string,
-      departure: "VGHS",
-      // departure_time: formData.get("departure_time") as string,
-      departure_time: "2300",
-      // arrival: formData.get("arrival") as string,
-      arrival: "VQPR",
+      departure: formData.get("departure") as string,
+      // departure: "VGHS",
+      departure_time: formData.get("departure_time") as string,
+      // departure_time: "2300",
+      arrival: formData.get("arrival") as string,
+      // arrival: "VQPR",
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      // route: formData.get("route") as string,
-      route: "TEGAK2 TEGAK W3 SDP BOGOP BOGO1B",
+      route: formData.get("route") as string,
     };
+
 
     const validation = flightSchema.safeParse(formValues);
     if (!validation.success) {
@@ -421,7 +421,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   className="flex items-center gap-1"
                 >
                   Time
-                  {/* <div
+                  <div
                   className="group relative inline-block"
                   // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
                 >
@@ -429,7 +429,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
                     The time you will enter the airspace — whether departing, arriving, or overflying the field.
                 </span>
-                </div> */}
+                </div>
                 </Label>
                 <Input
                   id="departure_time"
@@ -437,7 +437,6 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   type="text"
                   defaultValue={flight.departure_time}
                   placeholder="e.g., 1720"
-                  disabled
                   required
                   className="border-gray-700 bg-gray-800 font-mono text-white"
                 />
@@ -457,7 +456,6 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   type="text"
                   defaultValue={flight.departure}
                   placeholder="e.g., KLAX"
-                  disabled
                   required
                   className="border-gray-700 bg-gray-800 text-white"
                 />
@@ -470,7 +468,6 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   type="text"
                   defaultValue={flight.arrival}
                   placeholder="e.g., KJFK"
-                  disabled
                   required
                   className="border-gray-700 bg-gray-800 text-white"
                 />
@@ -511,17 +508,21 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 <Select
                   name="airport_atc"
                   onValueChange={setSelectedAirport}
-                  value={`MGGT`}
-                  disabled
+                  defaultValue={flight.airport}
                 >
                   <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
                     <SelectValue placeholder="Select an airport" />
                   </SelectTrigger>
-                  <SelectContent className="border-gray-700 bg-gray-800 text-white">
-                    <SelectItem value="MGGT">
-                      {`La Aurora International Airport (MGGT)`}
+                <SelectContent className="border-gray-700 bg-gray-800 text-white">
+                  {airports.map((airport) => (
+                    <SelectItem key={airport.id} value={airport.id}>
+                      {airport.name} ({airport.id})
                     </SelectItem>
-                  </SelectContent>
+                  ))}
+                  {/* <SelectItem value="VGHS">
+                    {`Hazrat Shahjalal International Airport (VGHS)`}
+                  </SelectItem> */}
+                </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -542,8 +543,6 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                   name="route"
                   defaultValue={flight.route}
                   placeholder="e.g., DCT VOR VOR STAR"
-                  value={flight.route}
-                  disabled
                   required
                   className="border-gray-700 bg-gray-800 text-white"
                 />
