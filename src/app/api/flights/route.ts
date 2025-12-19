@@ -90,16 +90,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 2. Transaction to check slot capacity and create flight
     const result = await prisma.$transaction(async (tx) => {
-      // Count total flights for this specific airport
-      const flightCount = await tx.flights.count({
-        where: {
-          airport: airport,
-        },
-      });
+      // Logic: Skip limitation if both fields are OMDB
+      const isOmdbException = airport === "OMDB" && departure === "OMDB";
 
-      // Threshold changed to 10
-      if (flightCount >= 5) {
-        throw new Error("AIRPORT_FULL");
+      if (!isOmdbException) {
+        // Count total flights for this specific airport (ATC location)
+        const flightCount = await tx.flights.count({
+          where: {
+            airport: airport,
+          },
+        });
+
+        // Limit set to 10 pilots
+        if (flightCount >= 10) {
+          throw new Error("AIRPORT_FULL");
+        }
       }
 
       return await tx.flights.create({
@@ -126,7 +131,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch (error: any) {
     console.error("Error creating flight:", error);
 
-    // Specific error for airport limit
     if (error.message === "AIRPORT_FULL") {
       return NextResponse.json(
         { 
@@ -136,7 +140,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Unique constraint error (Prisma P2002)
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "A flight with this callsign already exists." },
