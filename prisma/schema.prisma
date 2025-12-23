@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,6 +16,28 @@ enum FlightStatus {
   control
 }
 
+model EventSettings {
+  id              String   @id @default("current")
+  airportMode     String   @default("CUSTOM")
+  fixedAirport    String?  @db.VarChar(4)
+  isEventLive     Boolean  @default(false)
+  departureMode   String   @default("CUSTOM")
+  fixedDeparture  String?  @db.VarChar(4)
+  arrivalMode     String   @default("CUSTOM")
+  fixedArrival    String?  @db.VarChar(4)
+
+  timeMode        String   @default("CUSTOM")
+  fixedTime       String?  @db.VarChar(4)
+  
+  routeMode       String   @default("CUSTOM")
+  fixedRoute      String?  @db.Text
+
+  airportData     Json     @default("[]") 
+  activeAirports  String[] @default([])   
+  
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
+}
+
 model flights {
   id               String          @id @default(uuid()) @db.Uuid
   airport          String          @db.VarChar(4)
@@ -30,15 +49,15 @@ model flights {
   departure_time   String          @db.VarChar(4)
   arrival          String          @db.VarChar(4)
   altitude         String          @db.VarChar(5)
-  squawk           String?          @db.VarChar(4)
+  squawk           String?         @db.VarChar(4)
   speed            String          @db.VarChar(4)
   status           FlightStatus
   route            String?         @db.Text
-  notes            String          @db.Text
+  notes            String?         @db.Text
   created_at       DateTime        @default(now()) @db.Timestamptz(6)
   updated_at       DateTime        @updatedAt @db.Timestamptz(6)
-
-  history  flight_history[]
+  deleted_at       DateTime?       @db.Timestamptz(6)
+  history          flight_history[]
 
   @@map("flights")
 }
@@ -50,8 +69,7 @@ model flight_history {
   new_status   String    @db.VarChar(255)
   changed_at   DateTime  @default(now()) @db.Timestamptz(6)
   changed_by   String?   @db.VarChar(255)
-
-  flight  flights @relation(fields: [flight_id], references: [id])
+  flight       flights   @relation(fields: [flight_id], references: [id])
 
   @@map("flight_history")
 }

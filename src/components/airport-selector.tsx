@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // Import the Link component
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -17,13 +17,32 @@ type Airport = {
   name: string;
 };
 
-export function AirportSelector({
-  airports,
-}: {
-  airports: readonly Airport[];
-}) {
+export function AirportSelector() {
+  const [dynamicAirports, setDynamicAirports] = useState<Airport[]>([]);
   const [selectedAirport, setSelectedAirport] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadAirports() {
+      try {
+        const response = await fetch("/api/admin/settings");
+        if (response.ok) {
+          const data = await response.json();
+          const masterList: Airport[] = data.airportData || [];
+          const activeIds: string[] = data.activeAirports || [];
+          
+          const filtered = masterList.filter((ap) => activeIds.includes(ap.id));
+          setDynamicAirports(filtered);
+        }
+      } catch (error) {
+        console.error("Failed to load airports:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadAirports();
+  }, []);
 
   const handleGoToBoard = () => {
     if (selectedAirport) {
@@ -32,16 +51,20 @@ export function AirportSelector({
     }
   };
 
+  if (isLoading) {
+    return <div className="text-gray-500 italic">Loading airports...</div>;
+  }
+
   return (
     <div className="flex w-full flex-col items-center gap-4 sm:flex-row">
       <Select onValueChange={(value) => setSelectedAirport(value)}>
         <SelectTrigger className="w-full border-gray-700 bg-gray-800 py-2 text-white">
-          <SelectValue placeholder="Select an airport" />
+          <SelectValue placeholder={dynamicAirports.length > 0 ? "Select an airport" : "No active airports"} />
         </SelectTrigger>
         <SelectContent className="border-gray-700 bg-gray-800 text-white">
-          {airports.map((airport) => (
+          {dynamicAirports.map((airport) => (
             <SelectItem key={airport.id} value={airport.id}>
-              {airport.name}
+              {airport.name} ({airport.id})
             </SelectItem>
           ))}
         </SelectContent>
