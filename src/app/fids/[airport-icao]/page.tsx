@@ -1,15 +1,24 @@
 import { FidsBoard } from "~/components/fids/fids-board";
-import { airports } from "~/constants/airports";
 import { notFound } from "next/navigation";
 import { FidsHeader } from "~/components/fids/fids-header";
+import { db } from "~/server/db";
 
 export default async function FidsPage({ params }: any) {
-  const airport = await params["airport-icao"]?.toUpperCase?.();
+  const { "airport-icao": airportIcao } = await params;
+  const airport = airportIcao?.toUpperCase();
 
   if (!airport) notFound();
 
-  const airportExists = airports.some((a) => a.id === airport);
-  if (!airportExists) notFound();
+  const settings = await db.eventSettings.findUnique({
+    where: { id: "current" },
+  });
+
+  const activeAirports = settings?.activeAirports || [];
+  const airportExists = activeAirports.includes(airport);
+
+  if (!airportExists) {
+    notFound();
+  }
 
   return (
     <main className="mx-auto max-w-7xl p-6">

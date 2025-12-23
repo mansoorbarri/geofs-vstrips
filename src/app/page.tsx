@@ -6,7 +6,6 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { AirportSelector } from "~/components/airport-selector";
 import Footer from "~/components/footer";
-import { airports } from "~/constants/airports";
 import Loading from "~/components/loading";
 import Header from "~/components/header";
 
@@ -53,7 +52,7 @@ export default function HomePage() {
             </p>
           </header>
           <main>
-            <AirportSelector airports={airports} />
+            <AirportSelector />
           </main>
         </div>
       </div>

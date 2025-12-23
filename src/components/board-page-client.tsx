@@ -12,7 +12,7 @@ import {
   X,
   Plus,
   CheckCircle,
-  Download, // Keep Download for general export
+  Download,
 } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { DropZone } from "~/components/drop-zone";
@@ -28,7 +28,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  // Removed Copy and FileText since sample functions are gone
 } from "~/components/ui/select";
 import {
   Dialog,
@@ -40,9 +39,8 @@ import {
 } from "~/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { airports } from "~/constants/airports";
 import Loading from "~/components/loading";
-import { toast } from "sonner"; // Import toast from sonner
+import { toast } from "sonner";
 
 export type FlightStatus =
   | "delivery"
@@ -97,6 +95,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     deleteFlight,
   } = useFlights(true, airportName);
 
+  const [dynamicAirports, setDynamicAirports] = useState<{ id: string; name: string }[]>([]);
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -109,6 +108,24 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     targetAirport: "",
     targetSector: "delivery",
   });
+
+  useEffect(() => {
+    async function loadAirports() {
+      try {
+        const response = await fetch("/api/admin/settings");
+        if (response.ok) {
+          const data = await response.json();
+          const masterList = data.airportData || [];
+          const activeIds = data.activeAirports || [];
+          const filtered = masterList.filter((ap: any) => activeIds.includes(ap.id));
+          setDynamicAirports(filtered);
+        }
+      } catch (err) {
+        console.error("Failed to load airports:", err);
+      }
+    }
+    void loadAirports();
+  }, []);
 
   const boardSectors = useMemo(() => {
     return [
@@ -184,7 +201,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             duration: 3000,
           },
         );
-      } catch (error) {
+      } catch (err) {
         toast.error("Failed to update flight status. Please try again.", {
           duration: 3000,
         });
@@ -211,7 +228,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             },
           );
         }
-      } catch (error) {
+      } catch (err) {
         toast.error("Failed to move flight. Please try again.", {
           duration: 3000,
         });
@@ -317,7 +334,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
               try {
                 await createFlight(flight);
                 return { success: true };
-              } catch (error) {
+              } catch (err) {
                 return { success: false };
               }
             });
@@ -329,52 +346,23 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
           const message = `Successfully imported ${successCount} flight(s)${
             errorCount > 0
-              ? `. ${errorCount} flights failed to import (possibly duplicates).`
+              ? `. ${errorCount} flights failed to import.`
               : "."
-          }${
-            invalidFlights.length > 0
-              ? ` ${invalidFlights.length} invalid entries were skipped.`
-              : ""
           }`;
 
-          if (
-            successCount > 0 &&
-            errorCount === 0 &&
-            invalidFlights.length === 0
-          ) {
-            toast.success("Import Success", {
-              description: message,
-              duration: 5000,
-            });
-          } else if (
-            successCount > 0 &&
-            (errorCount > 0 || invalidFlights.length > 0)
-          ) {
-            toast.warning("Import with Issues", {
-              description: message,
-              duration: 5000,
-            });
-          } else {
-            toast.error("Import Failed", {
-              description: message,
-              duration: 5000,
-            });
-          }
+          toast.info("Import Result", {
+            description: message,
+            duration: 5000,
+          });
         } else {
-          toast.error(
-            "No valid flights found in the JSON file. Please check the format.",
-            {
-              duration: 3000,
-            },
-          );
-        }
-      } catch (error) {
-        toast.error(
-          "Failed to parse JSON file. Please ensure it's a valid JSON format.",
-          {
+          toast.error("No valid flights found in the JSON file.", {
             duration: 3000,
-          },
-        );
+          });
+        }
+      } catch (err) {
+        toast.error("Failed to parse JSON file.", {
+          duration: 3000,
+        });
       }
 
       if (fileInputRef.current) {
@@ -383,42 +371,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     },
     [validateFlight, createFlight, selectedImportStatus, airportName],
   );
-
-  // Removed generateSampleJSON
-  // const generateSampleJSON = useCallback(() => {
-  //   const dataStr = JSON.stringify(sampleFlights, null, 2);
-  //   const dataBlob = new Blob([dataStr], { type: "application/json" });
-  //   const url = URL.createObjectURL(dataBlob);
-  //   const link = document.createElement("a");
-  //   link.href = url;
-  //   link.download = `sample_flights_${airportName}.json`;
-  //   link.click();
-  //   URL.revokeObjectURL(url);
-  //   toast.info(`A sample JSON file for ${airportName} has been downloaded.`, {
-  //     duration: 3000,
-  //   });
-  // }, [sampleFlights, airportName]);
-
-  // Removed copySampleJSON
-  // const copySampleJSON = useCallback(async () => {
-  //   const jsonString = JSON.stringify(sampleFlights, null, 2);
-  //   try {
-  //     await navigator.clipboard.writeText(jsonString);
-  //     toast.success(
-  //       "Sample JSON copied to clipboard! You can paste it into a .json file.",
-  //       {
-  //         duration: 3000,
-  //       },
-  //     );
-  //   } catch (error) {
-  //     toast.error(
-  //       "Failed to copy to clipboard. Please try the download option instead.",
-  //       {
-  //         duration: 3000,
-  //       },
-  //     );
-  //   }
-  // }, [sampleFlights]);
 
   const handleEditFlight = useCallback((flight: Flight) => {
     setEditingFlight(flight);
@@ -437,9 +389,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             duration: 3000,
           },
         );
-      } catch (error: any) {
+      } catch (err: any) {
         toast.error(
-          error.message || "Failed to update flight. Please try again.",
+          err.message || "Failed to update flight. Please try again.",
           {
             duration: 3000,
           },
@@ -463,9 +415,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             },
           );
         }
-      } catch (error: any) {
+      } catch (err: any) {
         toast.error(
-          error.message || "Failed to delete flight. Please try again.",
+          err.message || "Failed to delete flight. Please try again.",
           {
             duration: 3000,
           },
@@ -534,68 +486,36 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       return;
     }
 
-    const flightsToDelete = flights.filter((f) =>
-      selectedFlights.includes(f.id),
-    );
-    const flightCallsigns = flightsToDelete.map((f) => f.callsign).join(", ");
-
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedFlights.length} selected flight strip(s)?\n\nCallsigns: ${flightCallsigns}\n\nThis action cannot be undone.`,
+      `Are you sure you want to delete ${selectedFlights.length} selected flight strip(s)?`,
     );
 
-    if (!confirmDelete) {
-      return;
-    }
+    if (!confirmDelete) return;
 
     try {
       let successCount = 0;
-      let errorCount = 0;
-
       const batchSize = 5;
       for (let i = 0; i < selectedFlights.length; i += batchSize) {
         const batch = selectedFlights.slice(i, i + batchSize);
-        const promises = batch.map(async (flightId) => {
-          try {
-            await deleteFlight(flightId);
-            return { success: true };
-          } catch (error) {
-            return { success: false };
-          }
-        });
-
-        const results = await Promise.all(promises);
-        successCount += results.filter((r) => r.success).length;
-        errorCount += results.filter((r) => !r.success).length;
+        const results = await Promise.all(
+          batch.map(async (id) => {
+            try {
+              await deleteFlight(id);
+              return true;
+            } catch {
+              return false;
+            }
+          })
+        );
+        successCount += results.filter(Boolean).length;
       }
 
       setSelectedFlights([]);
-
-      const message = `Successfully deleted ${successCount} flight strip(s)${
-        errorCount > 0 ? `. ${errorCount} flights failed to delete.` : "."
-      }`;
-
-      if (successCount > 0 && errorCount === 0) {
-        toast.success("Deletion Success", {
-          description: message,
-          duration: 5000,
-        });
-      } else if (successCount > 0 && errorCount > 0) {
-        toast.warning("Deletion with Issues", {
-          description: message,
-          duration: 5000,
-        });
-      } else {
-        toast.error("Deletion Failed", {
-          description: message,
-          duration: 5000,
-        });
-      }
-    } catch (error) {
-      toast.error("Failed to delete selected flights. Please try again.", {
-        duration: 3000,
-      });
+      toast.success(`Deleted ${successCount} flight strip(s) successfully!`);
+    } catch (err) {
+      toast.error("Failed to delete selected flights.");
     }
-  }, [selectedFlights, flights, deleteFlight]);
+  }, [selectedFlights, deleteFlight]);
 
   const handleTransferClick = useCallback(() => {
     if (selectedFlights.length === 0) {
@@ -605,7 +525,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       return;
     }
 
-    const otherAirports = airports.filter(
+    const otherAirports = dynamicAirports.filter(
       (airport) => airport.id !== airportName,
     );
     setTransferDialog({
@@ -613,7 +533,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       targetAirport: otherAirports.length > 0 ? otherAirports[0]!.id : "",
       targetSector: "delivery",
     });
-  }, [selectedFlights, airportName]);
+  }, [selectedFlights, airportName, dynamicAirports]);
 
   const handleTransferConfirm = useCallback(async () => {
     if (selectedFlights.length === 0 || !transferDialog.targetAirport) {
@@ -626,27 +546,23 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
     try {
       let successCount = 0;
-      let errorCount = 0;
-
       const batchSize = 5;
       for (let i = 0; i < flightsToTransfer.length; i += batchSize) {
         const batch = flightsToTransfer.slice(i, i + batchSize);
-        const promises = batch.map(async (flight) => {
-          try {
-            await updateFlight(flight.id, {
-              airport: transferDialog.targetAirport,
-              status: transferDialog.targetSector,
-            });
-
-            return { success: true };
-          } catch (error) {
-            return { success: false };
-          }
-        });
-
-        const results = await Promise.all(promises);
-        successCount += results.filter((r) => r.success).length;
-        errorCount += results.filter((r) => !r.success).length;
+        const results = await Promise.all(
+          batch.map(async (flight) => {
+            try {
+              await updateFlight(flight.id, {
+                airport: transferDialog.targetAirport,
+                status: transferDialog.targetSector,
+              });
+              return true;
+            } catch {
+              return false;
+            }
+          })
+        );
+        successCount += results.filter(Boolean).length;
       }
 
       setSelectedFlights([]);
@@ -656,37 +572,11 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         targetSector: "delivery",
       });
 
-      const targetAirportName =
-        airports.find((a) => a.id === transferDialog.targetAirport)?.name ||
-        transferDialog.targetAirport;
-      const sectorName = statusTitles[transferDialog.targetSector];
-
-      const message = `Successfully transferred ${successCount} flight strip(s) to ${targetAirportName} ${sectorName}${
-        errorCount > 0 ? `. ${errorCount} flights failed to transfer.` : "."
-      }`;
-
-      if (successCount > 0 && errorCount === 0) {
-        toast.success("Transfer Success", {
-          description: message,
-          duration: 5000,
-        });
-      } else if (successCount > 0 && errorCount > 0) {
-        toast.warning("Transfer with Issues", {
-          description: message,
-          duration: 5000,
-        });
-      } else {
-        toast.error("Transfer Failed", {
-          description: message,
-          duration: 5000,
-        });
-      }
-    } catch (error) {
-      toast.error("Failed to transfer selected flights. Please try again.", {
-        duration: 3000,
-      });
+      toast.success(`Successfully transferred ${successCount} flight strip(s).`);
+    } catch (err) {
+      toast.error("Failed to transfer selected flights.");
     }
-  }, [selectedFlights, flights, transferDialog, updateFlight, statusTitles]);
+  }, [selectedFlights, flights, transferDialog, updateFlight]);
 
   const handleTransferCancel = useCallback(() => {
     setTransferDialog({
@@ -695,11 +585,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       targetSector: "delivery",
     });
   }, []);
-
-  useEffect(() => {
-    console.log("Value of airportName prop:", airportName);
-    console.log("Value from URL (useParams):", airportNameFromURL);
-  }, [airportName, airportNameFromURL]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -833,24 +718,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             <Send className="mr-2 h-4 w-4" />
             Transfer Selected
           </Button>
-          {/* Removed Copy Sample JSON Button */}
-          {/* <Button
-            variant="outline"
-            className="bg-black border-blue-500 text-blue-400 hover:bg-blue-900 hover:text-blue-300 hover:cursor-pointer"
-            onClick={copySampleJSON}
-          >
-            <Copy className="w-4 h-4 mr-2" />
-            Copy Sample JSON
-          </Button> */}
-          {/* Removed Download Sample Button */}
-          {/* <Button
-            variant="outline"
-            className="bg-black border-gray-500 text-gray-300 hover:bg-gray-800 hover:text-white hover:cursor-pointer"
-            onClick={generateSampleJSON}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Download Sample
-          </Button> */}
         </div>
         <input
           ref={fileInputRef}
@@ -898,7 +765,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                   <SelectValue placeholder="Select target airport" />
                 </SelectTrigger>
                 <SelectContent className="border-gray-700 bg-gray-900">
-                  {airports
+                  {dynamicAirports
                     .filter((airport) => airport.id !== airportName)
                     .map((airport) => (
                       <SelectItem key={airport.id} value={airport.id}>
@@ -934,28 +801,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 </SelectContent>
               </Select>
             </div>
-
-            {transferDialog.targetAirport && (
-              <div className="rounded-lg border border-gray-600 bg-gray-800 p-3">
-                <p className="text-sm text-gray-300">
-                  <strong>Transfer Summary:</strong>
-                  <br />
-                  Moving {selectedFlights.length} flight(s) from{" "}
-                  <strong>{airportName}</strong> to{" "}
-                  <strong>
-                    {airports.find((a) => a.id === transferDialog.targetAirport)
-                      ?.name || transferDialog.targetAirport}
-                  </strong>{" "}
-                  under{" "}
-                  <strong>{statusTitles[transferDialog.targetSector]}</strong>{" "}
-                  sector.
-                </p>
-                <p className="mt-2 text-xs text-yellow-400">
-                  Note: This will remove the flights from the current board and
-                  create them in the target board.
-                </p>
-              </div>
-            )}
           </div>
 
           <DialogFooter>

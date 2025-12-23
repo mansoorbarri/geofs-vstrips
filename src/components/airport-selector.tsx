@@ -41,7 +41,7 @@ export function AirportSelector() {
         setIsLoading(false);
       }
     }
-    loadAirports();
+    void loadAirports();
   }, []);
 
   const handleGoToBoard = () => {

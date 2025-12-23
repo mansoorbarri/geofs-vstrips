@@ -1,4 +1,3 @@
-// src/components/all-flights.tsx
 "use client";
 
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
@@ -37,7 +36,6 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
-import { airports } from "~/constants/airports";
 import Loading from "~/components/loading";
 import { useRouter } from "next/navigation";
 
@@ -73,6 +71,7 @@ export function AllFlightsPageClient() {
     deleteFlight,
   } = useFlights(true, undefined);
 
+  const [dynamicAirports, setDynamicAirports] = useState<{ id: string; name: string }[]>([]);
   const [importStatus, setImportStatus] = useState<ImportStatus>({
     type: null,
     message: "",
@@ -88,6 +87,24 @@ export function AllFlightsPageClient() {
     targetAirport: "",
     targetSector: "delivery",
   });
+
+  useEffect(() => {
+    async function loadAirports() {
+      try {
+        const response = await fetch("/api/admin/settings");
+        if (response.ok) {
+          const data = await response.json();
+          const masterList = data.airportData || [];
+          const activeIds = data.activeAirports || [];
+          const filtered = masterList.filter((ap: any) => activeIds.includes(ap.id));
+          setDynamicAirports(filtered);
+        }
+      } catch (err) {
+        console.error("Failed to load airports:", err);
+      }
+    }
+    void loadAirports();
+  }, []);
 
   const boardSectors = useMemo(
     () =>
@@ -233,10 +250,10 @@ export function AllFlightsPageClient() {
           "success",
           `Flight strip ${updatedFlightData.callsign} updated successfully!`,
         );
-      } catch (error: any) {
+      } catch (err: any) {
         showStatus(
           "error",
-          error.message || "Failed to update flight. Please try again.",
+          err.message || "Failed to update flight. Please try again.",
         );
       }
     },
@@ -345,13 +362,13 @@ export function AllFlightsPageClient() {
 
     const selectedFlight = flights.find((f) => f.id === selectedFlights[0]);
     const defaultAirport =
-      airports.find((a) => a.id !== selectedFlight?.airport)?.id || "";
+      dynamicAirports.find((a) => a.id !== selectedFlight?.airport)?.id || "";
     setTransferDialog({
       isOpen: true,
       targetAirport: defaultAirport,
       targetSector: "delivery",
     });
-  }, [selectedFlights, flights, showStatus]);
+  }, [selectedFlights, flights, showStatus, dynamicAirports]);
 
   const handleTransferConfirm = useCallback(async () => {
     if (!transferDialog.targetAirport || selectedFlights.length === 0) return;
@@ -374,7 +391,7 @@ export function AllFlightsPageClient() {
     );
 
     const airportName =
-      airports.find((a) => a.id === transferDialog.targetAirport)?.name ??
+      dynamicAirports.find((a) => a.id === transferDialog.targetAirport)?.name ??
       transferDialog.targetAirport;
     const sectorName = statusTitles[transferDialog.targetSector];
 
@@ -399,6 +416,7 @@ export function AllFlightsPageClient() {
     updateFlight,
     showStatus,
     statusTitles,
+    dynamicAirports,
   ]);
 
   useEffect(() => {
@@ -589,7 +607,7 @@ export function AllFlightsPageClient() {
                   <SelectValue placeholder="Select target airport" />
                 </SelectTrigger>
                 <SelectContent className="border-gray-700 bg-gray-900">
-                  {airports.map((a) => (
+                  {dynamicAirports.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.id} - {a.name}
                     </SelectItem>

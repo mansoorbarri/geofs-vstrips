@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (searchQuery.length > 1) {
-      searchGlobalAirports(searchQuery).then(setSearchResults);
+     void searchGlobalAirports(searchQuery).then(setSearchResults);
     } else {
       setSearchResults([]);
     }
@@ -71,8 +71,9 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    if (authLoaded && isSignedIn && user?.publicMetadata?.admin) void fetchData();
-    else if (authLoaded && (!isSignedIn || !user?.publicMetadata?.admin)) router.push("/");
+    if (authLoaded && isSignedIn) {
+      void fetchData();
+    }
   }, [authLoaded, isSignedIn]);
 
   const toggleAirport = (ap: ExternalAirport) => {

@@ -17,16 +17,15 @@ import {
 } from "~/components/ui/select";
 import { redirect, useRouter } from "next/navigation";
 import { z } from "zod";
-import { airports } from "~/constants/airports";
 import Footer from "~/components/footer";
 import Header from "./header";
+import Loading from "~/components/loading";
 
 const flightSchema = z.object({
   airport: z
     .string()
     .min(1, "Airport is required")
-    .max(4, "Airport must be 4 characters or less")
-    .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
+    .max(4, "Airport must be 4 characters or less"),
   callsign: z
     .string()
     .min(1, "Callsign is required")
@@ -43,26 +42,15 @@ const flightSchema = z.object({
   departure: z
     .string()
     .min(1, "Departure is required")
-    .max(4, "Departure must be 4 characters or less")
-    .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
+    .max(4, "Departure must be 4 characters or less"),
   departure_time: z
     .string()
     .min(1, "Departure time is required")
-    .max(4, "Departure time must be 4 characters or less")
-    .regex(/^\d{4}$/, "Must be a 4-digit time (e.g., 1720)"),
-  // .refine((v) => {
-  //   const hh = Number(v.slice(0, 2));
-  //   const mm = Number(v.slice(2, 4));
-  //   return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
-  // }, { message: "Invalid time – minutes must be 00-59" })
-  // .refine((v) => Number(v.slice(0, 2)) >= 16 && Number(v.slice(0, 2)) <= 19, {
-  //   message: "Departure time must be between 1600 and 1900 (4 PM – 7 PM)",
-  // }),
+    .max(4, "Departure time must be 4 characters or less"),
   arrival: z
     .string()
     .min(1, "Arrival is required")
-    .max(4, "Arrival must be 4 characters or less")
-    .regex(/^[A-Z]{4}$/, "Must be a 4-letter ICAO code (e.g., KLAX)"),
+    .max(4, "Arrival must be 4 characters or less"),
   altitude: z
     .string()
     .min(1, "Altitude is required")
@@ -71,8 +59,7 @@ const flightSchema = z.object({
   speed: z
     .string()
     .min(1, "Speed is required")
-    .max(4, "Speed must be 4 characters or less")
-    .regex(/^0\.\d{1,2}$/, "Must be in Mach (e.g., 0.82)"),
+    .max(4, "Speed must be 4 characters or less"),
   route: z
     .string()
     .min(1, "Flight Route is required")
@@ -108,6 +95,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
   const [flight, setFlight] = useState<Flight | null>(null);
   const [selectedAirport, setSelectedAirport] = useState("");
   const [loading, setLoading] = useState(true);
+  const [eventSettings, setEventSettings] = useState<any>(null);
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message?: string;
@@ -120,12 +108,10 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-          return data;
-        }
+        if (Date.now() - timestamp < CACHE_DURATION) return data;
         localStorage.removeItem(CACHE_KEY);
       }
-    } catch (error) {
+    } catch (e) {
       localStorage.removeItem(CACHE_KEY);
     }
     return null;
@@ -135,14 +121,9 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     try {
       localStorage.setItem(
         CACHE_KEY,
-        JSON.stringify({
-          data: flightsData,
-          timestamp: Date.now(),
-        }),
+        JSON.stringify({ data: flightsData, timestamp: Date.now() }),
       );
-    } catch (error) {
-      console.error("Failed to cache flights:", error);
-    }
+    } catch (e) {}
   };
 
   const fetchFlight = useCallback(async () => {
@@ -158,37 +139,28 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     }
 
     try {
-      const response = await fetch("/api/flights/my");
-      if (!response.ok) {
-        throw new Error("Failed to fetch flights");
-      }
-      const data = await response.json();
-
-      const foundFlight = data.flights?.find((f: Flight) => f.id === flightId);
-      if (!foundFlight) {
-        throw new Error(
-          "Flight not found or you do not have permission to edit this flight",
-        );
-      }
+      const [fRes, sRes] = await Promise.all([
+        fetch("/api/flights/my"),
+        fetch("/api/admin/settings"),
+      ]);
+      if (!fRes.ok || !sRes.ok) throw new Error("Failed to fetch data");
+      
+      const fData = await fRes.json();
+      const sData = await sRes.json();
+      
+      const foundFlight = fData.flights?.find((f: Flight) => f.id === flightId);
+      if (!foundFlight) throw new Error("Flight not found");
 
       setFlight(foundFlight);
       setSelectedAirport(foundFlight.airport);
-      setCachedFlights(data.flights);
+      setEventSettings(sData);
+      setCachedFlights(fData.flights);
     } catch (error: any) {
-      setSubmissionResult({
-        success: false,
-        message: error.message || "Failed to load flight plan",
-      });
+      setSubmissionResult({ success: false, message: error.message });
     } finally {
       setLoading(false);
     }
-  }, [
-    flightId,
-    setLoading,
-    setFlight,
-    setSelectedAirport,
-    setSubmissionResult,
-  ]);
+  }, [flightId]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -196,32 +168,27 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     setSubmissionResult(null);
 
     const formData = new FormData(event.currentTarget);
+    const finalAirport = eventSettings?.airportMode === "FIXED" 
+      ? eventSettings.fixedAirport 
+      : selectedAirport;
+
     const formValues = {
-      airport: selectedAirport,
-      // airport: "VGHS",
+      airport: finalAirport,
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      departure: formData.get("departure") as string,
-      // departure: "VGHS",
-      departure_time: formData.get("departure_time") as string,
-      // departure_time: "2300",
-      arrival: formData.get("arrival") as string,
-      // arrival: "VQPR",
+      departure: (eventSettings?.departureMode === "FIXED" ? eventSettings.fixedDeparture : formData.get("departure")) as string,
+      departure_time: (eventSettings?.timeMode === "FIXED" ? eventSettings.fixedTime : formData.get("departure_time")) as string,
+      arrival: (eventSettings?.arrivalMode === "FIXED" ? eventSettings.fixedArrival : formData.get("arrival")) as string,
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      route: formData.get("route") as string,
+      route: (eventSettings?.routeMode === "FIXED" ? eventSettings.fixedRoute : formData.get("route")) as string,
     };
-
 
     const validation = flightSchema.safeParse(formValues);
     if (!validation.success) {
       setIsSubmitting(false);
-      setSubmissionResult({
-        success: false,
-        message: "Please correct the errors in the form.",
-        errors: validation.error.issues,
-      });
+      setSubmissionResult({ success: false, message: "Correct errors.", errors: validation.error.issues });
       return;
     }
 
@@ -231,20 +198,11 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validation.data),
       });
+      if (!response.ok) throw new Error("Update failed");
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update flight plan.");
-      }
-
-      setSubmissionResult({
-        success: true,
-        message: "Flight plan updated successfully!",
-      });
-
+      setSubmissionResult({ success: true, message: "Flight plan updated!" });
       localStorage.removeItem(CACHE_KEY);
-      await fetchFlight();
+      void fetchFlight();
     } catch (error: any) {
       setSubmissionResult({ success: false, message: error.message });
     } finally {
@@ -253,318 +211,127 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
   };
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!isSignedIn) {
-      redirect("/sign-up");
-      return;
+    if (isLoaded) {
+      if (!isSignedIn) redirect("/sign-up");
+      else void fetchFlight();
     }
-
-    void fetchFlight();
   }, [isLoaded, isSignedIn, fetchFlight]);
 
-  if (!isLoaded || loading) {
+  const renderField = (label: string, name: string, mode: string, fixedVal: string, defaultVal: string, placeholder: string) => {
+    const isFixed = mode === "FIXED";
     return (
-      <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
-        <p className="mt-4">Loading flight plan...</p>
+      <div className="space-y-2">
+        <Label htmlFor={name}>{label}</Label>
+        <Input
+          id={name}
+          name={name}
+          defaultValue={isFixed ? fixedVal : defaultVal}
+          readOnly={isFixed}
+          placeholder={placeholder}
+          required
+          className={`border-gray-700 bg-gray-800 text-white ${isFixed ? "opacity-60 cursor-not-allowed" : ""}`}
+        />
       </div>
     );
-  }
+  };
 
-  if (!flight) {
-    return (
-      <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-        <Header />
-        <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-        <h1 className="mb-4 text-3xl font-bold">Flight Not Found</h1>
-        <p className="mb-6 text-lg text-gray-300">
-          The requested flight plan could not be found.
-        </p>
-        <Button
-          onClick={() => router.back()}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          Go Back
-        </Button>
-      </div>
-    );
-  }
+  if (!isLoaded || loading) return <Loading />;
+
+  if (!flight) return (
+    <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+      <Header />
+      <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
+      <h1 className="mb-4 text-3xl font-bold">Flight Not Found</h1>
+      <Button onClick={() => router.back()}>Go Back</Button>
+    </div>
+  );
 
   const isEditable = flight.status === "delivery";
 
-  if (submissionResult?.success) {
-    return (
-      <>
-        <Header />
-        <div className="container mx-auto mt-10 max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-          <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
-          <h1 className="mb-4 text-3xl font-bold">Flight Plan Updated!</h1>
-          <p className="mb-6 text-lg text-gray-300">
-            {submissionResult.message}
-          </p>
-          <Button
-            onClick={() => router.push("/file-flight")}
-            className="mr-4 bg-blue-600 text-white hover:cursor-pointer hover:bg-blue-700"
-          >
-            File Another
-          </Button>
-          <Button
-            onClick={() => router.push("/edit-flight")}
-            className="bg-gray-600 text-white hover:cursor-pointer hover:bg-gray-700"
-          >
-            View All Flights
-          </Button>
-        </div>
-      </>
-    );
-  }
-
-  if (!isEditable) {
-    return (
-      <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-        <Header />
-        <Lock className="mx-auto mb-4 h-16 w-16 text-yellow-500" />
-        <h1 className="mb-4 text-3xl font-bold">Flight Plan Locked</h1>
-        <p className="mb-2 text-lg text-gray-300">
-          This flight plan cannot be edited because its status is:
-        </p>
-        <span className="mb-6 inline-block rounded-full bg-gray-800 px-3 py-1 text-sm font-semibold text-yellow-400">
-          {flight.status.toUpperCase()}
-        </span>
-        <p className="mb-6 text-sm text-gray-400">
-          {`Flight plans can only be edited when the status is "DELIVERY"`}.
-        </p>
-        <Button
-          onClick={() => router.back()}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          Go Back
-        </Button>
+  if (submissionResult?.success) return (
+    <>
+      <Header />
+      <div className="container mx-auto mt-10 max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+        <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
+        <h1 className="mb-4 text-3xl font-bold">Updated!</h1>
+        <Button onClick={() => router.push("/edit-flight")}>View All</Button>
       </div>
-    );
-  }
+    </>
+  );
+
+  if (!isEditable) return (
+    <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+      <Header />
+      <Lock className="mx-auto mb-4 h-16 w-16 text-yellow-500" />
+      <h1 className="mb-4 font-bold">Locked</h1>
+      <p>Status: {flight.status.toUpperCase()}</p>
+      <Button onClick={() => router.back()}>Go Back</Button>
+    </div>
+  );
+
+  const activeATCList = (eventSettings?.airportData || []).filter((ap: any) => 
+    eventSettings?.activeAirports?.includes(ap.id)
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <div className="container mx-auto mt-10 max-w-lg rounded-lg bg-gray-900 p-6 text-white shadow-xl">
-        <div className="mb-6 flex flex-col items-center">
-          <h1 className="text-3xl font-bold">Edit Flight Plan</h1>
-          <p className="mt-2 text-gray-400">Callsign: {flight.callsign}</p>
-        </div>
-
-        {submissionResult?.success === false && (
-          <Alert
-            variant="destructive"
-            className="mb-4 border-red-600 bg-red-900"
-          >
-            <AlertCircle className="h-4 w-4 text-red-400" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription className="text-red-200">
-              {submissionResult.message}
-              {submissionResult.errors && (
-                <ul className="mt-2 list-inside list-disc space-y-1">
-                  {submissionResult.errors.map((err, index) => (
-                    <li key={index}>
-                      {err.path.join(".")}: {err.message}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="callsign">Callsign</Label>
-                <Input
-                  id="callsign"
-                  name="callsign"
-                  type="text"
-                  defaultValue={flight.callsign}
-                  placeholder="e.g., DAL123"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="geofs_callsign">GeoFS Callsign</Label>
-                <Input
-                  id="geofs_callsign"
-                  name="geofs_callsign"
-                  type="text"
-                  defaultValue={flight.geofs_callsign}
-                  placeholder="e.g., Ayman"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="aircraft_type">Aircraft</Label>
-                <Input
-                  id="aircraft_type"
-                  name="aircraft_type"
-                  type="text"
-                  defaultValue={flight.aircraft_type}
-                  placeholder="e.g., A320"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="departure_time"
-                  className="flex items-center gap-1"
-                >
-                  Time
-                  <div
-                  className="group relative inline-block"
-                  // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
-                >
-                  <Info className="h-3.5 w-3.5 text-blue-400 cursor-help" />
-                  <span className="absolute hidden group-hover:block bg-gray-700 text-white text-xs rounded p-2 -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
-                    The time you will enter the airspace — whether departing, arriving, or overflying the field.
-                </span>
-                </div>
-                </Label>
-                <Input
-                  id="departure_time"
-                  name="departure_time"
-                  type="text"
-                  defaultValue={flight.departure_time}
-                  placeholder="e.g., 1720"
-                  required
-                  className="border-gray-700 bg-gray-800 font-mono text-white"
-                />
-              </div>
+        <h1 className="text-3xl font-bold text-center">Edit Flight Plan</h1>
+        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Callsign</Label>
+              <Input name="callsign" defaultValue={flight.callsign} required className="bg-gray-800 text-white" />
+            </div>
+            <div className="space-y-2">
+              <Label>GeoFS Callsign</Label>
+              <Input name="geofs_callsign" defaultValue={flight.geofs_callsign} required className="bg-gray-800 text-white" />
+            </div>
+            <div className="space-y-2">
+              <Label>Aircraft</Label>
+              <Input name="aircraft_type" defaultValue={flight.aircraft_type} required className="bg-gray-800 text-white" />
+            </div>
+            {renderField("Time", "departure_time", eventSettings?.timeMode, eventSettings?.fixedTime, flight.departure_time, "1720")}
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 border-t border-gray-700 pt-6">
+            {renderField("Departure", "departure", eventSettings?.departureMode, eventSettings?.fixedDeparture, flight.departure, "KLAX")}
+            {renderField("Arrival", "arrival", eventSettings?.arrivalMode, eventSettings?.fixedArrival, flight.arrival, "KJFK")}
+            <div className="space-y-2">
+              <Label>Altitude</Label>
+              <Input name="altitude" defaultValue={flight.altitude} required className="bg-gray-800 text-white" />
+            </div>
+            <div className="space-y-2">
+              <Label>Speed (Mach)</Label>
+              <Input name="speed" defaultValue={flight.speed} required className="bg-gray-800 text-white" />
             </div>
           </div>
-
-          <div className="border-b border-gray-700"></div>
-
-          <div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="departure">Departure Airport</Label>
-                <Input
-                  id="departure"
-                  name="departure"
-                  type="text"
-                  defaultValue={flight.departure}
-                  placeholder="e.g., KLAX"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="arrival">Arrival Airport</Label>
-                <Input
-                  id="arrival"
-                  name="arrival"
-                  type="text"
-                  defaultValue={flight.arrival}
-                  placeholder="e.g., KJFK"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="altitude">Cruise Altitude</Label>
-                <Input
-                  id="altitude"
-                  name="altitude"
-                  type="text"
-                  defaultValue={flight.altitude}
-                  placeholder="e.g., FL350"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="speed">{"Cruise Speed (mach)"}</Label>
-                <Input
-                  id="speed"
-                  name="speed"
-                  type="text"
-                  defaultValue={flight.speed}
-                  placeholder="e.g., 0.82"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-b border-gray-700"></div>
-
-          <div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="airport_atc">Where do you want ATC?</Label>
-                <Select
-                  name="airport_atc"
-                  onValueChange={setSelectedAirport}
-                  defaultValue={flight.airport}
-                >
-                  <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
-                    <SelectValue placeholder="Select an airport" />
-                  </SelectTrigger>
-                <SelectContent className="border-gray-700 bg-gray-800 text-white">
-                  {airports.map((airport) => (
-                    <SelectItem key={airport.id} value={airport.id}>
-                      {airport.name} ({airport.id})
-                    </SelectItem>
-                  ))}
-                  {/* <SelectItem value="VGHS">
-                    {`Hazrat Shahjalal International Airport (VGHS)`}
-                  </SelectItem> */}
-                </SelectContent>
+          <div className="space-y-4 border-t border-gray-700 pt-6">
+            <div className="space-y-2">
+              <Label>ATC Airport</Label>
+              {eventSettings?.airportMode === "FIXED" ? (
+                <Input value={`${eventSettings.fixedAirport}`} readOnly className="bg-gray-700 opacity-60" />
+              ) : (
+                <Select defaultValue={flight.airport} onValueChange={setSelectedAirport}>
+                  <SelectTrigger className="bg-gray-800"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-gray-800 text-white">
+                    {activeATCList.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.name} ({a.id})</SelectItem>)}
+                  </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="route">
-                  Flight Route
-                  <div
-                    className="group relative inline-block"
-                    // title="The time you will be using the airspace — whether departing, arriving, or crossing the airfield."
-                  >
-                    <Info className="h-3.5 w-3.5 cursor-help text-blue-400" />
-                    <span className="absolute -top-10 left-1/2 z-10 hidden -translate-x-1/2 rounded bg-gray-700 p-2 text-xs whitespace-nowrap text-white group-hover:block">
-                      Must include a SID or STAR from approved SID/STARs
-                    </span>
-                  </div>
-                </Label>
-                <Textarea
-                  id="route"
-                  name="route"
-                  defaultValue={flight.route}
-                  placeholder="e.g., DCT VOR VOR STAR"
-                  required
-                  className="border-gray-700 bg-gray-800 text-white"
-                />
-              </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Route</Label>
+              {eventSettings?.routeMode === "FIXED" ? (
+                <Textarea value={eventSettings.fixedRoute} readOnly className="bg-gray-700 opacity-60" />
+              ) : (
+                <Textarea name="route" defaultValue={flight.route} required className="bg-gray-800 text-white" />
+              )}
             </div>
           </div>
-
           <div className="flex gap-4">
-            <Button
-              type="submit"
-              className="shine-button flex-1 bg-green-600 text-white hover:cursor-pointer hover:bg-green-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Updating..." : "Update Flight Plan"}
-            </Button>
-            <Button
-              type="button"
-              onClick={() => router.back()}
-              className="bg-gray-600 text-white hover:cursor-pointer hover:bg-gray-700"
-            >
-              Cancel
-            </Button>
+            <Button type="submit" className="flex-1 bg-green-600">Update</Button>
+            <Button type="button" onClick={() => router.back()} className="bg-gray-600">Cancel</Button>
           </div>
         </form>
       </div>
