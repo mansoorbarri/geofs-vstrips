@@ -95,7 +95,9 @@ export function FileFlightForm() {
       <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-10 text-center text-white shadow-xl">
         <Info className="mx-auto mb-4 h-16 w-16 text-blue-500" />
         <h1 className="text-2xl font-bold">No Active Event</h1>
-        <p className="mt-4 text-gray-400">There are no events currently live. Please check back later!</p>
+        <p className="mt-4 text-gray-400">
+          There are no events currently live. Please check back later!
+        </p>
       </div>
     );
   }
@@ -106,8 +108,9 @@ export function FileFlightForm() {
     setSubmissionResult(null);
 
     const formData = new FormData(event.currentTarget);
-    const finalAirport = eventSettings?.airportMode === "FIXED" 
-        ? eventSettings.fixedAirport 
+    const finalAirport =
+      eventSettings?.airportMode === "FIXED"
+        ? eventSettings.fixedAirport
         : selectedAirport;
 
     const formValues = {
@@ -120,7 +123,9 @@ export function FileFlightForm() {
       arrival: (formData.get("arrival") as string || "").toUpperCase(),
       altitude: formData.get("altitude") as string,
       speed: formData.get("speed") as string,
-      route: (eventSettings?.routeMode === "FIXED" ? eventSettings.fixedRoute : formData.get("route")) as string,
+      route: (eventSettings?.routeMode === "FIXED"
+        ? eventSettings.fixedRoute
+        : formData.get("route")) as string,
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -138,7 +143,7 @@ export function FileFlightForm() {
       ...validation.data,
       discord_username: user.externalAccounts[0]?.username,
       status: "delivery",
-      notes: ""
+      notes: "",
     };
 
     try {
@@ -149,7 +154,8 @@ export function FileFlightForm() {
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Failed to file flight.");
+      if (!response.ok)
+        throw new Error(result.error || "Failed to file flight.");
 
       setSubmissionResult({
         success: true,
@@ -162,7 +168,13 @@ export function FileFlightForm() {
     }
   };
 
-  const renderField = (label: string, name: string, mode: string, fixedVal: string, placeholder: string) => {
+  const renderField = (
+    label: string,
+    name: string,
+    mode: string,
+    fixedVal: string,
+    placeholder: string,
+  ) => {
     const isFixed = mode === "FIXED";
     return (
       <div className="space-y-2">
@@ -174,14 +186,14 @@ export function FileFlightForm() {
           readOnly={isFixed}
           placeholder={placeholder}
           required
-          className={`border-gray-700 bg-gray-800 text-white ${isFixed ? "opacity-60 cursor-not-allowed" : ""}`}
+          className={`border-gray-700 bg-gray-800 text-white ${isFixed ? "cursor-not-allowed opacity-60" : ""}`}
         />
       </div>
     );
   };
 
-  const activeATCList = (eventSettings?.airportData || []).filter((ap: any) => 
-    eventSettings?.activeAirports?.includes(ap.id)
+  const activeATCList = (eventSettings?.airportData || []).filter((ap: any) =>
+    eventSettings?.activeAirports?.includes(ap.id),
   );
 
   if (submissionResult?.success) {
@@ -189,7 +201,9 @@ export function FileFlightForm() {
       <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
         <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
         <h1 className="3xl mb-4 font-bold">Flight Filed!</h1>
-        <p className="mb-6 text-lg text-gray-300">{submissionResult.message}</p>
+        <p className="mb-6 text-lg text-gray-300">
+          {submissionResult.message}
+        </p>
       </div>
     );
   }
@@ -201,7 +215,10 @@ export function FileFlightForm() {
       </div>
 
       {submissionResult?.success === false && (
-        <Alert variant="destructive" className="mb-4 border-red-600 bg-red-900">
+        <Alert
+          variant="destructive"
+          className="mb-4 border-red-600 bg-red-900"
+        >
           <AlertCircle className="h-4 w-4 text-red-400" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="text-red-200">
@@ -214,31 +231,79 @@ export function FileFlightForm() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="callsign">Callsign</Label>
-            <Input id="callsign" name="callsign" placeholder="e.g., DAL123" required className="border-gray-700 bg-gray-800 text-white" />
+            <Input
+              id="callsign"
+              name="callsign"
+              placeholder="e.g., DAL123"
+              required
+              className="border-gray-700 bg-gray-800 text-white"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="geofs_callsign">GeoFS Callsign</Label>
-            <Input id="geofs_callsign" name="geofs_callsign" placeholder="e.g., Ayman" required className="border-gray-700 bg-gray-800 text-white" />
+            <Input
+              id="geofs_callsign"
+              name="geofs_callsign"
+              placeholder="e.g., Ayman"
+              required
+              className="border-gray-700 bg-gray-800 text-white"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="aircraft_type">Aircraft</Label>
-            <Input id="aircraft_type" name="aircraft_type" placeholder="e.g., A320" required className="border-gray-700 bg-gray-800 text-white" />
+            <Input
+              id="aircraft_type"
+              name="aircraft_type"
+              placeholder="e.g., A320"
+              required
+              className="border-gray-700 bg-gray-800 text-white"
+            />
           </div>
-          {renderField("Time", "departure_time", eventSettings?.timeMode, eventSettings?.fixedTime, "e.g. 1720")}
+          {renderField(
+            "Time",
+            "departure_time",
+            eventSettings?.timeMode,
+            eventSettings?.fixedTime,
+            "e.g. 1720",
+          )}
         </div>
 
         <div className="border-b border-gray-700"></div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {renderField("Departure Airport", "departure", eventSettings?.departureMode, eventSettings?.fixedDeparture, "e.g. KLAX")}
-          {renderField("Arrival Airport", "arrival", eventSettings?.arrivalMode, eventSettings?.fixedArrival, "e.g. KJFK")}
+          {renderField(
+            "Departure Airport",
+            "departure",
+            eventSettings?.departureMode,
+            eventSettings?.fixedDeparture,
+            "e.g. KLAX",
+          )}
+          {renderField(
+            "Arrival Airport",
+            "arrival",
+            eventSettings?.arrivalMode,
+            eventSettings?.fixedArrival,
+            "e.g. KJFK",
+          )}
           <div className="space-y-2">
             <Label htmlFor="altitude">Cruise Altitude</Label>
-            <Input id="altitude" name="altitude" placeholder="e.g., FL350" required className="border-gray-700 bg-gray-800 text-white" />
+            <Input
+              id="altitude"
+              name="altitude"
+              placeholder="e.g., FL350"
+              required
+              className="border-gray-700 bg-gray-800 text-white"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="speed">Mach Speed</Label>
-            <Input id="speed" name="speed" placeholder="e.g., 0.82" required className="border-gray-700 bg-gray-800 text-white" />
+            <Input
+              id="speed"
+              name="speed"
+              placeholder="e.g., 0.82"
+              required
+              className="border-gray-700 bg-gray-800 text-white"
+            />
           </div>
         </div>
 
@@ -252,7 +317,7 @@ export function FileFlightForm() {
                 <Input
                   value={`${eventSettings.airportData.find((a: any) => a.id === eventSettings.fixedAirport)?.name || eventSettings.fixedAirport} (${eventSettings.fixedAirport})`}
                   readOnly
-                  className="border-gray-700 bg-gray-700 text-white opacity-60 cursor-not-allowed"
+                  className="cursor-not-allowed border-gray-700 bg-gray-700 text-white opacity-60"
                 />
               </div>
             ) : (
@@ -274,20 +339,30 @@ export function FileFlightForm() {
           <div className="space-y-2">
             <Label htmlFor="route">Flight Route</Label>
             {eventSettings?.routeMode === "FIXED" ? (
-              <Textarea 
-                id="route" 
-                name="route" 
-                value={eventSettings.fixedRoute} 
-                readOnly 
-                className="border-gray-700 bg-gray-700 text-white opacity-60" 
+              <Textarea
+                id="route"
+                name="route"
+                value={eventSettings.fixedRoute}
+                readOnly
+                className="border-gray-700 bg-gray-700 text-white opacity-60"
               />
             ) : (
-              <Textarea id="route" name="route" placeholder="e.g., DCT VOR VOR STAR" required className="border-gray-700 bg-gray-800 text-white" />
+              <Textarea
+                id="route"
+                name="route"
+                placeholder="e.g., DCT VOR VOR STAR"
+                required
+                className="border-gray-700 bg-gray-800 text-white"
+              />
             )}
           </div>
         </div>
 
-        <Button type="submit" className="w-full bg-blue-600 text-white hover:bg-blue-700" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full bg-blue-600 text-white hover:bg-blue-700"
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Submitting..." : "File Flight Plan"}
         </Button>
       </form>
