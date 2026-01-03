@@ -64,7 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const status = body["1_status"] || body.status;
     const route = body["1_route"] || body.route || "";
 
-    // 1. Validation check
+    // Validation check
     if (
       !airport ||
       !callsign ||
@@ -88,57 +88,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    // 2. Transaction to check slot capacity and create flight
-    const result = await prisma.$transaction(async (tx) => {
-      // Logic: Skip limitation if both fields are OMDB
-      const isOmdbException = airport === "OMDB" && departure === "OMDB";
-
-      if (!isOmdbException) {
-        // Count total flights for this specific airport (ATC location)
-        const flightCount = await tx.flights.count({
-          where: {
-            airport: airport,
-          },
-        });
-
-        // Limit set to 10 pilots
-        if (flightCount >= 10) {
-          throw new Error("AIRPORT_FULL");
-        }
-      }
-
-      return await tx.flights.create({
-        data: {
-          airport,
-          callsign,
-          discord_username,
-          geofs_callsign,
-          aircraft_type,
-          departure,
-          departure_time,
-          arrival,
-          altitude,
-          squawk: "",
-          speed,
-          status,
-          route,
-          notes: "",
-        },
-      });
+    const flight = await prisma.flights.create({
+      data: {
+        airport,
+        callsign,
+        discord_username,
+        geofs_callsign,
+        aircraft_type,
+        departure,
+        departure_time,
+        arrival,
+        altitude,
+        squawk: "",
+        speed,
+        status,
+        route,
+        notes: "",
+      },
     });
 
-    return NextResponse.json({ flight: result });
+    return NextResponse.json({ flight });
   } catch (error: any) {
     console.error("Error creating flight:", error);
-
-    if (error.message === "AIRPORT_FULL") {
-      return NextResponse.json(
-        { 
-          error: "This airport has reached its limit of 10 pilots. Please select a different location." 
-        },
-        { status: 429 }
-      );
-    }
 
     if (error.code === "P2002") {
       return NextResponse.json(
