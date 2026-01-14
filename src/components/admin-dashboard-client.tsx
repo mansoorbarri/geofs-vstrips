@@ -57,7 +57,6 @@ export function AdminDashboardClient() {
 
   // Sync local settings with Convex settings when they load
   useEffect(() => {
-    console.log("Convex settings loaded:", convexSettings);
     if (convexSettings) {
       setLocalSettings({
         isEventLive: convexSettings.isEventLive ?? false,
@@ -124,14 +123,11 @@ export function AdminDashboardClient() {
   };
 
   const handleToggleEventLive = async (val: boolean) => {
-    console.log("Toggling event live to:", val);
     setLocalSettings({...localSettings, isEventLive: val});
     try {
-      const result = await updateSettings({ isEventLive: val });
-      console.log("Update result:", result);
+      await updateSettings({ isEventLive: val });
       toast.success(val ? "Event is now LIVE!" : "Event is now offline");
     } catch (e: any) {
-      console.error("Failed to toggle event live:", e);
       toast.error(`Failed to update: ${e.message || "Unknown error"}`);
       setLocalSettings({...localSettings, isEventLive: !val}); // Revert on error
     }
