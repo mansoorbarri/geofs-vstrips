@@ -1,39 +1,22 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { AlertCircle, Edit, Plane } from "lucide-react";
+import { AlertCircle, Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Footer from "~/components/footer";
 import Header from "./header";
-
-interface Flight {
-  id: string;
-  airport: string;
-  callsign: string;
-  geofs_callsign: string;
-  aircraft_type: string;
-  departure: string;
-  departure_time: string;
-  arrival: string;
-  altitude: string;
-  speed: string;
-  status: string;
-  route: string;
-  discord_username: string;
-}
-
-const CACHE_KEY = "flights_cache";
-const CACHE_DURATION = 60 * 1000;
+import { useMyFlights } from "~/hooks/use-flights";
+import Loading from "~/components/loading";
 
 export function FlightsList() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const discordUsername = user?.externalAccounts?.[0]?.username ?? null;
+  const { flights, isLoading } = useMyFlights(discordUsername);
 
   const editableFlights = useMemo(
     () => flights.filter((flight) => flight.status === "delivery"),
@@ -45,98 +28,13 @@ export function FlightsList() {
     [flights],
   );
 
-  const getCachedFlights = () => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-          return data;
-        }
-        localStorage.removeItem(CACHE_KEY);
-      }
-    } catch (error) {
-      localStorage.removeItem(CACHE_KEY);
-    }
-    return null;
-  };
-
-  const setCachedFlights = (flightsData: Flight[]) => {
-    try {
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({
-          data: flightsData,
-          timestamp: Date.now(),
-        }),
-      );
-    } catch (error) {
-      console.error("Failed to cache flights:", error);
-    }
-  };
-
-  const fetchFlights = useCallback(async () => {
-    const cached = getCachedFlights();
-    if (cached) {
-      setFlights(cached);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/flights/my", {
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch flights");
-      }
-
-      const data = await response.json();
-      const flightsData = data.flights || [];
-
-      setFlights(flightsData);
-      setCachedFlights(flightsData);
-    } catch (error: any) {
-      setError(error.message || "Failed to load flights");
-    } finally {
-      setLoading(false);
-    }
-  }, [setFlights, setLoading, setError]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!isSignedIn) {
-      router.push("/sign-up");
-      return;
-    }
-
-    void fetchFlights();
-  }, [isLoaded, isSignedIn, fetchFlights, router]);
-
-  if (!isLoaded || loading) {
-    return (
-      <div className="container mx-auto max-w-4xl rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
-        <p className="mt-4">Loading your flights...</p>
-      </div>
-    );
+  if (!isLoaded || isLoading) {
+    return <Loading />;
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto max-w-4xl rounded-lg bg-gray-900 p-6 text-white shadow-xl">
-        <Alert variant="destructive" className="border-red-600 bg-red-900">
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription className="text-red-200">{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!isSignedIn) {
+    router.push("/sign-up");
+    return null;
   }
 
   return (

@@ -1,10 +1,18 @@
 "use client";
 
-import { type flights, type FlightStatus } from "@prisma/client";
+import { type LegacyFlight as Flight } from "~/hooks/use-flights";
+
+type FlightStatus =
+  | "delivery"
+  | "ground"
+  | "tower"
+  | "departure"
+  | "approach"
+  | "control";
 
 interface FidsColumnProps {
   status: FlightStatus;
-  flights: flights[];
+  flights: Flight[];
 }
 
 const STATUS_LABELS: Record<FlightStatus, string> = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useState } from "react";
+import { useEventSettings } from "~/hooks/use-event-settings";
 
 type Airport = {
   id: string;
@@ -18,31 +20,16 @@ type Airport = {
 };
 
 export function AirportSelector() {
-  const [dynamicAirports, setDynamicAirports] = useState<Airport[]>([]);
   const [selectedAirport, setSelectedAirport] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { settings, isLoading } = useEventSettings();
 
-  useEffect(() => {
-    async function loadAirports() {
-      try {
-        const response = await fetch("/api/admin/settings");
-        if (response.ok) {
-          const data = await response.json();
-          const masterList: Airport[] = data.airportData || [];
-          const activeIds: string[] = data.activeAirports || [];
-          
-          const filtered = masterList.filter((ap) => activeIds.includes(ap.id));
-          setDynamicAirports(filtered);
-        }
-      } catch (error) {
-        console.error("Failed to load airports:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    void loadAirports();
-  }, []);
+  const dynamicAirports = useMemo(() => {
+    if (!settings) return [];
+    const masterList: Airport[] = (settings.airportData as Airport[]) || [];
+    const activeIds: string[] = settings.activeAirports || [];
+    return masterList.filter((ap) => activeIds.includes(ap.id));
+  }, [settings]);
 
   const handleGoToBoard = () => {
     if (selectedAirport) {

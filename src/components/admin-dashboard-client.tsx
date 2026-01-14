@@ -7,12 +7,11 @@ import Footer from "~/components/footer";
 import Loading from "~/components/loading";
 import Header from "~/components/header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Checkbox } from "~/components/ui/checkbox";
 import { Switch } from "~/components/ui/switch";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
@@ -20,6 +19,7 @@ import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { toast } from "sonner";
 import { searchGlobalAirports, type ExternalAirport } from "~/lib/fetch-airports";
+import { useEventSettings } from "~/hooks/use-event-settings";
 
 interface AppUser {
   id: string;
@@ -32,12 +32,14 @@ interface AppUser {
 export function AdminDashboardClient() {
   const { user } = useUser();
   const [users, setUsers] = useState<AppUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ExternalAirport[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const [settings, setSettings] = useState({
+  const { settings: convexSettings, isLoading: isLoadingSettings, updateSettings } = useEventSettings();
+
+  const [localSettings, setLocalSettings] = useState({
     isEventLive: false,
     airportMode: "CUSTOM",
     fixedAirport: "",
@@ -53,30 +55,41 @@ export function AdminDashboardClient() {
     airportData: [] as { id: string; name: string }[],
   });
 
-  const fetchData = async () => {
+  // Sync local settings with Convex settings when they load
+  useEffect(() => {
+    console.log("Convex settings loaded:", convexSettings);
+    if (convexSettings) {
+      setLocalSettings({
+        isEventLive: convexSettings.isEventLive ?? false,
+        airportMode: convexSettings.airportMode ?? "CUSTOM",
+        fixedAirport: convexSettings.fixedAirport ?? "",
+        departureMode: convexSettings.departureMode ?? "CUSTOM",
+        fixedDeparture: convexSettings.fixedDeparture ?? "",
+        arrivalMode: convexSettings.arrivalMode ?? "CUSTOM",
+        fixedArrival: convexSettings.fixedArrival ?? "",
+        routeMode: convexSettings.routeMode ?? "CUSTOM",
+        fixedRoute: convexSettings.fixedRoute ?? "",
+        timeMode: convexSettings.timeMode ?? "CUSTOM",
+        fixedTime: convexSettings.fixedTime ?? "",
+        activeAirports: convexSettings.activeAirports ?? [],
+        airportData: (convexSettings.airportData as { id: string; name: string }[]) ?? [],
+      });
+    }
+  }, [convexSettings]);
+
+  const fetchUsers = async () => {
     try {
-      const [uRes, sRes] = await Promise.all([
-        fetch("/api/users"),
-        fetch("/api/admin/settings")
-      ]);
-      if (uRes.ok) setUsers(await uRes.json());
-      if (sRes.ok) {
-        const sData = await sRes.json();
-        setSettings({
-          ...sData,
-          airportData: sData.airportData ?? [],
-          activeAirports: sData.activeAirports ?? []
-        });
-      }
+      const res = await fetch("/api/users");
+      if (res.ok) setUsers(await res.json());
     } catch (e) {
-      toast.error("Failed to load dashboard data");
+      toast.error("Failed to load users");
     } finally {
-      setIsLoading(false);
+      setIsLoadingUsers(false);
     }
   };
 
   useEffect(() => {
-    void fetchData();
+    void fetchUsers();
   }, []);
 
   useEffect(() => {
@@ -88,33 +101,48 @@ export function AdminDashboardClient() {
   }, [searchQuery]);
 
   const toggleAirport = (ap: ExternalAirport) => {
-    const isAlreadyActive = settings.activeAirports.includes(ap.icao);
-    const nextActive = isAlreadyActive 
-      ? settings.activeAirports.filter(id => id !== ap.icao)
-      : [...settings.activeAirports, ap.icao];
+    const isAlreadyActive = localSettings.activeAirports.includes(ap.icao);
+    const nextActive = isAlreadyActive
+      ? localSettings.activeAirports.filter(id => id !== ap.icao)
+      : [...localSettings.activeAirports, ap.icao];
 
     const nextData = isAlreadyActive
-      ? settings.airportData.filter(d => d.id !== ap.icao)
-      : [...settings.airportData, { id: ap.icao, name: ap.name }];
+      ? localSettings.airportData.filter(d => d.id !== ap.icao)
+      : [...localSettings.airportData, { id: ap.icao, name: ap.name }];
 
-    setSettings({ ...settings, activeAirports: nextActive, airportData: nextData });
+    setLocalSettings({ ...localSettings, activeAirports: nextActive, airportData: nextData });
   };
 
   const handleSave = async () => {
-    const res = await fetch("/api/admin/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings),
-    });
-    if (res.ok) toast.success("Settings saved");
+    try {
+      await updateSettings(localSettings);
+      toast.success("Settings saved");
+    } catch (e) {
+      console.error("Failed to save settings:", e);
+      toast.error("Failed to save settings");
+    }
+  };
+
+  const handleToggleEventLive = async (val: boolean) => {
+    console.log("Toggling event live to:", val);
+    setLocalSettings({...localSettings, isEventLive: val});
+    try {
+      const result = await updateSettings({ isEventLive: val });
+      console.log("Update result:", result);
+      toast.success(val ? "Event is now LIVE!" : "Event is now offline");
+    } catch (e: any) {
+      console.error("Failed to toggle event live:", e);
+      toast.error(`Failed to update: ${e.message || "Unknown error"}`);
+      setLocalSettings({...localSettings, isEventLive: !val}); // Revert on error
+    }
   };
 
   const renderConfigSection = (title: string, modeKey: string, valKey: string, placeholder: string) => (
-    <div className={`p-4 border rounded-lg space-y-4 ${settings[modeKey as keyof typeof settings] === "FIXED" ? "border-blue-500 bg-blue-900/10" : "border-gray-800"}`}>
+    <div className={`p-4 border rounded-lg space-y-4 ${localSettings[modeKey as keyof typeof localSettings] === "FIXED" ? "border-blue-500 bg-blue-900/10" : "border-gray-800"}`}>
       <Label className="text-blue-400">{title}</Label>
-      <Select 
-        value={settings[modeKey as keyof typeof settings] as string} 
-        onValueChange={(v) => setSettings({...settings, [modeKey]: v})}
+      <Select
+        value={localSettings[modeKey as keyof typeof localSettings] as string}
+        onValueChange={(v) => setLocalSettings({...localSettings, [modeKey]: v})}
       >
         <SelectTrigger className="bg-gray-800 border-gray-700">
           <SelectValue />
@@ -124,17 +152,17 @@ export function AdminDashboardClient() {
           <SelectItem value="FIXED">Locked Value</SelectItem>
         </SelectContent>
       </Select>
-      <Input 
+      <Input
         placeholder={placeholder}
-        value={settings[valKey as keyof typeof settings] as string || ""}
-        onChange={(e) => setSettings({...settings, [valKey]: e.target.value.toUpperCase()})}
-        disabled={settings[modeKey as keyof typeof settings] === "CUSTOM"}
+        value={localSettings[valKey as keyof typeof localSettings] as string || ""}
+        onChange={(e) => setLocalSettings({...localSettings, [valKey]: e.target.value.toUpperCase()})}
+        disabled={localSettings[modeKey as keyof typeof localSettings] === "CUSTOM"}
         className="bg-gray-800 border-gray-700 disabled:opacity-30"
       />
     </div>
   );
 
-  if (isLoading) return <Loading />;
+  if (isLoadingSettings || isLoadingUsers) return <Loading />;
 
   return (
     <div className="px-8 min-h-screen bg-black text-white">
@@ -143,9 +171,9 @@ export function AdminDashboardClient() {
         <h1 className="text-3xl font-bold">Admin Controls</h1>
         <div className="flex items-center space-x-4 bg-gray-900 p-3 rounded-lg border border-gray-800">
           <Label className="font-bold">Event Live</Label>
-          <Switch 
-            checked={settings.isEventLive} 
-            onCheckedChange={(val) => setSettings({...settings, isEventLive: val})} 
+          <Switch
+            checked={localSettings.isEventLive}
+            onCheckedChange={handleToggleEventLive}
           />
         </div>
       </div>
@@ -174,7 +202,7 @@ export function AdminDashboardClient() {
                       <CommandGroup>
                         {searchResults.map((ap) => (
                           <CommandItem key={ap.icao} onSelect={() => toggleAirport(ap)} className="text-white">
-                            <Check className={`mr-2 h-4 w-4 ${settings.activeAirports.includes(ap.icao) ? "opacity-100" : "opacity-0"}`} />
+                            <Check className={`mr-2 h-4 w-4 ${localSettings.activeAirports.includes(ap.icao) ? "opacity-100" : "opacity-0"}`} />
                             {ap.icao} - {ap.name}
                           </CommandItem>
                         ))}
@@ -184,19 +212,19 @@ export function AdminDashboardClient() {
                 </PopoverContent>
               </Popover>
 
-              <RadioGroup 
-                value={settings.airportMode === "FIXED" ? settings.fixedAirport : "CUSTOM"}
-                onValueChange={(val) => setSettings({ 
-                  ...settings, 
+              <RadioGroup
+                value={localSettings.airportMode === "FIXED" ? localSettings.fixedAirport : "CUSTOM"}
+                onValueChange={(val) => setLocalSettings({
+                  ...localSettings,
                   airportMode: val === "CUSTOM" ? "CUSTOM" : "FIXED",
-                  fixedAirport: val === "CUSTOM" ? "" : val 
+                  fixedAirport: val === "CUSTOM" ? "" : val
                 })}
               >
                 <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded border border-gray-700">
                   <RadioGroupItem value="CUSTOM" id="custom-atc" />
                   <Label htmlFor="custom-atc" className="flex-grow cursor-pointer text-gray-400">Pilots choose from list below</Label>
                 </div>
-                {settings.airportData.map((ap) => (
+                {localSettings.airportData.map((ap) => (
                   <div key={ap.id} className="flex items-center justify-between p-3 bg-gray-800 rounded border border-gray-700">
                     <div className="flex items-center space-x-3">
                       <RadioGroupItem value={ap.id} id={ap.id} />
@@ -217,14 +245,14 @@ export function AdminDashboardClient() {
             {renderConfigSection("Departure Time", "timeMode", "fixedTime", "e.g. 1800")}
             {renderConfigSection("Flight Route", "routeMode", "fixedRoute", "e.g. DCT VOR STAR")}
           </div>
-          
+
           <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold">
             Push Config to Live Site
           </Button>
         </TabsContent>
 
         <TabsContent value="users">
-          <UserList users={users} onRoleChange={fetchData} currentUserId={user?.id || ""} />
+          <UserList users={users} onRoleChange={fetchUsers} currentUserId={user?.id || ""} />
         </TabsContent>
       </Tabs>
       <Footer />

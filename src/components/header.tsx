@@ -1,28 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
+import { useEventSettings } from "~/hooks/use-event-settings";
 
 export default function Header() {
-  const [defaultAirportId, setDefaultAirportId] = useState<string>("");
+  const { settings } = useEventSettings();
 
-  useEffect(() => {
-    async function fetchDefaultAirport() {
-      try {
-        const response = await fetch("/api/admin/settings");
-        if (response.ok) {
-          const data = await response.json();
-          const activeIds = data.activeAirports || [];
-          if (activeIds.length > 0) {
-            setDefaultAirportId(activeIds[0]);
-          }
-        }
-      } catch (err) {
-        console.error("Header failed to fetch airport settings:", err);
-      }
-    }
-    void fetchDefaultAirport();
-  }, []);
+  const defaultAirportId = useMemo(() => {
+    const activeIds = settings?.activeAirports || [];
+    return activeIds.length > 0 ? activeIds[0] : "";
+  }, [settings]);
 
   return (
     <header className="w-full border-b border-gray-800">

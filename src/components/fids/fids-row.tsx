@@ -1,7 +1,14 @@
 "use client";
 
-import type { Flight } from "~/hooks/use-flights";
-import type { FlightStatus } from "@prisma/client";
+import type { LegacyFlight as Flight } from "~/hooks/use-flights";
+
+type FlightStatus =
+  | "delivery"
+  | "ground"
+  | "tower"
+  | "departure"
+  | "approach"
+  | "control";
 
 interface FidsRowProps {
   flight: Flight;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useEventSettings } from "~/hooks/use-event-settings";
 
 interface FidsHeaderProps {
   currentAirport: string;
@@ -17,25 +18,14 @@ interface FidsHeaderProps {
 
 export const FidsHeader: React.FC<FidsHeaderProps> = ({ currentAirport }) => {
   const router = useRouter();
-  const [dynamicAirports, setDynamicAirports] = useState<{ id: string; name: string }[]>([]);
+  const { settings } = useEventSettings();
 
-  useEffect(() => {
-    async function loadAirports() {
-      try {
-        const response = await fetch("/api/admin/settings");
-        if (response.ok) {
-          const data = await response.json();
-          const masterList = data.airportData || [];
-          const activeIds = data.activeAirports || [];
-          const filtered = masterList.filter((ap: any) => activeIds.includes(ap.id));
-          setDynamicAirports(filtered);
-        }
-      } catch (err) {
-        console.error("FIDS Header failed to load airports:", err);
-      }
-    }
-    void loadAirports();
-  }, []);
+  const dynamicAirports = useMemo(() => {
+    if (!settings) return [];
+    const masterList = (settings.airportData as { id: string; name: string }[]) || [];
+    const activeIds = settings.activeAirports || [];
+    return masterList.filter((ap) => activeIds.includes(ap.id));
+  }, [settings]);
 
   return (
     <header className="flex flex-col sm:flex-row items-center justify-between w-full gap-4 border-b border-gray-700 bg-gray-900 px-5 py-4 text-white shadow-md mb-3">

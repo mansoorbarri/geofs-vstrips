@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { AlertCircle, CheckCircle, Info } from "lucide-react";
@@ -17,8 +17,9 @@ import {
 } from "~/components/ui/select";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import Link from "next/link";
 import Loading from "~/components/loading";
+import { useEventSettings } from "~/hooks/use-event-settings";
+import { useFlights } from "~/hooks/use-flights";
 
 const flightSchema = z.object({
   airport: z
@@ -74,18 +75,9 @@ export function FileFlightForm() {
     errors?: z.ZodIssue[];
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eventSettings, setEventSettings] = useState<any>(null);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/admin/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        setEventSettings(data);
-        setIsLoadingSettings(false);
-      })
-      .catch(() => setIsLoadingSettings(false));
-  }, []);
+  const { settings: eventSettings, isLoading: isLoadingSettings } = useEventSettings();
+  const { createFlight } = useFlights();
 
   if (!isLoaded || isLoadingSettings) return <Loading />;
   if (!isSignedIn) redirect("/sign-up");
@@ -114,7 +106,7 @@ export function FileFlightForm() {
         : selectedAirport;
 
     const formValues = {
-      airport: finalAirport,
+      airport: finalAirport || "",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
@@ -141,22 +133,14 @@ export function FileFlightForm() {
 
     const flightData = {
       ...validation.data,
-      discord_username: user.externalAccounts[0]?.username,
-      status: "delivery",
+      discord_username: user.externalAccounts[0]?.username ?? null,
+      status: "delivery" as const,
       notes: "",
+      squawk: null,
     };
 
     try {
-      const response = await fetch("/api/flights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(flightData),
-      });
-
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error || "Failed to file flight.");
-
+      await createFlight(flightData);
       setSubmissionResult({
         success: true,
         message: "Thank you. Your flight is filed. See you at the event!",
@@ -171,8 +155,8 @@ export function FileFlightForm() {
   const renderField = (
     label: string,
     name: string,
-    mode: string,
-    fixedVal: string,
+    mode: string | undefined,
+    fixedVal: string | undefined,
     placeholder: string,
   ) => {
     const isFixed = mode === "FIXED";
@@ -192,7 +176,8 @@ export function FileFlightForm() {
     );
   };
 
-  const activeATCList = (eventSettings?.airportData || []).filter((ap: any) =>
+  const airportData = (eventSettings?.airportData as { id: string; name: string }[]) || [];
+  const activeATCList = airportData.filter((ap) =>
     eventSettings?.activeAirports?.includes(ap.id),
   );
 
@@ -315,7 +300,7 @@ export function FileFlightForm() {
             {eventSettings?.airportMode === "FIXED" ? (
               <div className="space-y-2">
                 <Input
-                  value={`${eventSettings.airportData.find((a: any) => a.id === eventSettings.fixedAirport)?.name || eventSettings.fixedAirport} (${eventSettings.fixedAirport})`}
+                  value={`${airportData.find((a) => a.id === eventSettings.fixedAirport)?.name || eventSettings.fixedAirport} (${eventSettings.fixedAirport})`}
                   readOnly
                   className="cursor-not-allowed border-gray-700 bg-gray-700 text-white opacity-60"
                 />
@@ -326,7 +311,7 @@ export function FileFlightForm() {
                   <SelectValue placeholder="Select an airport" />
                 </SelectTrigger>
                 <SelectContent className="border-gray-700 bg-gray-800 text-white">
-                  {activeATCList.map((airport: any) => (
+                  {activeATCList.map((airport) => (
                     <SelectItem key={airport.id} value={airport.id}>
                       {airport.name} ({airport.id})
                     </SelectItem>

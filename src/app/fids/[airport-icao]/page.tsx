@@ -1,23 +1,37 @@
-import { FidsBoard } from "~/components/fids/fids-board";
-import { notFound } from "next/navigation";
-import { FidsHeader } from "~/components/fids/fids-header";
-import { db } from "~/server/db";
+"use client";
 
-export default async function FidsPage({ params }: any) {
-  const { "airport-icao": airportIcao } = await params;
+import { FidsBoard } from "~/components/fids/fids-board";
+import { FidsHeader } from "~/components/fids/fids-header";
+import { useParams } from "next/navigation";
+import { useEventSettings } from "~/hooks/use-event-settings";
+import Loading from "~/components/loading";
+
+export default function FidsPage() {
+  const params = useParams();
+  const airportIcao = params["airport-icao"] as string;
   const airport = airportIcao?.toUpperCase();
 
-  if (!airport) notFound();
+  const { settings, isLoading } = useEventSettings();
 
-  const settings = await db.eventSettings.findUnique({
-    where: { id: "current" },
-  });
+  if (isLoading) return <Loading />;
+
+  if (!airport) {
+    return (
+      <main className="mx-auto max-w-7xl p-6">
+        <p className="text-red-500">Airport not found</p>
+      </main>
+    );
+  }
 
   const activeAirports = settings?.activeAirports || [];
   const airportExists = activeAirports.includes(airport);
 
   if (!airportExists) {
-    notFound();
+    return (
+      <main className="mx-auto max-w-7xl p-6">
+        <p className="text-red-500">Airport {airport} is not currently active</p>
+      </main>
+    );
   }
 
   return (

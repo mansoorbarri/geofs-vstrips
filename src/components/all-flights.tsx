@@ -18,7 +18,8 @@ import { FlightStrip } from "~/components/flight-strip";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
 import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { useFlights, type Flight } from "~/hooks/use-flights";
+import { useFlights, type LegacyFlight as Flight } from "~/hooks/use-flights";
+import { useEventSettings } from "~/hooks/use-event-settings";
 import Link from "next/link";
 import {
   Select,
@@ -71,7 +72,15 @@ export function AllFlightsPageClient() {
     deleteFlight,
   } = useFlights(true, undefined);
 
-  const [dynamicAirports, setDynamicAirports] = useState<{ id: string; name: string }[]>([]);
+  const { settings: eventSettings } = useEventSettings();
+
+  const dynamicAirports = useMemo(() => {
+    if (!eventSettings) return [];
+    const masterList = (eventSettings.airportData as { id: string; name: string }[]) || [];
+    const activeIds = eventSettings.activeAirports || [];
+    return masterList.filter((ap) => activeIds.includes(ap.id));
+  }, [eventSettings]);
+
   const [importStatus, setImportStatus] = useState<ImportStatus>({
     type: null,
     message: "",
@@ -87,24 +96,6 @@ export function AllFlightsPageClient() {
     targetAirport: "",
     targetSector: "delivery",
   });
-
-  useEffect(() => {
-    async function loadAirports() {
-      try {
-        const response = await fetch("/api/admin/settings");
-        if (response.ok) {
-          const data = await response.json();
-          const masterList = data.airportData || [];
-          const activeIds = data.activeAirports || [];
-          const filtered = masterList.filter((ap: any) => activeIds.includes(ap.id));
-          setDynamicAirports(filtered);
-        }
-      } catch (err) {
-        console.error("Failed to load airports:", err);
-      }
-    }
-    void loadAirports();
-  }, []);
 
   const boardSectors = useMemo(
     () =>
