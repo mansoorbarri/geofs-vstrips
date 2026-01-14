@@ -1,22 +1,41 @@
-// src/hooks/use-flights.ts
 "use client";
-import useSWR from "swr";
-import { useState, useCallback, useMemo, useEffect } from "react";
-import type { Prisma } from "@prisma/client";
 
-// src/hooks/use-flights.ts
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+import { useMemo, useCallback } from "react";
 
 export interface Flight {
+  _id: Id<"flights">;
+  _creationTime: number;
+  airport: string;
+  callsign: string;
+  geofs_callsign?: string;
+  discord_username?: string;
+  aircraft_type: string;
+  departure: string;
+  departure_time: string;
+  arrival: string;
+  altitude: string;
+  squawk?: string;
+  speed: string;
+  status: "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
+  route?: string;
+  notes?: string;
+}
+
+// Legacy interface for compatibility
+export interface LegacyFlight {
   id: string;
   created_at: string;
   updated_at: string;
   airport: string;
   callsign: string;
   geofs_callsign: string | null;
-  discord_username: string | null; // NEW: Discord username
+  discord_username: string | null;
   aircraft_type: string;
   departure: string;
-  departure_time: string | null; // NEW: Departure time
+  departure_time: string | null;
   arrival: string;
   altitude: string;
   squawk: string | null;
@@ -27,153 +46,184 @@ export interface Flight {
 }
 
 interface UseFlightsResult {
-  flights: Flight[];
+  flights: LegacyFlight[];
   isLoading: boolean;
-  error: any;
+  error: Error | null;
   lastUpdate: string | null;
   createFlight: (
-    flightData: Omit<Flight, "id" | "created_at" | "updated_at">,
-  ) => Promise<Flight>;
+    flightData: Omit<LegacyFlight, "id" | "created_at" | "updated_at">
+  ) => Promise<LegacyFlight>;
   updateFlight: (
     id: string,
-    flightData: Partial<Omit<Flight, "id" | "created_at" | "updated_at">>,
-  ) => Promise<Flight>;
+    flightData: Partial<Omit<LegacyFlight, "id" | "created_at" | "updated_at">>
+  ) => Promise<LegacyFlight>;
   deleteFlight: (id: string) => Promise<void>;
 }
 
-// Custom fetcher for SWR
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) {
-    const error = new Error("An error occurred while fetching the data.");
-    throw error;
-  }
-  return res.json();
-};
+// Convert Convex flight to legacy format for compatibility
+function toLeglightFlight(flight: Flight): LegacyFlight {
+  return {
+    id: flight._id,
+    created_at: new Date(flight._creationTime).toISOString(),
+    updated_at: new Date(flight._creationTime).toISOString(),
+    airport: flight.airport,
+    callsign: flight.callsign,
+    geofs_callsign: flight.geofs_callsign ?? null,
+    discord_username: flight.discord_username ?? null,
+    aircraft_type: flight.aircraft_type,
+    departure: flight.departure,
+    departure_time: flight.departure_time ?? null,
+    arrival: flight.arrival,
+    altitude: flight.altitude,
+    squawk: flight.squawk ?? null,
+    speed: flight.speed,
+    status: flight.status,
+    route: flight.route ?? null,
+    notes: flight.notes ?? null,
+  };
+}
 
-// UPDATED: Added optional airport parameter
 export function useFlights(
-  realtime = false,
-  airport?: string,
+  _realtime = false, // No longer needed - Convex is always real-time
+  airport?: string
 ): UseFlightsResult {
-  // UPDATED: Build URL with airport query parameter if provided
-  const apiUrl = useMemo(() => {
-    const baseUrl = "/api/flights";
-    if (airport) {
-      return `${baseUrl}?airport=${encodeURIComponent(airport)}`;
-    }
-    return baseUrl;
-  }, [airport]);
+  const flightsData = useQuery(api.flights.list, { airport });
+  const createFlightMutation = useMutation(api.flights.create);
+  const updateFlightMutation = useMutation(api.flights.update);
+  const deleteFlightMutation = useMutation(api.flights.remove);
 
-  const { data, error, isLoading, mutate } = useSWR<{ flights: Flight[] }>(
-    apiUrl, // UPDATED: Use dynamic URL
-    fetcher,
-    {
-      refreshInterval: realtime ? 5000 : 0,
-      revalidateOnFocus: realtime,
-      fallbackData: { flights: [] },
-    },
-  );
+  const isLoading = flightsData === undefined;
 
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const flights = useMemo(() => {
+    if (!flightsData) return [];
+    return flightsData.map(toLeglightFlight);
+  }, [flightsData]);
 
-  useEffect(() => {
-    if (data?.flights && data.flights.length > 0) {
-      // Convert string dates to Date objects for proper numerical comparison
-      const sortedFlights = [...data.flights].sort((a, b) => {
-        const dateA = new Date(a.updated_at);
-        const dateB = new Date(b.updated_at);
-        return dateB.getTime() - dateA.getTime();
-      });
+  const lastUpdate = useMemo(() => {
+    if (!flightsData || flightsData.length === 0) return null;
+    const sorted = [...flightsData].sort(
+      (a, b) => b._creationTime - a._creationTime
+    );
+    return sorted[0] ? new Date(sorted[0]._creationTime).toISOString() : null;
+  }, [flightsData]);
 
-      const latestFlight = sortedFlights[0];
-      if (latestFlight) {
-        setLastUpdate(new Date(latestFlight.updated_at).toISOString());
-      } else {
-        setLastUpdate(null);
-      }
-    } else {
-      setLastUpdate(null);
-    }
-  }, [data]);
-
-  const flights = useMemo(() => data?.flights || [], [data]);
-
-  // UPDATED: Include airport in createFlight
   const createFlight = useCallback(
     async (
-      flightData: Omit<Flight, "id" | "created_at" | "updated_at">,
-    ): Promise<Flight> => {
-      // Ensure airport is included in the flight data
-      const flightDataWithAirport = {
-        ...flightData,
-        airport: flightData.airport || airport || "", // Use provided airport as fallback
-      };
-
-      const res = await fetch("/api/flights/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(flightDataWithAirport),
+      flightData: Omit<LegacyFlight, "id" | "created_at" | "updated_at">
+    ): Promise<LegacyFlight> => {
+      const id = await createFlightMutation({
+        airport: flightData.airport || airport || "",
+        callsign: flightData.callsign,
+        discord_username: flightData.discord_username ?? undefined,
+        geofs_callsign: flightData.geofs_callsign ?? undefined,
+        aircraft_type: flightData.aircraft_type,
+        departure: flightData.departure,
+        departure_time: flightData.departure_time || "",
+        arrival: flightData.arrival,
+        altitude: flightData.altitude,
+        squawk: flightData.squawk ?? undefined,
+        speed: flightData.speed,
+        status: flightData.status as Flight["status"],
+        route: flightData.route ?? undefined,
+        notes: flightData.notes ?? undefined,
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to create flight.");
-      }
-
-      const newFlight = await res.json();
-      void mutate(); // Revalidate the SWR cache
-      return newFlight;
+      // Return a mock response - the actual data will be in the subscription
+      return {
+        id: id as string,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        airport: flightData.airport,
+        callsign: flightData.callsign,
+        geofs_callsign: flightData.geofs_callsign,
+        discord_username: flightData.discord_username,
+        aircraft_type: flightData.aircraft_type,
+        departure: flightData.departure,
+        departure_time: flightData.departure_time,
+        arrival: flightData.arrival,
+        altitude: flightData.altitude,
+        squawk: flightData.squawk,
+        speed: flightData.speed,
+        status: flightData.status,
+        route: flightData.route,
+        notes: flightData.notes,
+      };
     },
-    [mutate, airport],
+    [createFlightMutation, airport]
   );
 
   const updateFlight = useCallback(
     async (
       id: string,
-      flightData: Partial<Omit<Flight, "id" | "created_at" | "updated_at">>,
-    ): Promise<Flight> => {
-      const res = await fetch(`/api/flights/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(flightData),
+      flightData: Partial<Omit<LegacyFlight, "id" | "created_at" | "updated_at">>
+    ): Promise<LegacyFlight> => {
+      const result = await updateFlightMutation({
+        id: id as Id<"flights">,
+        airport: flightData.airport,
+        callsign: flightData.callsign,
+        discord_username: flightData.discord_username ?? undefined,
+        geofs_callsign: flightData.geofs_callsign ?? undefined,
+        aircraft_type: flightData.aircraft_type,
+        departure: flightData.departure,
+        departure_time: flightData.departure_time ?? undefined,
+        arrival: flightData.arrival,
+        altitude: flightData.altitude,
+        squawk: flightData.squawk ?? undefined,
+        speed: flightData.speed,
+        status: flightData.status as Flight["status"] | undefined,
+        route: flightData.route ?? undefined,
+        notes: flightData.notes ?? undefined,
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update flight.");
+      if (!result) {
+        throw new Error("Flight not found");
       }
 
-      const updatedFlight = await res.json();
-      void mutate(); // Revalidate the SWR cache
-      return updatedFlight;
+      return toLeglightFlight(result as Flight);
     },
-    [mutate],
+    [updateFlightMutation]
   );
 
   const deleteFlight = useCallback(
     async (id: string): Promise<void> => {
-      const res = await fetch(`/api/flights/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to delete flight.");
-      }
-
-      void mutate(); // Revalidate the SWR cache
+      await deleteFlightMutation({ id: id as Id<"flights"> });
     },
-    [mutate],
+    [deleteFlightMutation]
   );
 
   return {
     flights,
     isLoading,
-    error,
+    error: null,
     lastUpdate,
     createFlight,
     updateFlight,
     deleteFlight,
+  };
+}
+
+// Additional hook for getting a single flight's history
+export function useFlightHistory(flightId: string | null) {
+  const history = useQuery(
+    api.flights.getHistory,
+    flightId ? { flight_id: flightId as Id<"flights"> } : "skip"
+  );
+
+  return {
+    history: history ?? [],
+    isLoading: history === undefined,
+  };
+}
+
+// Hook for getting user's own flights
+export function useMyFlights(discordUsername: string | null) {
+  const flights = useQuery(
+    api.flights.getMyFlights,
+    discordUsername ? { discord_username: discordUsername } : "skip"
+  );
+
+  return {
+    flights: flights?.map(toLeglightFlight) ?? [],
+    isLoading: flights === undefined,
   };
 }

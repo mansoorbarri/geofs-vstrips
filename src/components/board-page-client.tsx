@@ -19,7 +19,7 @@ import { DropZone } from "~/components/drop-zone";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
 import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { useFlights } from "~/hooks/use-flights";
-import { type Flight } from "~/hooks/use-flights";
+import { type LegacyFlight as Flight } from "~/hooks/use-flights";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -41,6 +41,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Loading from "~/components/loading";
 import { toast } from "sonner";
+import { useEventSettings } from "~/hooks/use-event-settings";
 
 export type FlightStatus =
   | "delivery"
@@ -95,7 +96,15 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     deleteFlight,
   } = useFlights(true, airportName);
 
-  const [dynamicAirports, setDynamicAirports] = useState<{ id: string; name: string }[]>([]);
+  const { settings: eventSettings } = useEventSettings();
+
+  const dynamicAirports = useMemo(() => {
+    if (!eventSettings) return [];
+    const masterList = (eventSettings.airportData as { id: string; name: string }[]) || [];
+    const activeIds = eventSettings.activeAirports || [];
+    return masterList.filter((ap) => activeIds.includes(ap.id));
+  }, [eventSettings]);
+
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -108,24 +117,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     targetAirport: "",
     targetSector: "delivery",
   });
-
-  useEffect(() => {
-    async function loadAirports() {
-      try {
-        const response = await fetch("/api/admin/settings");
-        if (response.ok) {
-          const data = await response.json();
-          const masterList = data.airportData || [];
-          const activeIds = data.activeAirports || [];
-          const filtered = masterList.filter((ap: any) => activeIds.includes(ap.id));
-          setDynamicAirports(filtered);
-        }
-      } catch (err) {
-        console.error("Failed to load airports:", err);
-      }
-    }
-    void loadAirports();
-  }, []);
 
   const boardSectors = useMemo(() => {
     return [

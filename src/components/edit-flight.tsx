@@ -4,10 +4,9 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { AlertCircle, CheckCircle, Lock, Info } from "lucide-react";
+import { AlertCircle, CheckCircle, Lock } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +19,8 @@ import { z } from "zod";
 import Footer from "~/components/footer";
 import Header from "./header";
 import Loading from "~/components/loading";
+import { useMyFlights, useFlights } from "~/hooks/use-flights";
+import { useEventSettings } from "~/hooks/use-event-settings";
 
 const flightSchema = z.object({
   airport: z
@@ -66,36 +67,14 @@ const flightSchema = z.object({
     .max(2000, "route are too long"),
 });
 
-interface Flight {
-  id: string;
-  airport: string;
-  callsign: string;
-  geofs_callsign: string;
-  aircraft_type: string;
-  departure: string;
-  departure_time: string;
-  arrival: string;
-  altitude: string;
-  speed: string;
-  status: string;
-  route: string;
-  discord_username: string;
-}
-
 interface EditFlightFormProps {
   flightId: string;
 }
 
-const CACHE_KEY = "flights_cache";
-const CACHE_DURATION = 1 * 60 * 1000;
-
 export function EditFlightForm({ flightId }: EditFlightFormProps) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
-  const [flight, setFlight] = useState<Flight | null>(null);
   const [selectedAirport, setSelectedAirport] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [eventSettings, setEventSettings] = useState<any>(null);
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message?: string;
@@ -103,64 +82,20 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getCachedFlights = () => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION) return data;
-        localStorage.removeItem(CACHE_KEY);
-      }
-    } catch (e) {
-      localStorage.removeItem(CACHE_KEY);
+  const discordUsername = user?.externalAccounts?.[0]?.username ?? null;
+  const { flights, isLoading: flightsLoading } = useMyFlights(discordUsername);
+  const { settings: eventSettings, isLoading: settingsLoading } = useEventSettings();
+  const { updateFlight } = useFlights();
+
+  const flight = useMemo(() => {
+    return flights.find((f) => f.id === flightId) ?? null;
+  }, [flights, flightId]);
+
+  useEffect(() => {
+    if (flight) {
+      setSelectedAirport(flight.airport);
     }
-    return null;
-  };
-
-  const setCachedFlights = (flightsData: Flight[]) => {
-    try {
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({ data: flightsData, timestamp: Date.now() }),
-      );
-    } catch (e) {}
-  };
-
-  const fetchFlight = useCallback(async () => {
-    const cached = getCachedFlights();
-    if (cached) {
-      const foundFlight = cached.find((f: Flight) => f.id === flightId);
-      if (foundFlight) {
-        setFlight(foundFlight);
-        setSelectedAirport(foundFlight.airport);
-        setLoading(false);
-        return;
-      }
-    }
-
-    try {
-      const [fRes, sRes] = await Promise.all([
-        fetch("/api/flights/my"),
-        fetch("/api/admin/settings"),
-      ]);
-      if (!fRes.ok || !sRes.ok) throw new Error("Failed to fetch data");
-      
-      const fData = await fRes.json();
-      const sData = await sRes.json();
-      
-      const foundFlight = fData.flights?.find((f: Flight) => f.id === flightId);
-      if (!foundFlight) throw new Error("Flight not found");
-
-      setFlight(foundFlight);
-      setSelectedAirport(foundFlight.airport);
-      setEventSettings(sData);
-      setCachedFlights(fData.flights);
-    } catch (error: any) {
-      setSubmissionResult({ success: false, message: error.message });
-    } finally {
-      setLoading(false);
-    }
-  }, [flightId]);
+  }, [flight]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -168,12 +103,12 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     setSubmissionResult(null);
 
     const formData = new FormData(event.currentTarget);
-    const finalAirport = eventSettings?.airportMode === "FIXED" 
-      ? eventSettings.fixedAirport 
+    const finalAirport = eventSettings?.airportMode === "FIXED"
+      ? eventSettings.fixedAirport
       : selectedAirport;
 
     const formValues = {
-      airport: finalAirport,
+      airport: finalAirport || "",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
@@ -193,16 +128,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     }
 
     try {
-      const response = await fetch(`/api/flights/${flightId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validation.data),
-      });
-      if (!response.ok) throw new Error("Update failed");
-
+      await updateFlight(flightId, validation.data);
       setSubmissionResult({ success: true, message: "Flight plan updated!" });
-      localStorage.removeItem(CACHE_KEY);
-      void fetchFlight();
     } catch (error: any) {
       setSubmissionResult({ success: false, message: error.message });
     } finally {
@@ -210,14 +137,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     }
   };
 
-  useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) redirect("/sign-up");
-      else void fetchFlight();
-    }
-  }, [isLoaded, isSignedIn, fetchFlight]);
-
-  const renderField = (label: string, name: string, mode: string, fixedVal: string, defaultVal: string, placeholder: string) => {
+  const renderField = (label: string, name: string, mode: string | undefined, fixedVal: string | undefined, defaultVal: string, placeholder: string) => {
     const isFixed = mode === "FIXED";
     return (
       <div className="space-y-2">
@@ -235,7 +155,11 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     );
   };
 
-  if (!isLoaded || loading) return <Loading />;
+  if (!isLoaded) {
+    redirect("/sign-up");
+  }
+
+  if (flightsLoading || settingsLoading) return <Loading />;
 
   if (!flight) return (
     <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
@@ -269,7 +193,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     </div>
   );
 
-  const activeATCList = (eventSettings?.airportData || []).filter((ap: any) => 
+  const airportData = (eventSettings?.airportData as { id: string; name: string }[]) || [];
+  const activeATCList = airportData.filter((ap) =>
     eventSettings?.activeAirports?.includes(ap.id)
   );
 
@@ -286,13 +211,13 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
             </div>
             <div className="space-y-2">
               <Label>GeoFS Callsign</Label>
-              <Input name="geofs_callsign" defaultValue={flight.geofs_callsign} required className="bg-gray-800 text-white" />
+              <Input name="geofs_callsign" defaultValue={flight.geofs_callsign || ""} required className="bg-gray-800 text-white" />
             </div>
             <div className="space-y-2">
               <Label>Aircraft</Label>
               <Input name="aircraft_type" defaultValue={flight.aircraft_type} required className="bg-gray-800 text-white" />
             </div>
-            {renderField("Time", "departure_time", eventSettings?.timeMode, eventSettings?.fixedTime, flight.departure_time, "1720")}
+            {renderField("Time", "departure_time", eventSettings?.timeMode, eventSettings?.fixedTime, flight.departure_time || "", "1720")}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 border-t border-gray-700 pt-6">
             {renderField("Departure", "departure", eventSettings?.departureMode, eventSettings?.fixedDeparture, flight.departure, "KLAX")}
@@ -315,7 +240,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
                 <Select defaultValue={flight.airport} onValueChange={setSelectedAirport}>
                   <SelectTrigger className="bg-gray-800"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-gray-800 text-white">
-                    {activeATCList.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.name} ({a.id})</SelectItem>)}
+                    {activeATCList.map((a) => <SelectItem key={a.id} value={a.id}>{a.name} ({a.id})</SelectItem>)}
                   </SelectContent>
                 </Select>
               )}
@@ -325,12 +250,14 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
               {eventSettings?.routeMode === "FIXED" ? (
                 <Textarea value={eventSettings.fixedRoute} readOnly className="bg-gray-700 opacity-60" />
               ) : (
-                <Textarea name="route" defaultValue={flight.route} required className="bg-gray-800 text-white" />
+                <Textarea name="route" defaultValue={flight.route || ""} required className="bg-gray-800 text-white" />
               )}
             </div>
           </div>
           <div className="flex gap-4">
-            <Button type="submit" className="flex-1 bg-green-600">Update</Button>
+            <Button type="submit" className="flex-1 bg-green-600" disabled={isSubmitting}>
+              {isSubmitting ? "Updating..." : "Update"}
+            </Button>
             <Button type="button" onClick={() => router.back()} className="bg-gray-600">Cancel</Button>
           </div>
         </form>

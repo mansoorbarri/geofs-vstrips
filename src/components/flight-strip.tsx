@@ -6,7 +6,10 @@ import { Edit, Trash2, Check } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
-import { type Flight } from "~/hooks/use-flights";
+import { type LegacyFlight as Flight } from "~/hooks/use-flights";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 export type FlightStatus =
   | "delivery"
@@ -42,6 +45,7 @@ export function FlightStrip({
   const [isEditingSquawk, setIsEditingSquawk] = useState(false);
   const [squawkValue, setSquawkValue] = useState(flight.squawk || "");
   const inputRef = useRef<HTMLInputElement>(null);
+  const updateFlightMutation = useMutation(api.flights.update);
 
   useEffect(() => {
     setSquawkValue(flight.squawk || "");
@@ -109,15 +113,10 @@ export function FlightStrip({
     setIsEditingSquawk(false);
     if (squawkValue !== (flight.squawk || "")) {
       try {
-        const res = await fetch(`/api/flights/${flight.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ squawk: squawkValue }),
+        await updateFlightMutation({
+          id: flight.id as Id<"flights">,
+          squawk: squawkValue,
         });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Failed to update squawk");
-        }
         toast.success(`Squawk updated to ${squawkValue}`);
       } catch (err: any) {
         console.error("Error updating squawk:", err);

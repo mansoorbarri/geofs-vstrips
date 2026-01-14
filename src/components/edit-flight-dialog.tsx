@@ -23,7 +23,7 @@ import {
 } from "~/components/ui/select";
 import Header from "./header";
 
-import { type Flight } from "~/hooks/use-flights";
+import { type LegacyFlight as Flight } from "~/hooks/use-flights";
 import { type FlightStatus } from "~/components/board-page-client";
 
 interface EditFlightDialogProps {

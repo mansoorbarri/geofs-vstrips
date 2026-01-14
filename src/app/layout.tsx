@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "~/components/ui/sonner";
+import { ConvexClientProvider } from "~/components/convex-client-provider";
 import "~/styles/globals.css";
 import SessionManager from "~/components/session-manager";
 
@@ -22,16 +23,18 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
-        <body
-          className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white`}
-        >
-          <SessionManager />
-          <Suspense fallback={null}>{children}</Suspense>
-          <Analytics />
-          <Toaster />
-        </body>
-      </html>
+      <ConvexClientProvider>
+        <html lang="en" className="dark">
+          <body
+            className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white`}
+          >
+            <SessionManager />
+            <Suspense fallback={null}>{children}</Suspense>
+            <Analytics />
+            <Toaster />
+          </body>
+        </html>
+      </ConvexClientProvider>
     </ClerkProvider>
   );
 }
