@@ -21,7 +21,7 @@ export interface EventSettings {
 }
 
 export function useEventSettings() {
-  const settings = useQuery(api.eventSettings.get);
+  const rawSettings = useQuery(api.eventSettings.get);
   const updateSettingsMutation = useMutation(api.eventSettings.update);
 
   const updateSettings = async (newSettings: Partial<EventSettings>) => {
@@ -30,9 +30,16 @@ export function useEventSettings() {
     return await updateSettingsMutation(settingsToUpdate);
   };
 
+  // Cast to proper type
+  const settings: EventSettings | null = rawSettings ? {
+    ...rawSettings,
+    activeAirports: rawSettings.activeAirports as string[],
+    airportData: rawSettings.airportData as unknown[],
+  } : null;
+
   return {
-    settings: settings ?? null,
-    isLoading: settings === undefined,
+    settings,
+    isLoading: rawSettings === undefined,
     updateSettings,
   };
 }

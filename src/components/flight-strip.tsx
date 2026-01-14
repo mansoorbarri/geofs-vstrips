@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { type LegacyFlight as Flight } from "~/hooks/use-flights";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export type FlightStatus =
   | "delivery"
