@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Edit, Trash2, Check } from "lucide-react";
+import { Edit, Trash2, Check, Radar } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
@@ -90,6 +90,14 @@ export function FlightStrip({
     onDelete?.(flight.id);
   };
 
+  const handleOpenRadar = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(
+      `https://radar.xyzmani.com/?callsign=${encodeURIComponent(flight.callsign)}`,
+      "_blank"
+    );
+  };
+
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect(flight.id);
@@ -160,6 +168,15 @@ export function FlightStrip({
         <Button
           size="sm"
           variant="ghost"
+          onClick={handleOpenRadar}
+          className="h-6 w-6 p-0 text-white hover:bg-cyan-600"
+          title="Open in RadarThing"
+        >
+          <Radar className="h-3 w-3" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
           onClick={handleEdit}
           className="h-6 w-6 p-0 text-white hover:bg-blue-600"
         >
@@ -175,7 +192,7 @@ export function FlightStrip({
         </Button>
       </div>
 
-      <div className="space-y-2 pr-16 pl-6 font-mono text-sm text-white">
+      <div className="space-y-2 pr-24 pl-6 font-mono text-sm text-white">
         <div className="flex items-center justify-between">
           <div className="text-base font-bold">{flight.callsign}</div>
           <div className="text-xs font-semibold text-gray-300">
