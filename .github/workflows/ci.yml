@@ -11,11 +11,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install Dependencies
-        run: npm install -g pnpm && pnpm install
+        run: bun install
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: bun typecheck
 
       - name: Lint
-        run: pnpm lint
+        run: bun lint
