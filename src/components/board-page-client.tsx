@@ -91,6 +91,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     isLoading,
     error,
     lastUpdate,
+    isConnected,
     createFlight,
     updateFlight,
     deleteFlight,
@@ -619,6 +620,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             lastUpdate={lastUpdate}
             isLoading={isLoading}
             error={error}
+            isConnected={isConnected}
           />
         </div>
         <div className="flex flex-wrap gap-4">

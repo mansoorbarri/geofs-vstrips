@@ -67,6 +67,7 @@ export function AllFlightsPageClient() {
     isLoading,
     error,
     lastUpdate,
+    isConnected,
     createFlight,
     updateFlight,
     deleteFlight,
@@ -446,6 +447,7 @@ export function AllFlightsPageClient() {
             lastUpdate={lastUpdate}
             isLoading={isLoading}
             error={error}
+            isConnected={isConnected}
           />
         </div>
         <div className="flex flex-wrap gap-4">

@@ -1,11 +1,17 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+
+export interface AirportData {
+  id: string;
+  name: string;
+}
 
 export interface EventSettings {
-  _id?: string;
+  _id?: Id<"eventSettings">;
   isEventLive: boolean;
   airportMode: string;
   fixedAirport?: string;
@@ -18,16 +24,20 @@ export interface EventSettings {
   routeMode: string;
   fixedRoute?: string;
   activeAirports: string[];
-  airportData: unknown[];
+  airportData: AirportData[];
 }
 
 export function useEventSettings() {
   const rawSettings = useQuery(api.eventSettings.get);
   const updateSettingsMutation = useMutation(api.eventSettings.update);
 
+  // Track when settings change for real-time detection
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const previousSettingsRef = useRef<string | null>(null);
+
   const updateSettings = useCallback(async (newSettings: Partial<EventSettings>) => {
     // Strip out _id as it's not part of the mutation args
-    const { _id, ...settingsToUpdate } = newSettings as EventSettings & { _id?: string };
+    const { _id, ...settingsToUpdate } = newSettings as EventSettings & { _id?: Id<"eventSettings"> };
     return await updateSettingsMutation(settingsToUpdate);
   }, [updateSettingsMutation]);
 
@@ -36,14 +46,33 @@ export function useEventSettings() {
     if (!rawSettings) return null;
     return {
       ...rawSettings,
+      _id: "_id" in rawSettings ? rawSettings._id : undefined,
       activeAirports: rawSettings.activeAirports as string[],
-      airportData: rawSettings.airportData as unknown[],
+      airportData: rawSettings.airportData as AirportData[],
     };
   }, [rawSettings]);
 
+  // Track real-time updates
+  useEffect(() => {
+    if (rawSettings) {
+      const settingsHash = JSON.stringify(rawSettings);
+      if (previousSettingsRef.current !== null && previousSettingsRef.current !== settingsHash) {
+        setLastUpdate(new Date());
+      } else if (previousSettingsRef.current === null) {
+        setLastUpdate(new Date());
+      }
+      previousSettingsRef.current = settingsHash;
+    }
+  }, [rawSettings]);
+
+  const isLoading = rawSettings === undefined;
+  const isConnected = !isLoading;
+
   return {
     settings,
-    isLoading: rawSettings === undefined,
+    isLoading,
+    isConnected,
+    lastUpdate,
     updateSettings,
   };
 }
