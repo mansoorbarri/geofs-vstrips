@@ -3,26 +3,11 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useMemo, useCallback } from "react";
+import type { Doc } from "../../convex/_generated/dataModel";
+import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 
-export interface Flight {
-  _id: Id<"flights">;
-  _creationTime: number;
-  airport: string;
-  callsign: string;
-  geofs_callsign?: string;
-  discord_username?: string;
-  aircraft_type: string;
-  departure: string;
-  departure_time: string;
-  arrival: string;
-  altitude: string;
-  squawk?: string;
-  speed: string;
-  status: "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
-  route?: string;
-  notes?: string;
-}
+// Use the generated Convex document type for type safety
+export type Flight = Doc<"flights">;
 
 // Legacy interface for compatibility
 export interface LegacyFlight {
@@ -45,11 +30,14 @@ export interface LegacyFlight {
   notes: string | null;
 }
 
+export type FlightStatus = "delivery" | "ground" | "tower" | "departure" | "approach" | "control";
+
 interface UseFlightsResult {
   flights: LegacyFlight[];
   isLoading: boolean;
   error: Error | null;
-  lastUpdate: string | null;
+  lastUpdate: Date | null;
+  isConnected: boolean;
   createFlight: (
     flightData: Omit<LegacyFlight, "id" | "created_at" | "updated_at">
   ) => Promise<LegacyFlight>;
@@ -92,6 +80,10 @@ export function useFlights(
   const updateFlightMutation = useMutation(api.flights.update);
   const deleteFlightMutation = useMutation(api.flights.remove);
 
+  // Track when data actually changes for real-time indicator
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const previousDataRef = useRef<string | null>(null);
+
   const isLoading = flightsData === undefined;
 
   const flights = useMemo(() => {
@@ -99,13 +91,21 @@ export function useFlights(
     return flightsData.map(toLeglightFlight);
   }, [flightsData]);
 
-  const lastUpdate = useMemo(() => {
-    if (!flightsData || flightsData.length === 0) return null;
-    const sorted = [...flightsData].sort(
-      (a, b) => b._creationTime - a._creationTime
-    );
-    return sorted[0] ? new Date(sorted[0]._creationTime).toISOString() : null;
+  // Update lastUpdate when data actually changes (real-time detection)
+  useEffect(() => {
+    if (flightsData) {
+      const dataHash = JSON.stringify(flightsData.map(f => ({ id: f._id, status: f.status, squawk: f.squawk, notes: f.notes })));
+      if (previousDataRef.current !== null && previousDataRef.current !== dataHash) {
+        setLastUpdate(new Date());
+      } else if (previousDataRef.current === null) {
+        setLastUpdate(new Date());
+      }
+      previousDataRef.current = dataHash;
+    }
   }, [flightsData]);
+
+  // Connection state - Convex useQuery returns undefined when loading/disconnected
+  const isConnected = flightsData !== undefined;
 
   const createFlight = useCallback(
     async (
@@ -196,6 +196,7 @@ export function useFlights(
     isLoading,
     error: null,
     lastUpdate,
+    isConnected,
     createFlight,
     updateFlight,
     deleteFlight,

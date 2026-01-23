@@ -4,29 +4,32 @@ import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 
 interface RealTimeIndicatorProps {
-  lastUpdate: string | null;
+  lastUpdate: Date | null;
   isLoading: boolean;
-  error: any;
+  error: Error | null;
+  isConnected?: boolean;
 }
 
 export function RealTimeIndicator({
   lastUpdate,
   isLoading,
   error,
+  isConnected = true,
 }: RealTimeIndicatorProps) {
-  const [timeSinceUpdate, setTimeSinceUpdate] = useState<string>("");
+  const [timeSinceUpdate, setTimeSinceUpdate] = useState<string>("just now");
 
   useEffect(() => {
     if (!lastUpdate) return;
 
     const updateTimer = () => {
       const now = new Date();
-      const updateTime = new Date(lastUpdate);
       const diffInSeconds = Math.floor(
-        (now.getTime() - updateTime.getTime()) / 1000,
+        (now.getTime() - lastUpdate.getTime()) / 1000
       );
 
-      if (diffInSeconds < 60) {
+      if (diffInSeconds < 5) {
+        setTimeSinceUpdate("just now");
+      } else if (diffInSeconds < 60) {
         setTimeSinceUpdate(`${diffInSeconds}s ago`);
       } else if (diffInSeconds < 3600) {
         setTimeSinceUpdate(`${Math.floor(diffInSeconds / 60)}m ago`);
@@ -52,7 +55,7 @@ export function RealTimeIndicator({
     );
   }
 
-  if (isLoading) {
+  if (isLoading || !isConnected) {
     return (
       <Badge
         variant="secondary"
@@ -68,7 +71,7 @@ export function RealTimeIndicator({
       variant="secondary"
       className="border-green-700 bg-green-900 text-green-100"
     >
-      Live • {timeSinceUpdate}
+      Live {lastUpdate ? `• ${timeSinceUpdate}` : ""}
     </Badge>
   );
 }
