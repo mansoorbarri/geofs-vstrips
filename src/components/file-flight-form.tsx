@@ -207,7 +207,15 @@ export function FileFlightForm() {
           <AlertCircle className="h-4 w-4 text-red-400" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="text-red-200">
-            {submissionResult.message}
+            {submissionResult.errors && submissionResult.errors.length > 0 ? (
+              <ul className="mt-2 list-disc pl-4">
+                {submissionResult.errors.map((error, index) => (
+                  <li key={index}>{error.message}</li>
+                ))}
+              </ul>
+            ) : (
+              submissionResult.message
+            )}
           </AlertDescription>
         </Alert>
       )}
