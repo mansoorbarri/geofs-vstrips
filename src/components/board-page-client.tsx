@@ -37,9 +37,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Loading from "~/components/loading";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { toast } from "sonner";
 import { useEventSettings } from "~/hooks/use-event-settings";
 
@@ -82,7 +83,8 @@ interface BoardPageClientProps {
 
 export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const router = useRouter();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user: convexUser, isLoading: isUserLoading } = useCurrentUser();
   const params = useParams();
   const airportNameFromURL = params.airportName;
 
@@ -579,24 +581,14 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   }, []);
 
   useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) {
-        router.push("/sign-up");
-      } else if (
-        !user?.publicMetadata ||
-        user.publicMetadata.controller !== true
-      ) {
-        router.push("/become-controller");
-      }
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-up");
+    } else if (!isUserLoading && convexUser && !convexUser.isController) {
+      router.push("/become-controller");
     }
-  }, [isLoaded, isSignedIn, user, router]);
+  }, [isLoaded, isSignedIn, isUserLoading, convexUser, router]);
 
-  if (
-    !isLoaded ||
-    !isSignedIn ||
-    !user ||
-    user.publicMetadata.controller !== true
-  ) {
+  if (!isLoaded || !isSignedIn || isUserLoading || !convexUser?.isController) {
     return <Loading />;
   }
 

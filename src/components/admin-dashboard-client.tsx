@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
 import { UserList } from "~/components/user-list";
 import Footer from "~/components/footer";
 import Loading from "~/components/loading";
 import Header from "~/components/header";
+import { useCurrentUser } from "~/hooks/use-current-user";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
@@ -21,18 +24,10 @@ import { toast } from "sonner";
 import { searchGlobalAirports, type ExternalAirport } from "~/lib/fetch-airports";
 import { useEventSettings } from "~/hooks/use-event-settings";
 
-interface AppUser {
-  id: string;
-  email: string;
-  username: string;
-  isController: boolean;
-  profile: string;
-}
-
 export function AdminDashboardClient() {
-  const { user } = useUser();
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const { user: convexUser } = useCurrentUser();
+  const users = useQuery(api.users.list);
+  const toggleController = useMutation(api.users.toggleController);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ExternalAirport[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -75,21 +70,6 @@ export function AdminDashboardClient() {
       });
     }
   }, [convexSettings]);
-
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("/api/users");
-      if (res.ok) setUsers(await res.json());
-    } catch (e) {
-      toast.error("Failed to load users");
-    } finally {
-      setIsLoadingUsers(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchUsers();
-  }, []);
 
   useEffect(() => {
     if (searchQuery.length > 1) {
@@ -158,7 +138,7 @@ export function AdminDashboardClient() {
     </div>
   );
 
-  if (isLoadingSettings || isLoadingUsers) return <Loading />;
+  if (isLoadingSettings || users === undefined) return <Loading />;
 
   return (
     <div className="px-8 min-h-screen bg-black text-white">
@@ -248,7 +228,7 @@ export function AdminDashboardClient() {
         </TabsContent>
 
         <TabsContent value="users">
-          <UserList users={users} onRoleChange={fetchUsers} currentUserId={user?.id || ""} />
+          <UserList users={users} onToggleController={async (userId: Id<"users">) => { await toggleController({ userId }); }} currentUserId={convexUser?._id} />
         </TabsContent>
       </Tabs>
       <Footer />

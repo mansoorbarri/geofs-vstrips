@@ -10,6 +10,7 @@
 
 import type * as eventSettings from "../eventSettings.js";
 import type * as flights from "../flights.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +21,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   eventSettings: typeof eventSettings;
   flights: typeof flights;
+  users: typeof users;
 }>;
 
 /**

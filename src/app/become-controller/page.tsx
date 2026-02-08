@@ -1,15 +1,20 @@
 // src/app/become-controller/page.tsx
 "use client";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import Footer from "~/components/footer";
 import Header from "~/components/header";
+import Loading from "~/components/loading";
+import { useCurrentUser } from "~/hooks/use-current-user";
 
 export default function BecomeControllerPage() {
-  const { user } = useUser();
+  const { user: convexUser, isLoading } = useCurrentUser();
 
-  if (user?.publicMetadata.controller == true) {
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (convexUser?.isController) {
     redirect("/");
   }
 

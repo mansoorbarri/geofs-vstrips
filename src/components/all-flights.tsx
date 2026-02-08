@@ -36,9 +36,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import Loading from "~/components/loading";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "~/hooks/use-current-user";
 
 export type FlightStatus =
   | "delivery"
@@ -61,7 +62,8 @@ interface TransferDialogState {
 
 export function AllFlightsPageClient() {
   const router = useRouter();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user: convexUser, isLoading: isUserLoading } = useCurrentUser();
   const {
     flights,
     isLoading,
@@ -412,19 +414,19 @@ export function AllFlightsPageClient() {
   ]);
 
   useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) router.push("/sign-up");
-      else if (!user?.publicMetadata?.controller)
-        router.push("/become-controller");
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-up");
+    } else if (!isUserLoading && convexUser && !convexUser.isController) {
+      router.push("/become-controller");
     }
-  }, [isLoaded, isSignedIn, user, router]);
+  }, [isLoaded, isSignedIn, isUserLoading, convexUser, router]);
 
   const sortedFlights = useMemo(
     () => flights.slice().sort((a, b) => a.callsign.localeCompare(b.callsign)),
     [flights],
   );
 
-  if (!isLoaded || !isSignedIn || !user?.publicMetadata?.controller)
+  if (!isLoaded || !isSignedIn || isUserLoading || !convexUser?.isController)
     return <Loading />;
 
   return (

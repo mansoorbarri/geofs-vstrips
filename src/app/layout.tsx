@@ -9,6 +9,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { ConvexClientProvider } from "~/components/convex-client-provider";
 import "~/styles/globals.css";
 import SessionManager from "~/components/session-manager";
+import { StoreUser } from "~/components/store-user";
 
 export const metadata: Metadata = {
   title: "ATC Flight Strip Manager",
@@ -28,6 +29,7 @@ export default function RootLayout({
           <body
             className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-black text-white`}
           >
+            <StoreUser />
             <SessionManager />
             <Suspense fallback={null}>{children}</Suspense>
             <Analytics />

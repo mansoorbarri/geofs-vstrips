@@ -2,36 +2,28 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { AirportSelector } from "~/components/airport-selector";
 import Footer from "~/components/footer";
 import Loading from "~/components/loading";
 import Header from "~/components/header";
+import { useCurrentUser } from "~/hooks/use-current-user";
 
 export default function HomePage() {
   const router = useRouter();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user: convexUser, isLoading } = useCurrentUser();
 
   useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) {
-        router.push("/sign-up");
-      } else if (
-        !user?.publicMetadata ||
-        user.publicMetadata.controller !== true
-      ) {
-        router.push("/become-controller");
-      }
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-up");
+    } else if (!isLoading && convexUser && !convexUser.isController) {
+      router.push("/become-controller");
     }
-  }, [isLoaded, isSignedIn, user, router]);
+  }, [isLoaded, isSignedIn, isLoading, convexUser, router]);
 
-  if (
-    !isLoaded ||
-    !isSignedIn ||
-    !user ||
-    user.publicMetadata.controller !== true
-  ) {
+  if (!isLoaded || !isSignedIn || isLoading || !convexUser?.isController) {
     return <Loading />;
   }
 

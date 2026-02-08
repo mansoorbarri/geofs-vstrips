@@ -36,6 +36,20 @@ export default defineSchema({
     changed_by: v.optional(v.string()),
   }).index("by_flight", ["flight_id"]),
 
+  users: defineTable({
+    clerkId: v.string(),
+    email: v.string(),
+    name: v.optional(v.string()),
+    username: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    isController: v.boolean(),
+    isAdmin: v.boolean(),
+    lastActiveAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_clerkId", ["clerkId"])
+    .index("by_isController", ["isController"]),
+
   eventSettings: defineTable({
     isEventLive: v.boolean(),
     airportMode: v.string(),

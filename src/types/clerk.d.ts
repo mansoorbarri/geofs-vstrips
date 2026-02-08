@@ -1,17 +1,3 @@
-import "@clerk/nextjs/server";
-import { ClerkUserPublicMetadata } from "@clerk/types";
-
-// Extend the existing ClerkUserPublicMetadata type with your custom fields
-declare module "@clerk/nextjs" {
-  interface ClerkUserPublicMetadata {
-    controller?: boolean;
-  }
-}
-
-declare module "@clerk/nextjs/server" {
-  interface SessionClaims {
-    publicMetadata?: {
-      controller?: boolean;
-    };
-  }
-}
+// Clerk type extensions — roles are now stored in Convex, not Clerk metadata.
+// This file is kept minimal for any future Clerk metadata needs.
+export {};
