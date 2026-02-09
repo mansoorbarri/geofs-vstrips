@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { useState } from "react";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 
@@ -71,7 +70,7 @@ export function UserList({
               <tr key={user._id}>
                 <td className="px-6 py-4 text-sm whitespace-nowrap text-white">
                   {user.imageUrl ? (
-                    <Image
+                    <img
                       src={user.imageUrl}
                       alt={user.username ?? user.email}
                       width={50}
