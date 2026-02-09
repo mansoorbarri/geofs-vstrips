@@ -137,3 +137,36 @@ export const setAdmin = mutation({
     });
   },
 });
+
+
+export const toggleAdmin = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    if (identity.email !== process.env.SUPER_ADMIN_EMAIL) {
+      throw new Error("Not authorized: super admin only");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    const targetUser = await ctx.db.get(args.userId);
+    if (!targetUser) {
+      throw new Error("User not found");
+    }
+
+    if (currentUser && targetUser._id === currentUser._id) {
+      throw new Error("Cannot toggle your own admin status");
+    }
+
+    await ctx.db.patch(args.userId, {
+      isAdmin: !targetUser.isAdmin,
+    });
+  },
+});

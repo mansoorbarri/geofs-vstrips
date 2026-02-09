@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserList } from "~/components/user-list";
+import { AdminUserList } from "~/components/admin-user-list";
 import Footer from "~/components/footer";
 import Loading from "~/components/loading";
 import Header from "~/components/header";
@@ -28,6 +29,8 @@ export function AdminDashboardClient() {
   const { user: convexUser } = useCurrentUser();
   const users = useQuery(api.users.list);
   const toggleController = useMutation(api.users.toggleController);
+  const toggleAdmin = useMutation(api.users.toggleAdmin);
+  const isSuperAdmin = convexUser?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ExternalAirport[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -158,6 +161,7 @@ export function AdminDashboardClient() {
         <TabsList className="bg-gray-900 border-gray-800 mb-6">
           <TabsTrigger value="event">Event Rules</TabsTrigger>
           <TabsTrigger value="users">Controllers</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger value="admins">Admins</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="event" className="space-y-8">
@@ -230,6 +234,12 @@ export function AdminDashboardClient() {
         <TabsContent value="users">
           <UserList users={users} onToggleController={async (userId: Id<"users">) => { await toggleController({ userId }); }} currentUserId={convexUser?._id} />
         </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="admins">
+            <AdminUserList users={users} onToggleAdmin={async (userId: Id<"users">) => { await toggleAdmin({ userId }); }} currentUserId={convexUser?._id} />
+          </TabsContent>
+        )}
       </Tabs>
       <Footer />
     </div>

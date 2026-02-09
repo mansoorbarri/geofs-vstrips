@@ -26,6 +26,7 @@ export const env = createEnv({
    NEXT_PUBLIC_BASE_URL: z.string().url(),
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
    NEXT_PUBLIC_CONVEX_URL: z.string().url(),
+   NEXT_PUBLIC_SUPER_ADMIN_EMAIL: z.string().email(),
   },
   
   /**
@@ -42,6 +43,7 @@ export const env = createEnv({
     REDIRECT_HOME_TO_NO_EVENT: process.env.REDIRECT_HOME_TO_NO_EVENT,
     CONVEX_DEPLOYMENT: process.env.CONVEX_DEPLOYMENT,
     NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL,
+    NEXT_PUBLIC_SUPER_ADMIN_EMAIL: process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
