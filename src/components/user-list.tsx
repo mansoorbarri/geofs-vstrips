@@ -13,6 +13,18 @@ export function UserList({
   currentUserId,
 }: UserListProps) {
   const [isUpdating, setIsUpdating] = useState<Id<"users"> | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredUsers = [...users]
+    .filter((u) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (u.username?.toLowerCase().includes(q) ?? false) || u.email.toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      if (a.isController !== b.isController) return a.isController ? -1 : 1;
+      return (b.lastActiveAt ?? b.createdAt ?? 0) - (a.lastActiveAt ?? a.createdAt ?? 0);
+    });
 
   const handleToggle = async (
     targetUserId: Id<"users">,
@@ -38,6 +50,15 @@ export function UserList({
 
   return (
     <div className="overflow-x-auto shadow-md sm:rounded-lg">
+      <div className="p-4 bg-gray-900">
+        <input
+          type="text"
+          placeholder="Search by username or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
+        />
+      </div>
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-slate-600">
           <tr>
@@ -62,10 +83,7 @@ export function UserList({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-gray-900">
-          {[...users].sort((a, b) => {
-            if (a.isController !== b.isController) return a.isController ? -1 : 1;
-            return (b.lastActiveAt ?? b.createdAt ?? 0) - (a.lastActiveAt ?? a.createdAt ?? 0);
-          }).map((user) => {
+          {filteredUsers.map((user) => {
             const isSelf = user._id === currentUserId;
             const disabled = isSelf || isUpdating === user._id;
 
