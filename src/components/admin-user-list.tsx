@@ -62,7 +62,10 @@ export function AdminUserList({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-gray-900">
-          {users.map((user) => {
+          {[...users].sort((a, b) => {
+            if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1;
+            return (b.lastActiveAt ?? b.createdAt ?? 0) - (a.lastActiveAt ?? a.createdAt ?? 0);
+          }).map((user) => {
             const isSelf = user._id === currentUserId;
             const disabled = isSelf || isUpdating === user._id;
 
