@@ -106,18 +106,18 @@ export function FileFlightForm() {
         : selectedAirport;
 
     const formValues = {
-      airport: finalAirport || "",
-      callsign: formData.get("callsign") as string,
+      airport: (finalAirport || "").toUpperCase(),
+      callsign: ((formData.get("callsign") as string) || "").toUpperCase(),
       geofs_callsign: formData.get("geofs_callsign") as string,
-      aircraft_type: formData.get("aircraft_type") as string,
-      departure: (formData.get("departure") as string || "").toUpperCase(),
+      aircraft_type: ((formData.get("aircraft_type") as string) || "").toUpperCase(),
+      departure: ((formData.get("departure") as string) || "").toUpperCase(),
       departure_time: formData.get("departure_time") as string,
-      arrival: (formData.get("arrival") as string || "").toUpperCase(),
-      altitude: formData.get("altitude") as string,
+      arrival: ((formData.get("arrival") as string) || "").toUpperCase(),
+      altitude: ((formData.get("altitude") as string) || "").toUpperCase(),
       speed: formData.get("speed") as string,
-      route: (eventSettings?.routeMode === "FIXED"
+      route: ((eventSettings?.routeMode === "FIXED"
         ? eventSettings.fixedRoute
-        : formData.get("route")) as string,
+        : formData.get("route")) as string || "").toUpperCase(),
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -170,7 +170,7 @@ export function FileFlightForm() {
           readOnly={isFixed}
           placeholder={placeholder}
           required
-          className={`border-gray-700 bg-gray-800 text-white ${isFixed ? "cursor-not-allowed opacity-60" : ""}`}
+          className={`border-gray-700 bg-gray-800 text-white uppercase ${isFixed ? "cursor-not-allowed opacity-60" : ""}`}
         />
       </div>
     );
@@ -229,7 +229,7 @@ export function FileFlightForm() {
               name="callsign"
               placeholder="e.g., DAL123"
               required
-              className="border-gray-700 bg-gray-800 text-white"
+              className="border-gray-700 bg-gray-800 text-white uppercase"
             />
           </div>
           <div className="space-y-2">
@@ -249,7 +249,7 @@ export function FileFlightForm() {
               name="aircraft_type"
               placeholder="e.g., A320"
               required
-              className="border-gray-700 bg-gray-800 text-white"
+              className="border-gray-700 bg-gray-800 text-white uppercase"
             />
           </div>
           {renderField(
@@ -285,7 +285,7 @@ export function FileFlightForm() {
               name="altitude"
               placeholder="e.g., FL350"
               required
-              className="border-gray-700 bg-gray-800 text-white"
+              className="border-gray-700 bg-gray-800 text-white uppercase"
             />
           </div>
           <div className="space-y-2">
@@ -345,7 +345,7 @@ export function FileFlightForm() {
                 name="route"
                 placeholder="e.g., DCT VOR VOR STAR"
                 required
-                className="border-gray-700 bg-gray-800 text-white"
+                className="border-gray-700 bg-gray-800 text-white uppercase"
               />
             )}
           </div>
