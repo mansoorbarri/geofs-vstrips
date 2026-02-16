@@ -90,7 +90,7 @@ export function EditFlightDialog({
 
   const handleSquawkChange = (value: string) => {
     // Only numeric, max 4 digits
-    const numeric = value.replace(/\D/g, "").slice(0, 4);
+    const numeric = value.replace(/[^0-7]/g, "").slice(0, 4);
     setFormData((prev) => ({ ...prev, squawk: numeric }));
   };
 

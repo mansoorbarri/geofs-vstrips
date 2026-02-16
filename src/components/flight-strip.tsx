@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Edit, Trash2, Check, Radar } from "lucide-react";
+import { Edit, Trash2, Check, Radar, RefreshCcw } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ export function FlightStrip({
   const [squawkValue, setSquawkValue] = useState(flight.squawk || "");
   const inputRef = useRef<HTMLInputElement>(null);
   const updateFlightMutation = useMutation(api.flights.update);
+  const assignSquawkMutation = useMutation(api.flights.assignSquawk);
 
   useEffect(() => {
     setSquawkValue(flight.squawk || "");
@@ -113,7 +114,7 @@ export function FlightStrip({
   };
 
   const handleSquawkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numeric = e.target.value.replace(/\D/g, "").slice(0, 4);
+    const numeric = e.target.value.replace(/[^0-7]/g, "").slice(0, 4);
     setSquawkValue(numeric);
   };
 
@@ -136,6 +137,18 @@ export function FlightStrip({
 
   const handleSquawkKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") inputRef.current?.blur();
+  };
+
+  const handleAssignSquawk = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const newSquawk = await assignSquawkMutation({
+        id: flight.id as Id<"flights">,
+      });
+      toast.success(`Squawk assigned: ${newSquawk}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to assign squawk");
+    }
   };
 
   return (
@@ -226,7 +239,7 @@ export function FlightStrip({
               ETD: <span className="text-white">{flight.departure_time}</span>
             </span>
           )}
-          <span>
+          <span className="flex items-center gap-1">
             SQK:{" "}
             {isEditingSquawk ? (
               <input
@@ -248,6 +261,13 @@ export function FlightStrip({
                 {flight.squawk || "----"}
               </span>
             )}
+            <button
+              onClick={handleAssignSquawk}
+              className="rounded p-0.5 text-gray-400 hover:bg-gray-700 hover:text-white"
+              title={flight.squawk ? "Rotate squawk" : "Assign squawk"}
+            >
+              <RefreshCcw className="h-3 w-3" />
+            </button>
           </span>
         </div>
 

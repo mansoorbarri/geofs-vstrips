@@ -216,6 +216,34 @@ export const remove = mutation({
   },
 });
 
+const RESERVED_SQUAWKS = new Set(["7500", "7600", "7700", "1200", "0000"]);
+
+export const assignSquawk = mutation({
+  args: { id: v.id("flights") },
+  handler: async (ctx, args) => {
+    const flight = await ctx.db.get(args.id);
+    if (!flight) throw new Error("Flight not found");
+
+    const allFlights = await ctx.db.query("flights").collect();
+    const usedSquawks = new Set(
+      allFlights
+        .map((f) => f.squawk)
+        .filter((s): s is string => !!s && s.length === 4),
+    );
+
+    for (let i = 0; i < 200; i++) {
+      const digits = Array.from({ length: 4 }, () =>
+        Math.floor(Math.random() * 8).toString(),
+      ).join("");
+      if (!RESERVED_SQUAWKS.has(digits) && !usedSquawks.has(digits)) {
+        await ctx.db.patch(args.id, { squawk: digits });
+        return digits;
+      }
+    }
+    throw new Error("Unable to generate a unique squawk code");
+  },
+});
+
 export const getHistory = query({
   args: { flight_id: v.id("flights") },
   handler: async (ctx, args) => {
