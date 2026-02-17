@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "~/components/ui/sonner";
+import { TooltipProvider } from "~/components/ui/tooltip";
 import { ConvexClientProvider } from "~/components/convex-client-provider";
 import "~/styles/globals.css";
 import SessionManager from "~/components/session-manager";
@@ -31,7 +32,9 @@ export default function RootLayout({
           >
             <StoreUser />
             <SessionManager />
-            <Suspense fallback={null}>{children}</Suspense>
+            <TooltipProvider>
+              <Suspense fallback={null}>{children}</Suspense>
+            </TooltipProvider>
             <Analytics />
             <Toaster />
           </body>

@@ -43,6 +43,7 @@ import Loading from "~/components/loading";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { toast } from "sonner";
 import { useEventSettings } from "~/hooks/use-event-settings";
+import { useRadarCallsigns } from "~/hooks/use-radar-callsigns";
 import { getFriendlyError } from "~/lib/friendly-error";
 
 export type FlightStatus =
@@ -101,6 +102,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   } = useFlights(true, airportName);
 
   const { settings: eventSettings } = useEventSettings();
+  const { radarAircraft } = useRadarCallsigns();
 
   const dynamicAirports = useMemo(() => {
     if (!eventSettings) return [];
@@ -841,6 +843,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                         onDelete={handleDeleteFlight}
                         onSelect={handleFlightSelection}
                         isSelected={selectedFlights.includes(flight.id)}
+                        radarAircraft={radarAircraft}
                       />
                     ))
                   )}

@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Edit, Trash2, Check, Radar, RefreshCcw, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -11,6 +11,12 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { getFriendlyError } from "~/lib/friendly-error";
+import type { RadarAircraft } from "~/hooks/use-radar-callsigns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 export type FlightStatus =
   | "delivery"
@@ -30,6 +36,7 @@ interface FlightStripProps {
   onDelete?: (flightId: string) => void;
   isSelected: boolean;
   onSelect: (flightId: string) => void;
+  radarAircraft?: RadarAircraft[];
 }
 
 export function FlightStrip({
@@ -42,12 +49,40 @@ export function FlightStrip({
   onDelete,
   isSelected,
   onSelect,
+  radarAircraft,
 }: FlightStripProps) {
   const [isEditingSquawk, setIsEditingSquawk] = useState(false);
   const [squawkValue, setSquawkValue] = useState(flight.squawk || "");
   const inputRef = useRef<HTMLInputElement>(null);
   const updateFlightMutation = useMutation(api.flights.update);
   const assignSquawkMutation = useMutation(api.flights.assignSquawk);
+
+  const matchedRadarAircraft = useMemo(() => {
+    if (!radarAircraft) return null;
+    const stripCallsign = flight.callsign.toUpperCase();
+    const stripGeofsCallsign = (flight.geofs_callsign || "").toUpperCase();
+    const stripDeparture = flight.departure.toUpperCase();
+    const stripArrival = flight.arrival.toUpperCase();
+
+    return radarAircraft.find((ac) => {
+      // Callsign must match: strip callsign matches SSE flightNo (ICAO/IATA)
+      const callsignMatch = ac.flightNo === stripCallsign;
+      // GeoFS callsign must match: strip geofs_callsign matches SSE callsign
+      const geofsMatch = !stripGeofsCallsign || ac.callsign === stripGeofsCallsign;
+      // Departure must match
+      const depMatch = !stripDeparture || ac.departure === stripDeparture;
+      // Arrival must match
+      const arrMatch = !stripArrival || ac.arrival === stripArrival;
+
+      return callsignMatch && geofsMatch && depMatch && arrMatch;
+    }) ?? null;
+  }, [radarAircraft, flight.callsign, flight.geofs_callsign, flight.departure, flight.arrival]);
+
+  const isOnRadar = !!matchedRadarAircraft;
+  const squawkMismatch = isOnRadar
+    && !!flight.squawk
+    && !!matchedRadarAircraft.squawk
+    && flight.squawk !== matchedRadarAircraft.squawk;
 
   useEffect(() => {
     setSquawkValue(flight.squawk || "");
@@ -95,7 +130,7 @@ export function FlightStrip({
   const handleOpenRadar = (e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(
-      `https://radar.xyzmani.com/?callsign=${encodeURIComponent(flight.callsign)}`,
+      `https://radarthing.com/radar?callsign=${encodeURIComponent(flight.callsign)}`,
       "_blank"
     );
   };
@@ -179,15 +214,23 @@ export function FlightStrip({
       </div>
 
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleOpenRadar}
-          className="h-6 w-6 p-0 text-white hover:bg-cyan-600"
-          title="Open in RadarThing"
-        >
-          <Radar className="h-3 w-3" />
-        </Button>
+        {isOnRadar && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleOpenRadar}
+                className="h-6 w-6 p-0 text-white hover:bg-cyan-600"
+              >
+                <Radar className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Open in RadarThing</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
         <Button
           size="sm"
           variant="ghost"
@@ -209,6 +252,19 @@ export function FlightStrip({
       <div className="space-y-2 pr-24 pl-6 font-mono text-sm text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-base font-bold">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    "inline-block h-2 w-2 flex-shrink-0 rounded-full",
+                    isOnRadar ? "bg-green-500" : "bg-gray-500",
+                  )}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isOnRadar ? "On radar" : "Not on radar"}</p>
+              </TooltipContent>
+            </Tooltip>
             {flight.callsign}
             {flight.airport === flight.arrival ? (
               <span title="Arriving">
@@ -265,6 +321,21 @@ export function FlightStrip({
                 onClick={(e) => e.stopPropagation()}
                 className="w-14 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs text-white outline-none focus:border-blue-500"
               />
+            ) : squawkMismatch ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    onClick={handleSquawkClick}
+                    className="cursor-pointer rounded border border-red-500 px-1 py-0.5 text-white hover:bg-gray-700"
+                  >
+                    {flight.squawk || "----"}
+                    <span className="ml-1 font-bold text-red-500">!</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Squawk mismatch: aircraft squawk is {matchedRadarAircraft?.squawk}</p>
+                </TooltipContent>
+              </Tooltip>
             ) : (
               <span
                 onClick={handleSquawkClick}
@@ -273,13 +344,19 @@ export function FlightStrip({
                 {flight.squawk || "----"}
               </span>
             )}
-            <button
-              onClick={handleAssignSquawk}
-              className="rounded p-0.5 text-gray-400 hover:bg-gray-700 hover:text-white"
-              title={flight.squawk ? "Rotate squawk" : "Assign squawk"}
-            >
-              <RefreshCcw className="h-3 w-3" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleAssignSquawk}
+                  className="rounded p-0.5 text-gray-400 hover:bg-gray-700 hover:text-white"
+                >
+                  <RefreshCcw className="h-3 w-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{flight.squawk ? "Rotate squawk" : "Assign squawk"}</p>
+              </TooltipContent>
+            </Tooltip>
           </span>
         </div>
 
