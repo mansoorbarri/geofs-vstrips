@@ -81,19 +81,25 @@ export const create = mutation({
       throw new Error("A flight with this callsign already exists.");
     }
 
+    // Auto-detect: arriving aircraft start in "control", departing in "delivery"
+    const airport = args.airport.toUpperCase();
+    const arrival = args.arrival.toUpperCase();
+    const isArriving = airport === arrival;
+    const initialStatus = isArriving ? "control" : "delivery";
+
     const flightId = await ctx.db.insert("flights", {
-      airport: args.airport.toUpperCase(),
+      airport,
       callsign: args.callsign.toUpperCase(),
       discord_username: args.discord_username,
       geofs_callsign: args.geofs_callsign,
       aircraft_type: args.aircraft_type.toUpperCase(),
       departure: args.departure.toUpperCase(),
       departure_time: args.departure_time,
-      arrival: args.arrival.toUpperCase(),
+      arrival,
       altitude: args.altitude,
       squawk: args.squawk || "",
       speed: args.speed,
-      status: args.status,
+      status: initialStatus,
       route: args.route || "",
       notes: args.notes || "",
     });

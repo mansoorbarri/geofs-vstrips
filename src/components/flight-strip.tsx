@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Edit, Trash2, Check, Radar, RefreshCcw } from "lucide-react";
+import { Edit, Trash2, Check, Radar, RefreshCcw, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
@@ -207,7 +207,18 @@ export function FlightStrip({
 
       <div className="space-y-2 pr-24 pl-6 font-mono text-sm text-white">
         <div className="flex items-center justify-between">
-          <div className="text-base font-bold">{flight.callsign}</div>
+          <div className="flex items-center gap-1.5 text-base font-bold">
+            {flight.callsign}
+            {flight.airport === flight.arrival ? (
+              <span title="Arriving">
+                <PlaneLanding className="h-3.5 w-3.5 text-amber-400" />
+              </span>
+            ) : (
+              <span title="Departing">
+                <PlaneTakeoff className="h-3.5 w-3.5 text-emerald-400" />
+              </span>
+            )}
+          </div>
           <div className="text-xs font-semibold text-gray-300">
             {flight.status.toUpperCase()}
           </div>
