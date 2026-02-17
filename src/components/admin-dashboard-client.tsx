@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { toast } from "sonner";
 import { searchGlobalAirports, type ExternalAirport } from "~/lib/fetch-airports";
 import { useEventSettings } from "~/hooks/use-event-settings";
+import { getFriendlyError } from "~/lib/friendly-error";
 
 export function AdminDashboardClient() {
   const { user: convexUser } = useCurrentUser();
@@ -110,8 +111,8 @@ export function AdminDashboardClient() {
     try {
       await updateSettings({ isEventLive: val });
       toast.success(val ? "Event is now LIVE!" : "Event is now offline");
-    } catch (e: any) {
-      toast.error(`Failed to update: ${e.message || "Unknown error"}`);
+    } catch (e: unknown) {
+      toast.error(getFriendlyError(e, "Failed to update event status."));
       setLocalSettings({...localSettings, isEventLive: !val}); // Revert on error
     }
   };

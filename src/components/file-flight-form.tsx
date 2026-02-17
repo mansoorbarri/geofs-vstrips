@@ -20,6 +20,7 @@ import { z } from "zod";
 import Loading from "~/components/loading";
 import { useEventSettings } from "~/hooks/use-event-settings";
 import { useFlights } from "~/hooks/use-flights";
+import { getFriendlyError } from "~/lib/friendly-error";
 
 const flightSchema = z.object({
   airport: z
@@ -145,8 +146,8 @@ export function FileFlightForm() {
         success: true,
         message: "Thank you. Your flight is filed. See you at the event!",
       });
-    } catch (error: any) {
-      setSubmissionResult({ success: false, message: error.message });
+    } catch (error: unknown) {
+      setSubmissionResult({ success: false, message: getFriendlyError(error) });
     } finally {
       setIsSubmitting(false);
     }

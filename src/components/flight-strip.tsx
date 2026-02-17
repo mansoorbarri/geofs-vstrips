@@ -10,6 +10,7 @@ import { type LegacyFlight as Flight } from "~/hooks/use-flights";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { getFriendlyError } from "~/lib/friendly-error";
 
 export type FlightStatus =
   | "delivery"
@@ -127,10 +128,10 @@ export function FlightStrip({
           squawk: squawkValue,
         });
         toast.success(`Squawk updated to ${squawkValue}`);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error updating squawk:", err);
         setSquawkValue(flight.squawk || "");
-        toast.error("Failed to update squawk");
+        toast.error(getFriendlyError(err, "Failed to update squawk."));
       }
     }
   };
@@ -146,8 +147,8 @@ export function FlightStrip({
         id: flight.id as Id<"flights">,
       });
       toast.success(`Squawk assigned: ${newSquawk}`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to assign squawk");
+    } catch (err: unknown) {
+      toast.error(getFriendlyError(err, "Failed to assign squawk."));
     }
   };
 

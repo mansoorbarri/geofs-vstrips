@@ -20,6 +20,7 @@ import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { useFlights, type LegacyFlight as Flight } from "~/hooks/use-flights";
 import { useEventSettings } from "~/hooks/use-event-settings";
+import { getFriendlyError } from "~/lib/friendly-error";
 import Link from "next/link";
 import {
   Select,
@@ -244,10 +245,10 @@ export function AllFlightsPageClient() {
           "success",
           `Flight strip ${updatedFlightData.callsign} updated successfully!`,
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         showStatus(
           "error",
-          err.message || "Failed to update flight. Please try again.",
+          getFriendlyError(err, "Failed to update flight. Please try again."),
         );
       }
     },

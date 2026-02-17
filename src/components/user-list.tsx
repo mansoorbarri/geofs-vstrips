@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
+import { getFriendlyError } from "~/lib/friendly-error";
 
 interface UserListProps {
   users: Doc<"users">[];
@@ -41,8 +42,8 @@ export function UserList({
     setIsUpdating(targetUserId);
     try {
       await onToggleController(targetUserId);
-    } catch (e) {
-      alert("An unexpected error occurred. Please try again.");
+    } catch (e: unknown) {
+      alert(getFriendlyError(e));
     } finally {
       setIsUpdating(null);
     }

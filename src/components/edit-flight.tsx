@@ -21,6 +21,7 @@ import Header from "./header";
 import Loading from "~/components/loading";
 import { useMyFlights, useFlights } from "~/hooks/use-flights";
 import { useEventSettings } from "~/hooks/use-event-settings";
+import { getFriendlyError } from "~/lib/friendly-error";
 
 const flightSchema = z.object({
   airport: z
@@ -130,8 +131,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     try {
       await updateFlight(flightId, validation.data);
       setSubmissionResult({ success: true, message: "Flight plan updated!" });
-    } catch (error: any) {
-      setSubmissionResult({ success: false, message: error.message });
+    } catch (error: unknown) {
+      setSubmissionResult({ success: false, message: getFriendlyError(error) });
     } finally {
       setIsSubmitting(false);
     }

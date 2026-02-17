@@ -43,6 +43,7 @@ import Loading from "~/components/loading";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { toast } from "sonner";
 import { useEventSettings } from "~/hooks/use-event-settings";
+import { getFriendlyError } from "~/lib/friendly-error";
 
 export type FlightStatus =
   | "delivery"
@@ -195,8 +196,8 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             duration: 3000,
           },
         );
-      } catch (err) {
-        toast.error("Failed to update flight status. Please try again.", {
+      } catch (err: unknown) {
+        toast.error(getFriendlyError(err, "Failed to update flight status. Please try again."), {
           duration: 3000,
         });
       }
@@ -222,8 +223,8 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             },
           );
         }
-      } catch (err) {
-        toast.error("Failed to move flight. Please try again.", {
+      } catch (err: unknown) {
+        toast.error(getFriendlyError(err, "Failed to move flight. Please try again."), {
           duration: 3000,
         });
         setDraggedFlightId(null);
@@ -383,9 +384,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             duration: 3000,
           },
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast.error(
-          err.message || "Failed to update flight. Please try again.",
+          getFriendlyError(err, "Failed to update flight. Please try again."),
           {
             duration: 3000,
           },
@@ -409,9 +410,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             },
           );
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast.error(
-          err.message || "Failed to delete flight. Please try again.",
+          getFriendlyError(err, "Failed to delete flight. Please try again."),
           {
             duration: 3000,
           },
