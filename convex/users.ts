@@ -178,3 +178,30 @@ export const toggleAdmin = mutation({
     });
   },
 });
+
+export const deleteByClerkId = mutation({
+  args: {
+    clerkId: v.string(),
+    syncSecret: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!process.env.CLERK_SYNC_SECRET) {
+      throw new Error("CLERK_SYNC_SECRET is not configured");
+    }
+    if (args.syncSecret !== process.env.CLERK_SYNC_SECRET) {
+      throw new Error("Not authorized");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (!user) {
+      return { deleted: false };
+    }
+
+    await ctx.db.delete(user._id);
+    return { deleted: true };
+  },
+});
