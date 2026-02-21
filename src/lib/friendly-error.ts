@@ -36,14 +36,22 @@ export function getFriendlyError(
   if (!error) return fallback;
 
   const raw =
-    error instanceof Error ? error.message : String(error);
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : typeof error === "number" ||
+            typeof error === "boolean" ||
+            typeof error === "bigint"
+          ? String(error)
+          : fallback;
 
   // Try direct match first
   if (ERROR_MAP[raw]) return ERROR_MAP[raw];
 
   // Convex wraps errors — try to extract the inner message
   // Pattern: "Uncaught Error: <actual message>"
-  const uncaughtMatch = raw.match(/Uncaught Error:\s*(.+)/);
+  const uncaughtMatch = /Uncaught Error:\s*(.+)/.exec(raw);
   if (uncaughtMatch?.[1]) {
     const inner = uncaughtMatch[1].trim();
     if (ERROR_MAP[inner]) return ERROR_MAP[inner];
