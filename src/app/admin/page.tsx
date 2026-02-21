@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
     if (isLoaded && !isSignedIn) {
       router.push("/sign-up");
     } else if (!isLoading && convexUser && !convexUser.isAdmin) {
-      router.push("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+      router.push("/");
     }
   }, [isLoaded, isSignedIn, isLoading, convexUser, router]);
 

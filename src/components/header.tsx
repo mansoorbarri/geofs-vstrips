@@ -44,7 +44,7 @@ export default function Header() {
               FIDs
             </Link>
           )}
-          {(user?.isController || user?.isAdmin) && (
+          {user?.isAdmin && (
             <Link
               href="/admin"
               className="bg-gradient-to-r from-blue-200 to-blue-500 bg-clip-text font-semibold text-transparent transition-all duration-300 hover:from-purple-500 hover:to-blue-400"
