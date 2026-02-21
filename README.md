@@ -39,7 +39,7 @@ Follow these steps to set up and run the project locally.
 #### Prerequisites
 
 * Node.js (LTS version)
-* pnpm (recommended) or npm
+* Bun
 * A running PostgreSQL database instance
 
 #### 1. Clone the Repository
@@ -52,7 +52,7 @@ cd geofs-vstrips
 #### 2. Install Dependencies
 
 ```bash
-pnpm install
+bun install
 ```
 
 #### 3. Create a .env file
@@ -68,13 +68,13 @@ cp .env.example .env
 Use Prima to push the database schema and generate the client.
 
 ```bash
-pnpm db:push
+bun db:push
 ```
 
 #### 5. Run the Application
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 The application will be available at http://localhost:3000.
