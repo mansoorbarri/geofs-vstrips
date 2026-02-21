@@ -3,9 +3,11 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useEventSettings } from "~/hooks/use-event-settings";
+import { useCurrentUser } from "~/hooks/use-current-user";
 
 export default function Header() {
   const { settings } = useEventSettings();
+  const { user } = useCurrentUser();
 
   const defaultAirportId = useMemo(() => {
     const activeIds = settings?.activeAirports || [];
@@ -42,11 +44,19 @@ export default function Header() {
               FIDs
             </Link>
           )}
+          {(user?.isController || user?.isAdmin) && (
+            <Link
+              href="/admin"
+              className="bg-gradient-to-r from-blue-200 to-blue-500 bg-clip-text font-semibold text-transparent transition-all duration-300 hover:from-purple-500 hover:to-blue-400"
+            >
+              Admin
+            </Link>
+          )}
           <Link
-            href="/admin"
+            href="/docs"
             className="bg-gradient-to-r from-blue-200 to-blue-500 bg-clip-text font-semibold text-transparent transition-all duration-300 hover:from-purple-500 hover:to-blue-400"
           >
-            Admin
+            Docs
           </Link>
         </nav>
       </div>
