@@ -31,7 +31,13 @@ export function AdminDashboardClient() {
   const users = useQuery(api.users.list);
   const toggleController = useMutation(api.users.toggleController);
   const toggleAdmin = useMutation(api.users.toggleAdmin);
-  const isSuperAdmin = convexUser?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = Boolean(
+    convexUser?.isAdmin &&
+      convexUser?.email &&
+      process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL &&
+      convexUser.email.toLowerCase().trim() ===
+        process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL.toLowerCase().trim(),
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ExternalAirport[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
