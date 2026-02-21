@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+const getSuperAdminEmail = () =>
+  process.env.SUPER_ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
+
 export const store = mutation({
   args: {},
   handler: async (ctx) => {
@@ -8,6 +11,9 @@ export const store = mutation({
     if (!identity) {
       throw new Error("Called store without authentication");
     }
+    const superAdminEmail = getSuperAdminEmail();
+    const isSuperAdmin =
+      Boolean(identity.email) && identity.email === superAdminEmail;
 
     const user = await ctx.db
       .query("users")
@@ -19,6 +25,8 @@ export const store = mutation({
         email: identity.email ?? user.email,
         name: identity.name ?? user.name,
         imageUrl: identity.pictureUrl ?? user.imageUrl,
+        isController: isSuperAdmin ? true : user.isController,
+        isAdmin: isSuperAdmin ? true : user.isAdmin,
         lastActiveAt: Date.now(),
       });
       return user._id;
@@ -30,8 +38,8 @@ export const store = mutation({
       name: identity.name,
       username: identity.nickname,
       imageUrl: identity.pictureUrl,
-      isController: false,
-      isAdmin: false,
+      isController: isSuperAdmin,
+      isAdmin: isSuperAdmin,
       lastActiveAt: Date.now(),
       createdAt: Date.now(),
     });
@@ -147,7 +155,7 @@ export const toggleAdmin = mutation({
       throw new Error("Not authenticated");
     }
 
-    if (identity.email !== process.env.SUPER_ADMIN_EMAIL) {
+    if (identity.email !== getSuperAdminEmail()) {
       throw new Error("Not authorized: super admin only");
     }
 
