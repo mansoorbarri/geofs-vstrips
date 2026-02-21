@@ -3,6 +3,19 @@ import { mutation, query } from "./_generated/server";
 
 const getSuperAdminEmail = () =>
   process.env.SUPER_ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
+const getSuperAdminClerkId = () => process.env.SUPER_ADMIN_CLERK_ID;
+
+const isSuperAdminIdentity = (identity: {
+  subject: string;
+  email?: string | null;
+}) => {
+  const superAdminEmail = getSuperAdminEmail();
+  const superAdminClerkId = getSuperAdminClerkId();
+  return (
+    (Boolean(identity.email) && identity.email === superAdminEmail) ||
+    (Boolean(superAdminClerkId) && identity.subject === superAdminClerkId)
+  );
+};
 
 export const store = mutation({
   args: {},
@@ -11,9 +24,7 @@ export const store = mutation({
     if (!identity) {
       throw new Error("Called store without authentication");
     }
-    const superAdminEmail = getSuperAdminEmail();
-    const isSuperAdmin =
-      Boolean(identity.email) && identity.email === superAdminEmail;
+    const isSuperAdmin = isSuperAdminIdentity(identity);
 
     const user = await ctx.db
       .query("users")
@@ -155,7 +166,7 @@ export const toggleAdmin = mutation({
       throw new Error("Not authenticated");
     }
 
-    if (identity.email !== getSuperAdminEmail()) {
+    if (!isSuperAdminIdentity(identity)) {
       throw new Error("Not authorized: super admin only");
     }
 
