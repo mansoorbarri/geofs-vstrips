@@ -51,10 +51,10 @@ export function useEventSettings() {
     return {
       ...rawSettings,
       _id: "_id" in rawSettings ? rawSettings._id : undefined,
-      altitudeMode: "altitudeMode" in rawSettings ? rawSettings.altitudeMode : "CUSTOM",
-      fixedAltitude: "fixedAltitude" in rawSettings ? rawSettings.fixedAltitude : "",
-      speedMode: "speedMode" in rawSettings ? rawSettings.speedMode : "CUSTOM",
-      fixedSpeed: "fixedSpeed" in rawSettings ? rawSettings.fixedSpeed : "",
+      altitudeMode: rawSettings.altitudeMode ?? "CUSTOM",
+      fixedAltitude: rawSettings.fixedAltitude ?? "",
+      speedMode: rawSettings.speedMode ?? "CUSTOM",
+      fixedSpeed: rawSettings.fixedSpeed ?? "",
       activeAirports: rawSettings.activeAirports as string[],
       airportData: rawSettings.airportData as AirportData[],
     };
