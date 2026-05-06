@@ -56,6 +56,10 @@ export function AdminDashboardClient() {
     fixedRoute: "",
     timeMode: "CUSTOM",
     fixedTime: "",
+    altitudeMode: "CUSTOM",
+    fixedAltitude: "",
+    speedMode: "CUSTOM",
+    fixedSpeed: "",
     activeAirports: [] as string[],
     airportData: [] as { id: string; name: string }[],
   });
@@ -75,6 +79,10 @@ export function AdminDashboardClient() {
         fixedRoute: convexSettings.fixedRoute ?? "",
         timeMode: convexSettings.timeMode ?? "CUSTOM",
         fixedTime: convexSettings.fixedTime ?? "",
+        altitudeMode: convexSettings.altitudeMode ?? "CUSTOM",
+        fixedAltitude: convexSettings.fixedAltitude ?? "",
+        speedMode: convexSettings.speedMode ?? "CUSTOM",
+        fixedSpeed: convexSettings.fixedSpeed ?? "",
         activeAirports: convexSettings.activeAirports ?? [],
         airportData: (convexSettings.airportData as { id: string; name: string }[]) ?? [],
       });
@@ -123,7 +131,13 @@ export function AdminDashboardClient() {
     }
   };
 
-  const renderConfigSection = (title: string, modeKey: string, valKey: string, placeholder: string) => (
+  const renderConfigSection = (
+    title: string,
+    modeKey: string,
+    valKey: string,
+    placeholder: string,
+    transformValue: (value: string) => string = (value) => value.toUpperCase(),
+  ) => (
     <div className={`p-4 border rounded-lg space-y-4 ${localSettings[modeKey as keyof typeof localSettings] === "FIXED" ? "border-blue-500 bg-blue-900/10" : "border-gray-800"}`}>
       <Label className="text-blue-400">{title}</Label>
       <Select
@@ -141,7 +155,7 @@ export function AdminDashboardClient() {
       <Input
         placeholder={placeholder}
         value={localSettings[valKey as keyof typeof localSettings] as string || ""}
-        onChange={(e) => setLocalSettings({...localSettings, [valKey]: e.target.value.toUpperCase()})}
+        onChange={(e) => setLocalSettings({...localSettings, [valKey]: transformValue(e.target.value)})}
         disabled={localSettings[modeKey as keyof typeof localSettings] === "CUSTOM"}
         className="bg-gray-800 border-gray-700 disabled:opacity-30"
       />
@@ -230,6 +244,8 @@ export function AdminDashboardClient() {
             {renderConfigSection("Departure Airport", "departureMode", "fixedDeparture", "e.g. OMDB")}
             {renderConfigSection("Arrival Airport", "arrivalMode", "fixedArrival", "e.g. OMDB")}
             {renderConfigSection("Departure Time", "timeMode", "fixedTime", "e.g. 1800")}
+            {renderConfigSection("Cruise Altitude", "altitudeMode", "fixedAltitude", "e.g. FL350")}
+            {renderConfigSection("Cruise Speed", "speedMode", "fixedSpeed", "e.g. 0.82", (value) => value)}
             {renderConfigSection("Flight Route", "routeMode", "fixedRoute", "e.g. DCT VOR STAR")}
           </div>
 

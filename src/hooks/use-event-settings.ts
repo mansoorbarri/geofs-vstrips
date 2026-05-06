@@ -21,6 +21,10 @@ export interface EventSettings {
   fixedArrival?: string;
   timeMode: string;
   fixedTime?: string;
+  altitudeMode: string;
+  fixedAltitude?: string;
+  speedMode: string;
+  fixedSpeed?: string;
   routeMode: string;
   fixedRoute?: string;
   activeAirports: string[];
@@ -47,6 +51,10 @@ export function useEventSettings() {
     return {
       ...rawSettings,
       _id: "_id" in rawSettings ? rawSettings._id : undefined,
+      altitudeMode: "altitudeMode" in rawSettings ? rawSettings.altitudeMode : "CUSTOM",
+      fixedAltitude: "fixedAltitude" in rawSettings ? rawSettings.fixedAltitude : "",
+      speedMode: "speedMode" in rawSettings ? rawSettings.speedMode : "CUSTOM",
+      fixedSpeed: "fixedSpeed" in rawSettings ? rawSettings.fixedSpeed : "",
       activeAirports: rawSettings.activeAirports as string[],
       airportData: rawSettings.airportData as AirportData[],
     };

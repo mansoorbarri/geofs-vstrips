@@ -116,8 +116,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
       departure: (eventSettings?.departureMode === "FIXED" ? eventSettings.fixedDeparture : formData.get("departure")) as string,
       departure_time: (eventSettings?.timeMode === "FIXED" ? eventSettings.fixedTime : formData.get("departure_time")) as string,
       arrival: (eventSettings?.arrivalMode === "FIXED" ? eventSettings.fixedArrival : formData.get("arrival")) as string,
-      altitude: formData.get("altitude") as string,
-      speed: formData.get("speed") as string,
+      altitude: (eventSettings?.altitudeMode === "FIXED" ? eventSettings.fixedAltitude : formData.get("altitude")) as string,
+      speed: (eventSettings?.speedMode === "FIXED" ? eventSettings.fixedSpeed : formData.get("speed")) as string,
       route: (eventSettings?.routeMode === "FIXED" ? eventSettings.fixedRoute : formData.get("route")) as string,
     };
 
@@ -223,14 +223,8 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 border-t border-gray-700 pt-6">
             {renderField("Departure", "departure", eventSettings?.departureMode, eventSettings?.fixedDeparture, flight.departure, "KLAX")}
             {renderField("Arrival", "arrival", eventSettings?.arrivalMode, eventSettings?.fixedArrival, flight.arrival, "KJFK")}
-            <div className="space-y-2">
-              <Label>Altitude</Label>
-              <Input name="altitude" defaultValue={flight.altitude} required className="bg-gray-800 text-white" />
-            </div>
-            <div className="space-y-2">
-              <Label>Speed (Mach)</Label>
-              <Input name="speed" defaultValue={flight.speed} required className="bg-gray-800 text-white" />
-            </div>
+            {renderField("Cruise Altitude", "altitude", eventSettings?.altitudeMode, eventSettings?.fixedAltitude, flight.altitude, "FL350")}
+            {renderField("Cruise Speed", "speed", eventSettings?.speedMode, eventSettings?.fixedSpeed, flight.speed, "0.82")}
           </div>
           <div className="space-y-4 border-t border-gray-700 pt-6">
             <div className="space-y-2">

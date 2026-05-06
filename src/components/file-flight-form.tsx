@@ -114,8 +114,12 @@ export function FileFlightForm() {
       departure: ((formData.get("departure") as string) || "").toUpperCase(),
       departure_time: formData.get("departure_time") as string,
       arrival: ((formData.get("arrival") as string) || "").toUpperCase(),
-      altitude: ((formData.get("altitude") as string) || "").toUpperCase(),
-      speed: formData.get("speed") as string,
+      altitude: ((eventSettings?.altitudeMode === "FIXED"
+        ? eventSettings.fixedAltitude
+        : formData.get("altitude")) as string || "").toUpperCase(),
+      speed: ((eventSettings?.speedMode === "FIXED"
+        ? eventSettings.fixedSpeed
+        : formData.get("speed")) as string || ""),
       route: ((eventSettings?.routeMode === "FIXED"
         ? eventSettings.fixedRoute
         : formData.get("route")) as string || "").toUpperCase(),
@@ -159,6 +163,7 @@ export function FileFlightForm() {
     mode: string | undefined,
     fixedVal: string | undefined,
     placeholder: string,
+    inputClassName = "uppercase",
   ) => {
     const isFixed = mode === "FIXED";
     return (
@@ -171,7 +176,7 @@ export function FileFlightForm() {
           readOnly={isFixed}
           placeholder={placeholder}
           required
-          className={`border-gray-700 bg-gray-800 text-white uppercase ${isFixed ? "cursor-not-allowed opacity-60" : ""}`}
+          className={`border-gray-700 bg-gray-800 text-white ${inputClassName} ${isFixed ? "cursor-not-allowed opacity-60" : ""}`}
         />
       </div>
     );
@@ -279,26 +284,21 @@ export function FileFlightForm() {
             eventSettings?.fixedArrival,
             "e.g. KJFK",
           )}
-          <div className="space-y-2">
-            <Label htmlFor="altitude">Cruise Altitude</Label>
-            <Input
-              id="altitude"
-              name="altitude"
-              placeholder="e.g., FL350"
-              required
-              className="border-gray-700 bg-gray-800 text-white uppercase"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="speed">Mach Speed</Label>
-            <Input
-              id="speed"
-              name="speed"
-              placeholder="e.g., 0.82"
-              required
-              className="border-gray-700 bg-gray-800 text-white"
-            />
-          </div>
+          {renderField(
+            "Cruise Altitude",
+            "altitude",
+            eventSettings?.altitudeMode,
+            eventSettings?.fixedAltitude,
+            "e.g. FL350",
+          )}
+          {renderField(
+            "Cruise Speed",
+            "speed",
+            eventSettings?.speedMode,
+            eventSettings?.fixedSpeed,
+            "e.g. 0.82",
+            "",
+          )}
         </div>
 
         <div className="border-b border-gray-700"></div>
