@@ -10,7 +10,7 @@ export default function FileFlightPage() {
       <main className="flex flex-1 items-center justify-center">
         <FileFlightForm />
       </main>
-      <Footer />
+      <Footer hintText="two letters, 34 + 35" />
     </div>
   );
 }

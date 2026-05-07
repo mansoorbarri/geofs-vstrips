@@ -1,13 +1,21 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
+import { z } from "zod";
+import Loading from "~/components/loading";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { AlertCircle, CheckCircle, Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,12 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { redirect } from "next/navigation";
-import { z } from "zod";
-import Loading from "~/components/loading";
+import { Textarea } from "~/components/ui/textarea";
 import { useEventSettings } from "~/hooks/use-event-settings";
 import { useFlights } from "~/hooks/use-flights";
 import { getFriendlyError } from "~/lib/friendly-error";
+import { AlertCircle, CheckCircle, Info } from "lucide-react";
 
 const flightSchema = z.object({
   airport: z
@@ -70,6 +77,9 @@ const flightSchema = z.object({
 export function FileFlightForm() {
   const { isLoaded, isSignedIn, user } = useUser();
   const [selectedAirport, setSelectedAirport] = useState("");
+  const [callsign, setCallsign] = useState("");
+  const [hasAutoOpenedPk69Hint, setHasAutoOpenedPk69Hint] = useState(false);
+  const [specialCodeOpen, setSpecialCodeOpen] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message?: string;
@@ -77,8 +87,23 @@ export function FileFlightForm() {
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { settings: eventSettings, isLoading: isLoadingSettings } = useEventSettings();
+  const { settings: eventSettings, isLoading: isLoadingSettings } =
+    useEventSettings();
   const { createFlight } = useFlights();
+  const normalizedCallsign = callsign.trim().toUpperCase();
+  const isPk69Callsign = normalizedCallsign === "PK69";
+
+  useEffect(() => {
+    if (isPk69Callsign && !hasAutoOpenedPk69Hint) {
+      setSpecialCodeOpen(true);
+      setHasAutoOpenedPk69Hint(true);
+      return;
+    }
+
+    if (!isPk69Callsign && hasAutoOpenedPk69Hint) {
+      setHasAutoOpenedPk69Hint(false);
+    }
+  }, [hasAutoOpenedPk69Hint, isPk69Callsign]);
 
   if (!isLoaded || isLoadingSettings) return <Loading />;
   if (!isSignedIn) redirect("/sign-up");
@@ -108,21 +133,28 @@ export function FileFlightForm() {
 
     const formValues = {
       airport: (finalAirport || "").toUpperCase(),
-      callsign: ((formData.get("callsign") as string) || "").toUpperCase(),
+      callsign: normalizedCallsign,
       geofs_callsign: formData.get("geofs_callsign") as string,
-      aircraft_type: ((formData.get("aircraft_type") as string) || "").toUpperCase(),
+      aircraft_type: (
+        (formData.get("aircraft_type") as string) || ""
+      ).toUpperCase(),
       departure: ((formData.get("departure") as string) || "").toUpperCase(),
       departure_time: formData.get("departure_time") as string,
       arrival: ((formData.get("arrival") as string) || "").toUpperCase(),
-      altitude: ((eventSettings?.altitudeMode === "FIXED"
-        ? eventSettings.fixedAltitude
-        : formData.get("altitude")) as string || "").toUpperCase(),
-      speed: ((eventSettings?.speedMode === "FIXED"
-        ? eventSettings.fixedSpeed
-        : formData.get("speed")) as string || ""),
-      route: ((eventSettings?.routeMode === "FIXED"
-        ? eventSettings.fixedRoute
-        : formData.get("route")) as string || "").toUpperCase(),
+      altitude: (
+        ((eventSettings?.altitudeMode === "FIXED"
+          ? eventSettings.fixedAltitude
+          : formData.get("altitude")) as string) || ""
+      ).toUpperCase(),
+      speed:
+        ((eventSettings?.speedMode === "FIXED"
+          ? eventSettings.fixedSpeed
+          : formData.get("speed")) as string) || "",
+      route: (
+        ((eventSettings?.routeMode === "FIXED"
+          ? eventSettings.fixedRoute
+          : formData.get("route")) as string) || ""
+      ).toUpperCase(),
     };
 
     const validation = flightSchema.safeParse(formValues);
@@ -151,7 +183,10 @@ export function FileFlightForm() {
         message: "Thank you. Your flight is filed. See you at the event!",
       });
     } catch (error: unknown) {
-      setSubmissionResult({ success: false, message: getFriendlyError(error) });
+      setSubmissionResult({
+        success: false,
+        message: getFriendlyError(error),
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -182,7 +217,8 @@ export function FileFlightForm() {
     );
   };
 
-  const airportData = (eventSettings?.airportData as { id: string; name: string }[]) || [];
+  const airportData =
+    (eventSettings?.airportData as { id: string; name: string }[]) || [];
   const activeATCList = airportData.filter((ap) =>
     eventSettings?.activeAirports?.includes(ap.id),
   );
@@ -200,166 +236,193 @@ export function FileFlightForm() {
   }
 
   return (
-    <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-white shadow-xl">
-      <div className="mb-6 flex flex-col items-center">
-        <h1 className="text-3xl font-bold">File a Flight Plan</h1>
-      </div>
-
-      {submissionResult?.success === false && (
-        <Alert
-          variant="destructive"
-          className="mb-4 border-red-600 bg-red-900"
-        >
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription className="text-red-200">
-            {submissionResult.errors && submissionResult.errors.length > 0 ? (
-              <ul className="mt-2 list-disc pl-4">
-                {submissionResult.errors.map((error, index) => (
-                  <li key={index}>{error.message}</li>
-                ))}
-              </ul>
-            ) : (
-              submissionResult.message
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="callsign">Callsign</Label>
-            <Input
-              id="callsign"
-              name="callsign"
-              placeholder="e.g., DAL123"
-              required
-              className="border-gray-700 bg-gray-800 text-white uppercase"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="geofs_callsign">GeoFS Callsign</Label>
-            <Input
-              id="geofs_callsign"
-              name="geofs_callsign"
-              placeholder="e.g., Ayman"
-              required
-              className="border-gray-700 bg-gray-800 text-white"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="aircraft_type">Aircraft</Label>
-            <Input
-              id="aircraft_type"
-              name="aircraft_type"
-              placeholder="e.g., A320"
-              required
-              className="border-gray-700 bg-gray-800 text-white uppercase"
-            />
-          </div>
-          {renderField(
-            "Time",
-            "departure_time",
-            eventSettings?.timeMode,
-            eventSettings?.fixedTime,
-            "e.g. 1720",
-          )}
+    <>
+      <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-white shadow-xl">
+        <div className="mb-6 flex flex-col items-center">
+          <h1 className="text-3xl font-bold">File a Flight Plan</h1>
         </div>
 
-        <div className="border-b border-gray-700"></div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {renderField(
-            "Departure Airport",
-            "departure",
-            eventSettings?.departureMode,
-            eventSettings?.fixedDeparture,
-            "e.g. KLAX",
-          )}
-          {renderField(
-            "Arrival Airport",
-            "arrival",
-            eventSettings?.arrivalMode,
-            eventSettings?.fixedArrival,
-            "e.g. KJFK",
-          )}
-          {renderField(
-            "Cruise Altitude",
-            "altitude",
-            eventSettings?.altitudeMode,
-            eventSettings?.fixedAltitude,
-            "e.g. FL350",
-          )}
-          {renderField(
-            "Cruise Speed",
-            "speed",
-            eventSettings?.speedMode,
-            eventSettings?.fixedSpeed,
-            "e.g. 0.82",
-            "",
-          )}
-        </div>
-
-        <div className="border-b border-gray-700"></div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="airport">Where do you want ATC?</Label>
-            {eventSettings?.airportMode === "FIXED" ? (
-              <div className="space-y-2">
-                <Input
-                  value={`${airportData.find((a) => a.id === eventSettings.fixedAirport)?.name || eventSettings.fixedAirport} (${eventSettings.fixedAirport})`}
-                  readOnly
-                  className="cursor-not-allowed border-gray-700 bg-gray-700 text-white opacity-60"
-                />
-              </div>
-            ) : (
-              <Select onValueChange={setSelectedAirport} required>
-                <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
-                  <SelectValue placeholder="Select an airport" />
-                </SelectTrigger>
-                <SelectContent className="border-gray-700 bg-gray-800 text-white">
-                  {activeATCList.map((airport) => (
-                    <SelectItem key={airport.id} value={airport.id}>
-                      {airport.name} ({airport.id})
-                    </SelectItem>
+        {submissionResult?.success === false && (
+          <Alert
+            variant="destructive"
+            className="mb-4 border-red-600 bg-red-900"
+          >
+            <AlertCircle className="h-4 w-4 text-red-400" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="text-red-200">
+              {submissionResult.errors && submissionResult.errors.length > 0 ? (
+                <ul className="mt-2 list-disc pl-4">
+                  {submissionResult.errors.map((error, index) => (
+                    <li key={index}>{error.message}</li>
                   ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+                </ul>
+              ) : (
+                submissionResult.message
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="route">Flight Route</Label>
-            {eventSettings?.routeMode === "FIXED" ? (
-              <Textarea
-                id="route"
-                name="route"
-                value={eventSettings.fixedRoute}
-                readOnly
-                className="border-gray-700 bg-gray-700 text-white opacity-60"
-              />
-            ) : (
-              <Textarea
-                id="route"
-                name="route"
-                placeholder="e.g., DCT VOR VOR STAR"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="callsign">Callsign</Label>
+              <Input
+                id="callsign"
+                name="callsign"
+                value={callsign}
+                onChange={(event) =>
+                  setCallsign(event.target.value.toUpperCase())
+                }
+                placeholder="e.g., DAL123"
                 required
                 className="border-gray-700 bg-gray-800 text-white uppercase"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="geofs_callsign">GeoFS Callsign</Label>
+              <Input
+                id="geofs_callsign"
+                name="geofs_callsign"
+                placeholder="e.g., Ayman"
+                required
+                className="border-gray-700 bg-gray-800 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="aircraft_type">Aircraft</Label>
+              <Input
+                id="aircraft_type"
+                name="aircraft_type"
+                placeholder="e.g., A320"
+                required
+                className="border-gray-700 bg-gray-800 text-white uppercase"
+              />
+            </div>
+            {renderField(
+              "Time",
+              "departure_time",
+              eventSettings?.timeMode,
+              eventSettings?.fixedTime,
+              "e.g. 1720",
             )}
           </div>
-        </div>
 
-        <Button
-          type="submit"
-          className="w-full bg-blue-600 text-white hover:bg-blue-700"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Submitting..." : "File Flight Plan"}
-        </Button>
-      </form>
-    </div>
+          <div className="border-b border-gray-700"></div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {renderField(
+              "Departure Airport",
+              "departure",
+              eventSettings?.departureMode,
+              eventSettings?.fixedDeparture,
+              "e.g. KLAX",
+            )}
+            {renderField(
+              "Arrival Airport",
+              "arrival",
+              eventSettings?.arrivalMode,
+              eventSettings?.fixedArrival,
+              "e.g. KJFK",
+            )}
+            {renderField(
+              "Cruise Altitude",
+              "altitude",
+              eventSettings?.altitudeMode,
+              eventSettings?.fixedAltitude,
+              "e.g. FL350",
+            )}
+            {renderField(
+              "Cruise Speed",
+              "speed",
+              eventSettings?.speedMode,
+              eventSettings?.fixedSpeed,
+              "e.g. 0.82",
+              "",
+            )}
+          </div>
+
+          <div className="border-b border-gray-700"></div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="airport">Where do you want ATC?</Label>
+              {eventSettings?.airportMode === "FIXED" ? (
+                <div className="space-y-2">
+                  <Input
+                    value={`${airportData.find((a) => a.id === eventSettings.fixedAirport)?.name || eventSettings.fixedAirport} (${eventSettings.fixedAirport})`}
+                    readOnly
+                    className="cursor-not-allowed border-gray-700 bg-gray-700 text-white opacity-60"
+                  />
+                </div>
+              ) : (
+                <Select onValueChange={setSelectedAirport} required>
+                  <SelectTrigger className="w-full border-gray-700 bg-gray-800 text-white">
+                    <SelectValue placeholder="Select an airport" />
+                  </SelectTrigger>
+                  <SelectContent className="border-gray-700 bg-gray-800 text-white">
+                    {activeATCList.map((airport) => (
+                      <SelectItem key={airport.id} value={airport.id}>
+                        {airport.name} ({airport.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="route">Flight Route</Label>
+              {eventSettings?.routeMode === "FIXED" ? (
+                <Textarea
+                  id="route"
+                  name="route"
+                  value={eventSettings.fixedRoute}
+                  readOnly
+                  className="border-gray-700 bg-gray-700 text-white opacity-60"
+                />
+              ) : (
+                <Textarea
+                  id="route"
+                  name="route"
+                  placeholder="e.g., DCT VOR VOR STAR"
+                  required
+                  className="border-gray-700 bg-gray-800 text-white uppercase"
+                />
+              )}
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Submitting..." : "File Flight Plan"}
+          </Button>
+        </form>
+      </div>
+
+      <Dialog open={specialCodeOpen} onOpenChange={setSpecialCodeOpen}>
+        <DialogContent className="max-w-sm border-blue-500/40 bg-gray-950 text-white">
+          <DialogHeader>
+            <DialogTitle>Special Code</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              send this to xyzmani before 0000z :)
+            </DialogDescription>
+          </DialogHeader>
+          {isPk69Callsign && (
+            <div className="rounded-md border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-center">
+              <p className="mb-1 text-xs tracking-[0.32em] text-blue-200 uppercase">
+                Code
+              </p>
+              <p className="font-mono text-2xl font-semibold tracking-[0.42em] text-white">
+                V3RM0N
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
