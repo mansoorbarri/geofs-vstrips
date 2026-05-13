@@ -33,8 +33,8 @@ const flightSchema = z.object({
     .max(7, "Callsign must be 7 characters or less"),
   geofs_callsign: z
     .string()
-    .max(24, "GeoFS Callsign must be 23 characters or less")
-    .optional(),
+    .min(1, "GeoFS Callsign is required")
+    .max(24, "GeoFS Callsign must be 23 characters or less"),
   aircraft_type: z
     .string()
     .min(1, "Aircraft type is required")
@@ -66,8 +66,6 @@ const flightSchema = z.object({
     .min(1, "Flight Route is required")
     .max(2000, "route are too long"),
 });
-
-const DISABLED_AIRCRAFT_TYPE = "UNK1";
 
 export function FileFlightForm() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -114,9 +112,10 @@ export function FileFlightForm() {
     const formValues = {
       airport: (finalAirport || "").toUpperCase(),
       callsign: normalizedCallsign,
-      geofs_callsign:
-        ((formData.get("geofs_callsign") as string) || "").trim() || undefined,
-      aircraft_type: DISABLED_AIRCRAFT_TYPE,
+      geofs_callsign: formData.get("geofs_callsign") as string,
+      aircraft_type: (
+        (formData.get("aircraft_type") as string) || ""
+      ).toUpperCase(),
       departure: ((formData.get("departure") as string) || "").toUpperCase(),
       departure_time: formData.get("departure_time") as string,
       arrival: ((formData.get("arrival") as string) || "").toUpperCase(),
@@ -149,7 +148,6 @@ export function FileFlightForm() {
 
     const flightData = {
       ...validation.data,
-      geofs_callsign: validation.data.geofs_callsign ?? null,
       discord_username: user.externalAccounts[0]?.username ?? null,
       status: "delivery" as const,
       notes: "",
@@ -263,9 +261,9 @@ export function FileFlightForm() {
             <Input
               id="geofs_callsign"
               name="geofs_callsign"
-              disabled
               placeholder="e.g., Ayman"
-              className="cursor-not-allowed border-gray-700 bg-gray-800 text-white opacity-50"
+              required
+              className="border-gray-700 bg-gray-800 text-white"
             />
           </div>
           <div className="space-y-2">
@@ -273,9 +271,9 @@ export function FileFlightForm() {
             <Input
               id="aircraft_type"
               name="aircraft_type"
-              disabled
               placeholder="e.g., A320"
-              className="cursor-not-allowed border-gray-700 bg-gray-800 text-white uppercase opacity-50"
+              required
+              className="border-gray-700 bg-gray-800 text-white uppercase"
             />
           </div>
           {renderField(
