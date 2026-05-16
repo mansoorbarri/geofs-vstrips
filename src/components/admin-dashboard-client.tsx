@@ -114,9 +114,9 @@ export function AdminDashboardClient() {
     try {
       await updateSettings(localSettings);
       toast.success("Settings saved");
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to save settings:", e);
-      toast.error("Failed to save settings");
+      toast.error(getFriendlyError(e, "Failed to save settings."));
     }
   };
 

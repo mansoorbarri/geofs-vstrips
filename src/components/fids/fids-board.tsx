@@ -1,6 +1,7 @@
 "use client";
 
 import { useFlights } from "~/hooks/use-flights";
+import { getFriendlyError } from "~/lib/friendly-error";
 import { FidsRow } from "./fids-row";
 
 interface FidsBoardProps {
@@ -11,7 +12,9 @@ export const FidsBoard: React.FC<FidsBoardProps> = ({ airport }) => {
   const { flights, isLoading, error } = useFlights(true, airport);
 
   if (isLoading) return <p>Loading flight data...</p>;
-  if (error) return <p className="text-red-600">{String(error.message)}</p>;
+  if (error) {
+    return <p className="text-red-600">{getFriendlyError(error)}</p>;
+  }
 
   // Filter by the current airport
   const relevantFlights = flights.filter(

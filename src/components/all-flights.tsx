@@ -262,8 +262,11 @@ export function AllFlightsPageClient() {
         await deleteFlight(flightId);
         if (flight)
           showStatus("success", `Flight strip ${flight.callsign} deleted.`);
-      } catch {
-        showStatus("error", "Failed to delete flight.");
+      } catch (err: unknown) {
+        showStatus(
+          "error",
+          getFriendlyError(err, "Failed to delete flight."),
+        );
       }
     },
     [flights, deleteFlight, showStatus],
