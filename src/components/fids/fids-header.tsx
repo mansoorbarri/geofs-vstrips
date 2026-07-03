@@ -47,12 +47,16 @@ export const FidsHeader: React.FC<FidsHeaderProps> = ({ currentAirport }) => {
           onValueChange={(value) => router.push(`/fids/${value}`)}
         >
           <SelectTrigger className="min-w-[6rem] w-auto border-gray-700 bg-gray-800 py-2 text-white">
-            <SelectValue placeholder="Select an airport" />
+            {currentAirport ? (
+              currentAirport
+            ) : (
+              <span className="text-muted-foreground">Select an airport</span>
+            )}
           </SelectTrigger>
           <SelectContent className="border-gray-700 bg-gray-800 text-white">
             {dynamicAirports.map((airport) => (
               <SelectItem key={airport.id} value={airport.id}>
-                {airport.id} — {airport.name}
+                {airport.id} - {airport.name}
               </SelectItem>
             ))}
           </SelectContent>

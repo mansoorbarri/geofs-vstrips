@@ -123,9 +123,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const shouldShowAirportSwitcher =
     isCurrentAirportActive && dynamicAirports.length > 1;
 
-  const airportHeading = currentAirportData?.name
-    ? `${airportName} - ${currentAirportData.name}`
-    : `${airportName} Board`;
+  const airportHeading = airportName || "Board";
 
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
@@ -647,8 +645,12 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                   Active Board
                 </span>
                 <Select value={airportName} onValueChange={handleAirportChange}>
-                  <SelectTrigger className="h-auto w-full min-w-0 justify-center gap-3 border-transparent bg-transparent px-3 py-1 text-center text-2xl font-bold text-white shadow-none hover:bg-gray-950 focus-visible:border-gray-700 focus-visible:ring-1 focus-visible:ring-gray-700 sm:px-4 sm:text-3xl [&>span]:max-w-full [&>span]:truncate [&>span]:text-center [&>span]:text-2xl sm:[&>span]:text-3xl [&>svg]:mt-1 [&>svg]:size-5 [&>svg]:opacity-60">
-                    <SelectValue placeholder="Select an airport" />
+                  <SelectTrigger className="h-auto w-full min-w-0 justify-center border border-transparent bg-transparent px-3 py-1 text-center text-2xl font-bold text-white shadow-none hover:border-gray-800 hover:bg-gray-950/70 focus-visible:border-gray-700 focus-visible:ring-1 focus-visible:ring-gray-700 sm:px-4 sm:text-3xl [&>svg]:hidden">
+                    <span className="block w-full truncate text-center text-2xl sm:text-3xl">
+                      {currentAirportData?.id ?? (
+                        <span className="text-muted-foreground">Select an airport</span>
+                      )}
+                    </span>
                   </SelectTrigger>
                   <SelectContent className="border-gray-700 bg-gray-900 text-white">
                     {dynamicAirports.map((airport) => (

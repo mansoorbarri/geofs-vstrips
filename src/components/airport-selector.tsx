@@ -31,6 +31,8 @@ export function AirportSelector() {
     return masterList.filter((ap) => activeIds.includes(ap.id));
   }, [settings]);
 
+  const selectedAirportLabel = selectedAirport ?? "";
+
   const handleGoToBoard = () => {
     if (selectedAirport) {
       const encodedId = encodeURIComponent(selectedAirport);
@@ -46,12 +48,16 @@ export function AirportSelector() {
     <div className="flex w-full flex-col items-center gap-4 sm:flex-row">
       <Select onValueChange={(value) => setSelectedAirport(value)}>
         <SelectTrigger className="w-full border-gray-700 bg-gray-800 py-2 text-white">
-          <SelectValue placeholder={dynamicAirports.length > 0 ? "Select an airport" : "No active airports"} />
+          {selectedAirportLabel || (
+            <span className="text-muted-foreground">
+              {dynamicAirports.length > 0 ? "Select an airport" : "No active airports"}
+            </span>
+          )}
         </SelectTrigger>
         <SelectContent className="border-gray-700 bg-gray-800 text-white">
           {dynamicAirports.map((airport) => (
             <SelectItem key={airport.id} value={airport.id}>
-              {airport.name} ({airport.id})
+              {airport.id} - {airport.name}
             </SelectItem>
           ))}
         </SelectContent>
