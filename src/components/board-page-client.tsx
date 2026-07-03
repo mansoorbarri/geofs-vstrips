@@ -21,7 +21,6 @@ import { RealTimeIndicator } from "~/components/real-time-indicator";
 import { useFlights } from "~/hooks/use-flights";
 import { type LegacyFlight as Flight } from "~/hooks/use-flights";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -87,8 +86,6 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
   const { user: convexUser, isLoading: isUserLoading } = useCurrentUser();
-  const params = useParams();
-  const airportNameFromURL = params.airportName;
 
   const {
     flights,
@@ -106,10 +103,29 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
 
   const dynamicAirports = useMemo(() => {
     if (!eventSettings) return [];
-    const masterList = (eventSettings.airportData as { id: string; name: string }[]) || [];
+    const masterList =
+      (eventSettings.airportData as { id: string; name: string }[]) || [];
     const activeIds = eventSettings.activeAirports || [];
     return masterList.filter((ap) => activeIds.includes(ap.id));
   }, [eventSettings]);
+
+  const currentAirportData = useMemo(() => {
+    if (!eventSettings) return null;
+    const masterList =
+      (eventSettings.airportData as { id: string; name: string }[]) || [];
+    return masterList.find((airport) => airport.id === airportName) ?? null;
+  }, [eventSettings, airportName]);
+
+  const isCurrentAirportActive = useMemo(() => {
+    return dynamicAirports.some((airport) => airport.id === airportName);
+  }, [dynamicAirports, airportName]);
+
+  const shouldShowAirportSwitcher =
+    isCurrentAirportActive && dynamicAirports.length > 1;
+
+  const airportHeading = currentAirportData?.name
+    ? `${airportName} - ${currentAirportData.name}`
+    : `${airportName} Board`;
 
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
@@ -199,9 +215,15 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           },
         );
       } catch (err: unknown) {
-        toast.error(getFriendlyError(err, "Failed to update flight status. Please try again."), {
-          duration: 3000,
-        });
+        toast.error(
+          getFriendlyError(
+            err,
+            "Failed to update flight status. Please try again.",
+          ),
+          {
+            duration: 3000,
+          },
+        );
       }
     },
     [flights, updateFlight, statusCycle, statusTitles],
@@ -226,9 +248,12 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           );
         }
       } catch (err: unknown) {
-        toast.error(getFriendlyError(err, "Failed to move flight. Please try again."), {
-          duration: 3000,
-        });
+        toast.error(
+          getFriendlyError(err, "Failed to move flight. Please try again."),
+          {
+            duration: 3000,
+          },
+        );
         setDraggedFlightId(null);
       }
     },
@@ -342,9 +367,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
           }
 
           const message = `Successfully imported ${successCount} flight(s)${
-            errorCount > 0
-              ? `. ${errorCount} flights failed to import.`
-              : "."
+            errorCount > 0 ? `. ${errorCount} flights failed to import.` : "."
           }`;
 
           toast.info("Import Result", {
@@ -502,7 +525,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             } catch {
               return false;
             }
-          })
+          }),
         );
         successCount += results.filter(Boolean).length;
       }
@@ -557,7 +580,7 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
             } catch {
               return false;
             }
-          })
+          }),
         );
         successCount += results.filter(Boolean).length;
       }
@@ -569,7 +592,9 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
         targetSector: "delivery",
       });
 
-      toast.success(`Successfully transferred ${successCount} flight strip(s).`);
+      toast.success(
+        `Successfully transferred ${successCount} flight strip(s).`,
+      );
     } catch (err) {
       toast.error("Failed to transfer selected flights.");
     }
@@ -582,6 +607,13 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
       targetSector: "delivery",
     });
   }, []);
+
+  const handleAirportChange = useCallback(
+    (value: string) => {
+      router.push(`/board/${encodeURIComponent(value)}`);
+    },
+    [router],
+  );
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -598,19 +630,41 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <div className="flex-shrink-0 p-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <Link href="/" passHref>
             <Button
               variant="outline"
-              className="mr-4 cursor-pointer border-gray-700 bg-black text-gray-400 hover:bg-gray-800"
+              className="cursor-pointer border-gray-700 bg-black text-gray-400 hover:bg-gray-800"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
           </Link>
-          <h1 className="flex-grow text-center text-3xl font-bold">
-            {airportName} Board
-          </h1>
+          <div className="flex min-w-0 flex-1 justify-center px-2 sm:px-4">
+            {shouldShowAirportSwitcher ? (
+              <div className="flex w-full max-w-[420px] min-w-0 flex-col items-center">
+                <span className="mb-1 text-[10px] font-medium tracking-[0.28em] text-gray-500 uppercase">
+                  Active Board
+                </span>
+                <Select value={airportName} onValueChange={handleAirportChange}>
+                  <SelectTrigger className="h-auto w-full min-w-0 justify-center gap-3 border-transparent bg-transparent px-3 py-1 text-center text-2xl font-bold text-white shadow-none hover:bg-gray-950 focus-visible:border-gray-700 focus-visible:ring-1 focus-visible:ring-gray-700 sm:px-4 sm:text-3xl [&>span]:max-w-full [&>span]:truncate [&>span]:text-center [&>span]:text-2xl sm:[&>span]:text-3xl [&>svg]:mt-1 [&>svg]:size-5 [&>svg]:opacity-60">
+                    <SelectValue placeholder="Select an airport" />
+                  </SelectTrigger>
+                  <SelectContent className="border-gray-700 bg-gray-900 text-white">
+                    {dynamicAirports.map((airport) => (
+                      <SelectItem key={airport.id} value={airport.id}>
+                        {airport.id} - {airport.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <h1 className="truncate text-center text-2xl font-bold sm:text-3xl">
+                {airportHeading}
+              </h1>
+            )}
+          </div>
           <RealTimeIndicator
             lastUpdate={lastUpdate}
             isLoading={isLoading}
