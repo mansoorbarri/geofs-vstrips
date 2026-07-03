@@ -109,7 +109,23 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
     return masterList.filter((ap) => activeIds.includes(ap.id));
   }, [eventSettings]);
 
-  const shouldShowAirportSwitcher = dynamicAirports.length > 1;
+  const currentAirportData = useMemo(() => {
+    if (!eventSettings) return null;
+    const masterList =
+      (eventSettings.airportData as { id: string; name: string }[]) || [];
+    return masterList.find((airport) => airport.id === airportName) ?? null;
+  }, [eventSettings, airportName]);
+
+  const isCurrentAirportActive = useMemo(() => {
+    return dynamicAirports.some((airport) => airport.id === airportName);
+  }, [dynamicAirports, airportName]);
+
+  const shouldShowAirportSwitcher =
+    isCurrentAirportActive && dynamicAirports.length > 1;
+
+  const airportHeading = currentAirportData?.name
+    ? `${airportName} - ${currentAirportData.name}`
+    : `${airportName} Board`;
 
   const [draggedFlightId, setDraggedFlightId] = useState<string | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
@@ -614,24 +630,24 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
       <div className="flex-shrink-0 p-6">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <Link href="/" passHref>
             <Button
               variant="outline"
-              className="mr-4 cursor-pointer border-gray-700 bg-black text-gray-400 hover:bg-gray-800"
+              className="cursor-pointer border-gray-700 bg-black text-gray-400 hover:bg-gray-800"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
           </Link>
-          <div className="flex flex-1 justify-center px-4">
+          <div className="flex min-w-0 flex-1 justify-center px-2 sm:px-4">
             {shouldShowAirportSwitcher ? (
-              <div className="flex flex-col items-center">
+              <div className="flex w-full max-w-[420px] min-w-0 flex-col items-center">
                 <span className="mb-1 text-[10px] font-medium tracking-[0.28em] text-gray-500 uppercase">
                   Active Board
                 </span>
                 <Select value={airportName} onValueChange={handleAirportChange}>
-                  <SelectTrigger className="h-auto min-w-[320px] justify-center gap-3 border-transparent bg-transparent px-4 py-1 text-center text-3xl font-bold text-white shadow-none hover:bg-gray-950 focus-visible:border-gray-700 focus-visible:ring-1 focus-visible:ring-gray-700 [&>span]:max-w-none [&>span]:justify-center [&>span]:text-center [&>span]:text-3xl [&>svg]:mt-1 [&>svg]:size-5 [&>svg]:opacity-60">
+                  <SelectTrigger className="h-auto w-full min-w-0 justify-center gap-3 border-transparent bg-transparent px-3 py-1 text-center text-2xl font-bold text-white shadow-none hover:bg-gray-950 focus-visible:border-gray-700 focus-visible:ring-1 focus-visible:ring-gray-700 sm:px-4 sm:text-3xl [&>span]:max-w-full [&>span]:truncate [&>span]:text-center [&>span]:text-2xl sm:[&>span]:text-3xl [&>svg]:mt-1 [&>svg]:size-5 [&>svg]:opacity-60">
                     <SelectValue placeholder="Select an airport" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-700 bg-gray-900 text-white">
@@ -644,8 +660,8 @@ export function BoardPageClient({ airportName }: BoardPageClientProps) {
                 </Select>
               </div>
             ) : (
-              <h1 className="text-center text-3xl font-bold">
-                {airportName} Board
+              <h1 className="truncate text-center text-2xl font-bold sm:text-3xl">
+                {airportHeading}
               </h1>
             )}
           </div>
