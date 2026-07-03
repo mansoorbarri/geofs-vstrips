@@ -9,21 +9,21 @@ A modern, real-time flight radar for the GeoFS flight simulator. Built with Next
 **Never run build or dev server unless explicitly asked.**
 
 ```bash
-bun lint              # ESLint
-bun typecheck         # TypeScript check
-bun run check         # Run lint + typecheck together
-bun run format:write  # Prettier auto-format
+pnpm lint             # ESLint
+pnpm typecheck        # TypeScript check
+pnpm check            # Run lint + typecheck together
+pnpm format:write     # Prettier auto-format
 ```
 
 Supporting services for local development:
 ```bash
-bun run cf            # Cloudflare tunnel (radarthing-dev)
-bun run stripe        # Stripe webhook listener → localhost:3000/api/webhooks/stripe
+pnpm cf               # Cloudflare tunnel (radarthing-dev)
+pnpm stripe           # Stripe webhook listener → localhost:3000/api/webhooks/stripe
 ```
 
 Convex:
 ```bash
-bunx convex dev       # Run after any changes in convex/ folder
+pnpm exec convex dev  # Run after any changes in convex/ folder
 ```
 Notify me to run deploy command when there are changes in the Convex folder.
 
