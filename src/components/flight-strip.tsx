@@ -2,7 +2,16 @@
 
 import type React from "react";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Edit, Trash2, Check, Radar, RefreshCcw, PlaneLanding, PlaneTakeoff } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Check,
+  Radar,
+  RefreshCcw,
+  PlaneLanding,
+  PlaneTakeoff,
+  CalendarClock,
+} from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
@@ -25,6 +34,29 @@ export type FlightStatus =
   | "departure"
   | "approach"
   | "control";
+
+const ROUTE_ENDPOINT_PATTERN = /^([A-Z]{4})\/(?:0[1-9]|[12]\d|3[0-6])(?:[LRC])?$/;
+
+function getRouteEndpoints(route: string | null): {
+  departure: string;
+  arrival: string;
+} | null {
+  if (!route) return null;
+
+  const waypoints = route.trim().toUpperCase().split(/\s+/);
+  if (waypoints.length < 2) return null;
+
+  const firstWaypoint = waypoints[0];
+  const lastWaypoint = waypoints[waypoints.length - 1];
+  if (!firstWaypoint || !lastWaypoint) return null;
+
+  const departure = ROUTE_ENDPOINT_PATTERN.exec(firstWaypoint);
+  const arrival = ROUTE_ENDPOINT_PATTERN.exec(lastWaypoint);
+
+  if (!departure?.[1] || !arrival?.[1]) return null;
+
+  return { departure: departure[1], arrival: arrival[1] };
+}
 
 interface FlightStripProps {
   flight: Flight;
@@ -56,6 +88,20 @@ export function FlightStrip({
   const inputRef = useRef<HTMLInputElement>(null);
   const updateFlightMutation = useMutation(api.flights.update);
   const assignSquawkMutation = useMutation(api.flights.assignSquawk);
+
+  const filedAt = useMemo(() => {
+    const date = new Date(flight.created_at);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+    }).format(date);
+  }, [flight.created_at]);
+
+  const routeEndpoints = useMemo(
+    () => getRouteEndpoints(flight.route),
+    [flight.route],
+  );
 
   const matchedRadarAircraft = useMemo(() => {
     if (!radarAircraft) return null;
@@ -300,6 +346,26 @@ export function FlightStrip({
         )}
 
         <div className="text-gray-200">{flight.aircraft_type}</div>
+
+        {routeEndpoints && (
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span>
+              Dep: <span className="text-gray-200">{routeEndpoints.departure}</span>
+            </span>
+            <span>
+              Arr: <span className="text-gray-200">{routeEndpoints.arrival}</span>
+            </span>
+          </div>
+        )}
+
+        {filedAt && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <CalendarClock className="h-3.5 w-3.5 text-gray-500" />
+            <span>
+              FILED: <span className="text-gray-200">{filedAt}</span>
+            </span>
+          </div>
+        )}
 
         <div className="flex justify-between text-xs text-gray-300">
           {flight.departure_time && (
