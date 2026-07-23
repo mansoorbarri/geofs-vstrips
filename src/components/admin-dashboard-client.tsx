@@ -185,12 +185,14 @@ export function AdminDashboardClient() {
       );
       return;
     }
-    const finalRules = localSettings.controlledFilingRulesSynced
-      ? controlledFilingRules.map((rule) => ({
-          ...controlledFilingRules[0],
-          airport: rule.airport,
-        }))
-      : controlledFilingRules;
+    const sharedRule = controlledFilingRules[0];
+    const finalRules =
+      localSettings.controlledFilingRulesSynced && sharedRule
+        ? controlledFilingRules.map((rule) => ({
+            ...sharedRule,
+            airport: rule.airport,
+          }))
+        : controlledFilingRules;
     try {
       await updateSettings({
         ...localSettings,
