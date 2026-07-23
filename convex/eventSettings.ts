@@ -25,6 +25,9 @@ export const get = query({
         fixedRoute: "",
         activeAirports: [],
         airportData: [],
+        filingMode: "OPEN",
+        controlledFilingRules: [],
+        controlledFilingRulesSynced: false,
       };
     }
 
@@ -51,6 +54,9 @@ export const update = mutation({
     fixedRoute: v.optional(v.string()),
     activeAirports: v.optional(v.array(v.string())),
     airportData: v.optional(v.any()),
+    filingMode: v.optional(v.union(v.literal("OPEN"), v.literal("CONTROLLED"))),
+    controlledFilingRules: v.optional(v.any()),
+    controlledFilingRulesSynced: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const existingSettings = await ctx.db.query("eventSettings").first();
@@ -97,6 +103,13 @@ export const update = mutation({
         ...(args.airportData !== undefined && {
           airportData: args.airportData,
         }),
+        ...(args.filingMode !== undefined && { filingMode: args.filingMode }),
+        ...(args.controlledFilingRules !== undefined && {
+          controlledFilingRules: args.controlledFilingRules,
+        }),
+        ...(args.controlledFilingRulesSynced !== undefined && {
+          controlledFilingRulesSynced: args.controlledFilingRulesSynced,
+        }),
       });
 
       return await ctx.db.get(existingSettings._id);
@@ -120,6 +133,9 @@ export const update = mutation({
         fixedRoute: args.fixedRoute ?? "",
         activeAirports: args.activeAirports ?? [],
         airportData: args.airportData ?? [],
+        filingMode: args.filingMode ?? "OPEN",
+        controlledFilingRules: args.controlledFilingRules ?? [],
+        controlledFilingRulesSynced: args.controlledFilingRulesSynced ?? false,
       });
 
       return await ctx.db.get(id);

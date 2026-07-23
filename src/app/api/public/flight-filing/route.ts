@@ -79,6 +79,7 @@ function applyFixedEventFields(
     fixedSpeed?: string;
     routeMode?: string;
     fixedRoute?: string;
+    filingMode?: string;
   };
 
   return {
@@ -92,6 +93,7 @@ function applyFixedEventFields(
         ? eventSettings.fixedDeparture || ""
         : input.departure,
     departure_time:
+      eventSettings.filingMode !== "CONTROLLED" &&
       eventSettings.timeMode === "FIXED"
         ? eventSettings.fixedTime || ""
         : input.departure_time,

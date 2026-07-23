@@ -1,5 +1,33 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
+import {
+  getControlledFilingError,
+  type ControlledFilingRule,
+} from "../src/lib/controlled-filing";
+
+async function enforceControlledFiling(
+  ctx: MutationCtx,
+  flight: { airport: string; departure_time: string },
+  excludeFlightId?: string,
+) {
+  const settings = await ctx.db.query("eventSettings").first();
+  if (settings?.filingMode !== "CONTROLLED") return;
+
+  const rules = (settings.controlledFilingRules ??
+    []) as ControlledFilingRule[];
+  const rule = rules.find(
+    (item) => item.airport.toUpperCase() === flight.airport.toUpperCase(),
+  );
+  const flights = await ctx.db.query("flights").collect();
+  const error = getControlledFilingError(
+    rule,
+    flights,
+    flight.airport,
+    flight.departure_time,
+    excludeFlightId,
+  );
+  if (error) throw new Error(error);
+}
 
 export const list = query({
   args: {
@@ -40,7 +68,7 @@ export const getMyFlights = query({
     return await ctx.db
       .query("flights")
       .withIndex("by_discord_username", (q) =>
-        q.eq("discord_username", args.discord_username)
+        q.eq("discord_username", args.discord_username),
       )
       .collect();
   },
@@ -65,7 +93,7 @@ export const create = mutation({
       v.literal("tower"),
       v.literal("departure"),
       v.literal("approach"),
-      v.literal("control")
+      v.literal("control"),
     ),
     route: v.optional(v.string()),
     notes: v.optional(v.string()),
@@ -80,6 +108,8 @@ export const create = mutation({
     if (existing) {
       throw new Error("A flight with this callsign already exists.");
     }
+
+    await enforceControlledFiling(ctx, args);
 
     // Auto-detect: arriving aircraft start in "control", departing in "delivery"
     const airport = args.airport.toUpperCase();
@@ -129,8 +159,8 @@ export const update = mutation({
         v.literal("tower"),
         v.literal("departure"),
         v.literal("approach"),
-        v.literal("control")
-      )
+        v.literal("control"),
+      ),
     ),
     route: v.optional(v.string()),
     notes: v.optional(v.string()),
@@ -154,6 +184,17 @@ export const update = mutation({
       if (existing) {
         throw new Error("A flight with this callsign already exists.");
       }
+    }
+
+    if (updates.airport !== undefined || updates.departure_time !== undefined) {
+      await enforceControlledFiling(
+        ctx,
+        {
+          airport: updates.airport ?? flight.airport,
+          departure_time: updates.departure_time ?? flight.departure_time,
+        },
+        id,
+      );
     }
 
     // Record status change in history

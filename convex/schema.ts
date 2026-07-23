@@ -20,7 +20,7 @@ export default defineSchema({
       v.literal("tower"),
       v.literal("departure"),
       v.literal("approach"),
-      v.literal("control")
+      v.literal("control"),
     ),
     route: v.optional(v.string()),
     notes: v.optional(v.string()),
@@ -68,5 +68,8 @@ export default defineSchema({
     fixedRoute: v.optional(v.string()),
     activeAirports: v.array(v.string()),
     airportData: v.any(),
+    filingMode: v.optional(v.union(v.literal("OPEN"), v.literal("CONTROLLED"))),
+    controlledFilingRules: v.optional(v.any()),
+    controlledFilingRulesSynced: v.optional(v.boolean()),
   }),
 });

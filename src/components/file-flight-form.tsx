@@ -21,6 +21,10 @@ import { useEventSettings } from "~/hooks/use-event-settings";
 import { useFlights } from "~/hooks/use-flights";
 import { getFriendlyError } from "~/lib/friendly-error";
 import { AlertCircle, CheckCircle, Info } from "lucide-react";
+import {
+  formatEventTime,
+  getAvailableFilingSlots,
+} from "~/lib/controlled-filing";
 
 const flightSchema = z.object({
   airport: z
@@ -80,7 +84,7 @@ export function FileFlightForm() {
 
   const { settings: eventSettings, isLoading: isLoadingSettings } =
     useEventSettings();
-  const { createFlight } = useFlights();
+  const { createFlight, flights } = useFlights();
   const normalizedCallsign = callsign.trim().toUpperCase();
 
   if (!isLoaded || isLoadingSettings) return <Loading />;
@@ -200,15 +204,26 @@ export function FileFlightForm() {
   const activeATCList = airportData.filter((ap) =>
     eventSettings?.activeAirports?.includes(ap.id),
   );
+  const filingAirport =
+    eventSettings?.airportMode === "FIXED"
+      ? eventSettings.fixedAirport
+      : selectedAirport;
+  const controlledRule =
+    eventSettings?.filingMode === "CONTROLLED"
+      ? eventSettings.controlledFilingRules.find(
+          (rule) => rule.airport === filingAirport,
+        )
+      : undefined;
+  const availableSlots = controlledRule
+    ? getAvailableFilingSlots(controlledRule, flights)
+    : [];
 
   if (submissionResult?.success) {
     return (
       <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
         <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
         <h1 className="3xl mb-4 font-bold">Flight Filed!</h1>
-        <p className="mb-6 text-lg text-gray-300">
-          {submissionResult.message}
-        </p>
+        <p className="mb-6 text-lg text-gray-300">{submissionResult.message}</p>
       </div>
     );
   }
@@ -220,10 +235,7 @@ export function FileFlightForm() {
       </div>
 
       {submissionResult?.success === false && (
-        <Alert
-          variant="destructive"
-          className="mb-4 border-red-600 bg-red-900"
-        >
+        <Alert variant="destructive" className="mb-4 border-red-600 bg-red-900">
           <AlertCircle className="h-4 w-4 text-red-400" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="text-red-200">
@@ -276,12 +288,42 @@ export function FileFlightForm() {
               className="border-gray-700 bg-gray-800 text-white uppercase"
             />
           </div>
-          {renderField(
-            "Time",
-            "departure_time",
-            eventSettings?.timeMode,
-            eventSettings?.fixedTime,
-            "e.g. 1720",
+          {controlledRule ? (
+            <div className="space-y-2">
+              <Label htmlFor="departure_time">{controlledRule.timeType}</Label>
+              <Select name="departure_time" required>
+                <SelectTrigger className="border-gray-700 bg-gray-800 text-white">
+                  <SelectValue
+                    placeholder={
+                      availableSlots.length
+                        ? `Select an available ${controlledRule.timeType}`
+                        : `No ${controlledRule.timeType} times available`
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent className="border-gray-700 bg-gray-800 text-white">
+                  {availableSlots.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {formatEventTime(time)} {controlledRule.timeType}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {availableSlots.length === 0 && (
+                <p className="text-sm text-amber-300">
+                  This airport is full. Select another airport or ask an admin
+                  to add capacity.
+                </p>
+              )}
+            </div>
+          ) : (
+            renderField(
+              "Time (Zulu)",
+              "departure_time",
+              eventSettings?.timeMode,
+              eventSettings?.fixedTime,
+              "e.g. 1720",
+            )
           )}
         </div>
 

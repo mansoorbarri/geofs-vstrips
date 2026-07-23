@@ -22,6 +22,10 @@ import Loading from "~/components/loading";
 import { useMyFlights, useFlights } from "~/hooks/use-flights";
 import { useEventSettings } from "~/hooks/use-event-settings";
 import { getFriendlyError } from "~/lib/friendly-error";
+import {
+  formatEventTime,
+  getAvailableFilingSlots,
+} from "~/lib/controlled-filing";
 
 const flightSchema = z.object({
   airport: z
@@ -85,8 +89,9 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
   const discordUsername = user?.externalAccounts?.[0]?.username ?? null;
   const { flights, isLoading: flightsLoading } = useMyFlights(discordUsername);
-  const { settings: eventSettings, isLoading: settingsLoading } = useEventSettings();
-  const { updateFlight } = useFlights();
+  const { settings: eventSettings, isLoading: settingsLoading } =
+    useEventSettings();
+  const { updateFlight, flights: allFlights } = useFlights();
 
   const flight = useMemo(() => {
     return flights.find((f) => f.id === flightId) ?? null;
@@ -104,27 +109,44 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     setSubmissionResult(null);
 
     const formData = new FormData(event.currentTarget);
-    const finalAirport = eventSettings?.airportMode === "FIXED"
-      ? eventSettings.fixedAirport
-      : selectedAirport;
+    const finalAirport =
+      eventSettings?.airportMode === "FIXED"
+        ? eventSettings.fixedAirport
+        : selectedAirport;
 
     const formValues = {
       airport: finalAirport || "",
       callsign: formData.get("callsign") as string,
       geofs_callsign: formData.get("geofs_callsign") as string,
       aircraft_type: formData.get("aircraft_type") as string,
-      departure: (eventSettings?.departureMode === "FIXED" ? eventSettings.fixedDeparture : formData.get("departure")) as string,
-      departure_time: (eventSettings?.timeMode === "FIXED" ? eventSettings.fixedTime : formData.get("departure_time")) as string,
-      arrival: (eventSettings?.arrivalMode === "FIXED" ? eventSettings.fixedArrival : formData.get("arrival")) as string,
-      altitude: (eventSettings?.altitudeMode === "FIXED" ? eventSettings.fixedAltitude : formData.get("altitude")) as string,
-      speed: (eventSettings?.speedMode === "FIXED" ? eventSettings.fixedSpeed : formData.get("speed")) as string,
-      route: (eventSettings?.routeMode === "FIXED" ? eventSettings.fixedRoute : formData.get("route")) as string,
+      departure: (eventSettings?.departureMode === "FIXED"
+        ? eventSettings.fixedDeparture
+        : formData.get("departure")) as string,
+      departure_time: (eventSettings?.timeMode === "FIXED"
+        ? eventSettings.fixedTime
+        : formData.get("departure_time")) as string,
+      arrival: (eventSettings?.arrivalMode === "FIXED"
+        ? eventSettings.fixedArrival
+        : formData.get("arrival")) as string,
+      altitude: (eventSettings?.altitudeMode === "FIXED"
+        ? eventSettings.fixedAltitude
+        : formData.get("altitude")) as string,
+      speed: (eventSettings?.speedMode === "FIXED"
+        ? eventSettings.fixedSpeed
+        : formData.get("speed")) as string,
+      route: (eventSettings?.routeMode === "FIXED"
+        ? eventSettings.fixedRoute
+        : formData.get("route")) as string,
     };
 
     const validation = flightSchema.safeParse(formValues);
     if (!validation.success) {
       setIsSubmitting(false);
-      setSubmissionResult({ success: false, message: "Correct errors.", errors: validation.error.issues });
+      setSubmissionResult({
+        success: false,
+        message: "Correct errors.",
+        errors: validation.error.issues,
+      });
       return;
     }
 
@@ -138,7 +160,14 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
     }
   };
 
-  const renderField = (label: string, name: string, mode: string | undefined, fixedVal: string | undefined, defaultVal: string, placeholder: string) => {
+  const renderField = (
+    label: string,
+    name: string,
+    mode: string | undefined,
+    fixedVal: string | undefined,
+    defaultVal: string,
+    placeholder: string,
+  ) => {
     const isFixed = mode === "FIXED";
     return (
       <div className="space-y-2">
@@ -150,7 +179,7 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
           readOnly={isFixed}
           placeholder={placeholder}
           required
-          className={`border-gray-700 bg-gray-800 text-white ${isFixed ? "opacity-60 cursor-not-allowed" : ""}`}
+          className={`border-gray-700 bg-gray-800 text-white ${isFixed ? "cursor-not-allowed opacity-60" : ""}`}
         />
       </div>
     );
@@ -162,80 +191,196 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
 
   if (flightsLoading || settingsLoading) return <Loading />;
 
-  if (!flight) return (
-    <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-      <Header />
-      <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-      <h1 className="mb-4 text-3xl font-bold">Flight Not Found</h1>
-      <Button onClick={() => router.back()}>Go Back</Button>
-    </div>
-  );
+  if (!flight)
+    return (
+      <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+        <Header />
+        <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-500" />
+        <h1 className="mb-4 text-3xl font-bold">Flight Not Found</h1>
+        <Button onClick={() => router.back()}>Go Back</Button>
+      </div>
+    );
 
   const isEditable = flight.status === "delivery";
 
-  if (submissionResult?.success) return (
-    <>
-      <Header />
-      <div className="container mx-auto mt-10 max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-        <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
-        <h1 className="mb-4 text-3xl font-bold">Updated!</h1>
-        <Button onClick={() => router.push("/edit-flight")}>View All</Button>
+  if (submissionResult?.success)
+    return (
+      <>
+        <Header />
+        <div className="container mx-auto mt-10 max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+          <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
+          <h1 className="mb-4 text-3xl font-bold">Updated!</h1>
+          <Button onClick={() => router.push("/edit-flight")}>View All</Button>
+        </div>
+      </>
+    );
+
+  if (!isEditable)
+    return (
+      <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
+        <Header />
+        <Lock className="mx-auto mb-4 h-16 w-16 text-yellow-500" />
+        <h1 className="mb-4 font-bold">Locked</h1>
+        <p>Status: {flight.status.toUpperCase()}</p>
+        <Button onClick={() => router.back()}>Go Back</Button>
       </div>
-    </>
-  );
+    );
 
-  if (!isEditable) return (
-    <div className="container mx-auto max-w-lg rounded-lg bg-gray-900 p-6 text-center text-white shadow-xl">
-      <Header />
-      <Lock className="mx-auto mb-4 h-16 w-16 text-yellow-500" />
-      <h1 className="mb-4 font-bold">Locked</h1>
-      <p>Status: {flight.status.toUpperCase()}</p>
-      <Button onClick={() => router.back()}>Go Back</Button>
-    </div>
-  );
-
-  const airportData = (eventSettings?.airportData as { id: string; name: string }[]) || [];
+  const airportData =
+    (eventSettings?.airportData as { id: string; name: string }[]) || [];
   const activeATCList = airportData.filter((ap) =>
-    eventSettings?.activeAirports?.includes(ap.id)
+    eventSettings?.activeAirports?.includes(ap.id),
   );
+  const filingAirport =
+    eventSettings?.airportMode === "FIXED"
+      ? eventSettings.fixedAirport
+      : selectedAirport;
+  const controlledRule =
+    eventSettings?.filingMode === "CONTROLLED"
+      ? eventSettings.controlledFilingRules.find(
+          (rule) => rule.airport === filingAirport,
+        )
+      : undefined;
+  const availableSlots = controlledRule
+    ? getAvailableFilingSlots(controlledRule, allFlights, flight.id)
+    : [];
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <div className="container mx-auto mt-10 max-w-lg rounded-lg bg-gray-900 p-6 text-white shadow-xl">
-        <h1 className="text-3xl font-bold text-center">Edit Flight Plan</h1>
-        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+        <h1 className="text-center text-3xl font-bold">Edit Flight Plan</h1>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Callsign</Label>
-              <Input name="callsign" defaultValue={flight.callsign} required className="bg-gray-800 text-white" />
+              <Input
+                name="callsign"
+                defaultValue={flight.callsign}
+                required
+                className="bg-gray-800 text-white"
+              />
             </div>
             <div className="space-y-2">
               <Label>GeoFS Callsign</Label>
-              <Input name="geofs_callsign" defaultValue={flight.geofs_callsign || ""} required className="bg-gray-800 text-white" />
+              <Input
+                name="geofs_callsign"
+                defaultValue={flight.geofs_callsign || ""}
+                required
+                className="bg-gray-800 text-white"
+              />
             </div>
             <div className="space-y-2">
               <Label>Aircraft</Label>
-              <Input name="aircraft_type" defaultValue={flight.aircraft_type} required className="bg-gray-800 text-white" />
+              <Input
+                name="aircraft_type"
+                defaultValue={flight.aircraft_type}
+                required
+                className="bg-gray-800 text-white"
+              />
             </div>
-            {renderField("Time", "departure_time", eventSettings?.timeMode, eventSettings?.fixedTime, flight.departure_time || "", "1720")}
+            {controlledRule ? (
+              <div className="space-y-2">
+                <Label htmlFor="departure_time">
+                  {controlledRule.timeType}
+                </Label>
+                <Select
+                  name="departure_time"
+                  defaultValue={flight.departure_time ?? undefined}
+                  required
+                >
+                  <SelectTrigger className="bg-gray-800">
+                    <SelectValue
+                      placeholder={
+                        availableSlots.length
+                          ? `Select an available ${controlledRule.timeType}`
+                          : `No ${controlledRule.timeType} times available`
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 text-white">
+                    {availableSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {formatEventTime(time)} {controlledRule.timeType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {availableSlots.length === 0 && (
+                  <p className="text-sm text-amber-300">
+                    This airport has no times left. Choose another airport or
+                    ask an admin to add capacity.
+                  </p>
+                )}
+              </div>
+            ) : (
+              renderField(
+                "Time (Zulu)",
+                "departure_time",
+                eventSettings?.timeMode,
+                eventSettings?.fixedTime,
+                flight.departure_time || "",
+                "1720",
+              )
+            )}
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 border-t border-gray-700 pt-6">
-            {renderField("Departure", "departure", eventSettings?.departureMode, eventSettings?.fixedDeparture, flight.departure, "KLAX")}
-            {renderField("Arrival", "arrival", eventSettings?.arrivalMode, eventSettings?.fixedArrival, flight.arrival, "KJFK")}
-            {renderField("Cruise Altitude", "altitude", eventSettings?.altitudeMode, eventSettings?.fixedAltitude, flight.altitude, "FL350")}
-            {renderField("Cruise Speed", "speed", eventSettings?.speedMode, eventSettings?.fixedSpeed, flight.speed, "0.82")}
+          <div className="grid grid-cols-1 gap-4 border-t border-gray-700 pt-6 md:grid-cols-2">
+            {renderField(
+              "Departure",
+              "departure",
+              eventSettings?.departureMode,
+              eventSettings?.fixedDeparture,
+              flight.departure,
+              "KLAX",
+            )}
+            {renderField(
+              "Arrival",
+              "arrival",
+              eventSettings?.arrivalMode,
+              eventSettings?.fixedArrival,
+              flight.arrival,
+              "KJFK",
+            )}
+            {renderField(
+              "Cruise Altitude",
+              "altitude",
+              eventSettings?.altitudeMode,
+              eventSettings?.fixedAltitude,
+              flight.altitude,
+              "FL350",
+            )}
+            {renderField(
+              "Cruise Speed",
+              "speed",
+              eventSettings?.speedMode,
+              eventSettings?.fixedSpeed,
+              flight.speed,
+              "0.82",
+            )}
           </div>
           <div className="space-y-4 border-t border-gray-700 pt-6">
             <div className="space-y-2">
               <Label>ATC Airport</Label>
               {eventSettings?.airportMode === "FIXED" ? (
-                <Input value={`${eventSettings.fixedAirport}`} readOnly className="bg-gray-700 opacity-60" />
+                <Input
+                  value={`${eventSettings.fixedAirport}`}
+                  readOnly
+                  className="bg-gray-700 opacity-60"
+                />
               ) : (
-                <Select defaultValue={flight.airport} onValueChange={setSelectedAirport}>
-                  <SelectTrigger className="bg-gray-800"><SelectValue /></SelectTrigger>
+                <Select
+                  defaultValue={flight.airport}
+                  onValueChange={setSelectedAirport}
+                >
+                  <SelectTrigger className="bg-gray-800">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent className="bg-gray-800 text-white">
-                    {activeATCList.map((a) => <SelectItem key={a.id} value={a.id}>{a.name} ({a.id})</SelectItem>)}
+                    {activeATCList.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name} ({a.id})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
@@ -243,17 +388,36 @@ export function EditFlightForm({ flightId }: EditFlightFormProps) {
             <div className="space-y-2">
               <Label>Route</Label>
               {eventSettings?.routeMode === "FIXED" ? (
-                <Textarea value={eventSettings.fixedRoute} readOnly className="bg-gray-700 opacity-60" />
+                <Textarea
+                  value={eventSettings.fixedRoute}
+                  readOnly
+                  className="bg-gray-700 opacity-60"
+                />
               ) : (
-                <Textarea name="route" defaultValue={flight.route || ""} required className="bg-gray-800 text-white" />
+                <Textarea
+                  name="route"
+                  defaultValue={flight.route || ""}
+                  required
+                  className="bg-gray-800 text-white"
+                />
               )}
             </div>
           </div>
           <div className="flex gap-4">
-            <Button type="submit" className="flex-1 bg-green-600" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="flex-1 bg-green-600"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Updating..." : "Update"}
             </Button>
-            <Button type="button" onClick={() => router.back()} className="bg-gray-600">Cancel</Button>
+            <Button
+              type="button"
+              onClick={() => router.back()}
+              className="bg-gray-600"
+            >
+              Cancel
+            </Button>
           </div>
         </form>
       </div>
