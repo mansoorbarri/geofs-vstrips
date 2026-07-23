@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import type { ControlledFilingRule } from "~/lib/controlled-filing";
 
 export interface AirportData {
   id: string;
@@ -29,6 +30,9 @@ export interface EventSettings {
   fixedRoute?: string;
   activeAirports: string[];
   airportData: AirportData[];
+  filingMode: "OPEN" | "CONTROLLED";
+  controlledFilingRules: ControlledFilingRule[];
+  controlledFilingRulesSynced: boolean;
 }
 
 export function useEventSettings() {
@@ -39,11 +43,16 @@ export function useEventSettings() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const previousSettingsRef = useRef<string | null>(null);
 
-  const updateSettings = useCallback(async (newSettings: Partial<EventSettings>) => {
-    // Strip out _id as it's not part of the mutation args
-    const { _id, ...settingsToUpdate } = newSettings as EventSettings & { _id?: Id<"eventSettings"> };
-    return await updateSettingsMutation(settingsToUpdate);
-  }, [updateSettingsMutation]);
+  const updateSettings = useCallback(
+    async (newSettings: Partial<EventSettings>) => {
+      // Strip out _id as it's not part of the mutation args
+      const { _id, ...settingsToUpdate } = newSettings as EventSettings & {
+        _id?: Id<"eventSettings">;
+      };
+      return await updateSettingsMutation(settingsToUpdate);
+    },
+    [updateSettingsMutation],
+  );
 
   // Cast to proper type - memoize to prevent infinite loops
   const settings = useMemo<EventSettings | null>(() => {
@@ -57,6 +66,11 @@ export function useEventSettings() {
       fixedSpeed: rawSettings.fixedSpeed ?? "",
       activeAirports: rawSettings.activeAirports as string[],
       airportData: rawSettings.airportData as AirportData[],
+      filingMode: (rawSettings.filingMode ?? "OPEN") as "OPEN" | "CONTROLLED",
+      controlledFilingRules:
+        (rawSettings.controlledFilingRules as ControlledFilingRule[]) ?? [],
+      controlledFilingRulesSynced:
+        rawSettings.controlledFilingRulesSynced ?? false,
     };
   }, [rawSettings]);
 
@@ -64,7 +78,10 @@ export function useEventSettings() {
   useEffect(() => {
     if (rawSettings) {
       const settingsHash = JSON.stringify(rawSettings);
-      if (previousSettingsRef.current !== null && previousSettingsRef.current !== settingsHash) {
+      if (
+        previousSettingsRef.current !== null &&
+        previousSettingsRef.current !== settingsHash
+      ) {
         setLastUpdate(new Date());
       } else if (previousSettingsRef.current === null) {
         setLastUpdate(new Date());
