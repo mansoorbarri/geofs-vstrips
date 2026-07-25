@@ -13,6 +13,8 @@ import {
   Plus,
   Send,
   X,
+  Filter,
+  RotateCcw,
 } from "lucide-react";
 import { FlightStrip } from "~/components/flight-strip";
 import { EditFlightDialog } from "~/components/edit-flight-dialog";
@@ -61,6 +63,32 @@ interface TransferDialogState {
   targetSector: FlightStatus;
 }
 
+interface FlightFilters {
+  departure: string;
+  arrival: string;
+  scheduledTime: string;
+  discordUsername: string;
+  geofsUsername: string;
+}
+
+const emptyFlightFilters: FlightFilters = {
+  departure: "",
+  arrival: "",
+  scheduledTime: "",
+  discordUsername: "",
+  geofsUsername: "",
+};
+
+const filterOptions: { value: keyof FlightFilters; label: string }[] = [
+  { value: "departure", label: "Departure airport" },
+  { value: "arrival", label: "Arrival airport" },
+  { value: "scheduledTime", label: "ETD / ETA" },
+  { value: "discordUsername", label: "Discord username" },
+  { value: "geofsUsername", label: "GeoFS username" },
+];
+
+const allFilterOption = "__all__";
+
 export function AllFlightsPageClient() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
@@ -80,7 +108,8 @@ export function AllFlightsPageClient() {
 
   const dynamicAirports = useMemo(() => {
     if (!eventSettings) return [];
-    const masterList = (eventSettings.airportData as { id: string; name: string }[]) || [];
+    const masterList =
+      (eventSettings.airportData as { id: string; name: string }[]) || [];
     const activeIds = eventSettings.activeAirports || [];
     return masterList.filter((ap) => activeIds.includes(ap.id));
   }, [eventSettings]);
@@ -100,6 +129,8 @@ export function AllFlightsPageClient() {
     targetAirport: "",
     targetSector: "delivery",
   });
+  const [filters, setFilters] = useState<FlightFilters>(emptyFlightFilters);
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
 
   const boardSectors = useMemo(
     () =>
@@ -263,10 +294,7 @@ export function AllFlightsPageClient() {
         if (flight)
           showStatus("success", `Flight strip ${flight.callsign} deleted.`);
       } catch (err: unknown) {
-        showStatus(
-          "error",
-          getFriendlyError(err, "Failed to delete flight."),
-        );
+        showStatus("error", getFriendlyError(err, "Failed to delete flight."));
       }
     },
     [flights, deleteFlight, showStatus],
@@ -281,8 +309,9 @@ export function AllFlightsPageClient() {
   }, []);
 
   const handleSelectAll = useCallback(
-    () => setSelectedFlights(flights.map((f) => f.id)),
-    [flights],
+    (visibleFlights: Flight[]) =>
+      setSelectedFlights(visibleFlights.map((f) => f.id)),
+    [],
   );
 
   const handleClearSelection = useCallback(() => setSelectedFlights([]), []);
@@ -389,8 +418,8 @@ export function AllFlightsPageClient() {
     );
 
     const airportName =
-      dynamicAirports.find((a) => a.id === transferDialog.targetAirport)?.name ??
-      transferDialog.targetAirport;
+      dynamicAirports.find((a) => a.id === transferDialog.targetAirport)
+        ?.name ?? transferDialog.targetAirport;
     const sectorName = statusTitles[transferDialog.targetSector];
 
     setSelectedFlights([]);
@@ -425,9 +454,61 @@ export function AllFlightsPageClient() {
     }
   }, [isLoaded, isSignedIn, isUserLoading, convexUser, router]);
 
-  const sortedFlights = useMemo(
-    () => flights.slice().sort((a, b) => a.callsign.localeCompare(b.callsign)),
-    [flights],
+  const sortedFlights = useMemo(() => {
+    const normalise = (value: string | null) =>
+      value?.trim().toLowerCase() ?? "";
+    const matches = (value: string | null, filter: string) =>
+      normalise(value).includes(normalise(filter));
+
+    return flights
+      .filter(
+        (flight) =>
+          matches(flight.departure, filters.departure) &&
+          matches(flight.arrival, filters.arrival) &&
+          matches(flight.departure_time, filters.scheduledTime) &&
+          matches(flight.discord_username, filters.discordUsername) &&
+          matches(flight.geofs_callsign, filters.geofsUsername),
+      )
+      .sort((a, b) => a.callsign.localeCompare(b.callsign));
+  }, [flights, filters]);
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
+  const availableFilterValues = useMemo(() => {
+    const valuesFor = (values: (string | null)[], selectedValue: string) =>
+      [...new Set([...values, selectedValue].filter(Boolean) as string[])].sort(
+        (a, b) => a.localeCompare(b),
+      );
+
+    return {
+      departure: valuesFor(
+        flights.map((flight) => flight.departure),
+        filters.departure,
+      ),
+      arrival: valuesFor(
+        flights.map((flight) => flight.arrival),
+        filters.arrival,
+      ),
+      scheduledTime: valuesFor(
+        flights.map((flight) => flight.departure_time),
+        filters.scheduledTime,
+      ),
+      discordUsername: valuesFor(
+        flights.map((flight) => flight.discord_username),
+        filters.discordUsername,
+      ),
+      geofsUsername: valuesFor(
+        flights.map((flight) => flight.geofs_callsign),
+        filters.geofsUsername,
+      ),
+    } satisfies Record<keyof FlightFilters, string[]>;
+  }, [flights, filters]);
+
+  const updateFilter = useCallback(
+    (filter: keyof FlightFilters, value: string) => {
+      setFilters((current) => ({ ...current, [filter]: value }));
+    },
+    [],
   );
 
   if (!isLoaded || !isSignedIn || isUserLoading || !convexUser?.isController)
@@ -470,7 +551,7 @@ export function AllFlightsPageClient() {
             <Button
               variant="outline"
               className="border-yellow-500 bg-black text-yellow-400 hover:bg-yellow-900"
-              onClick={handleSelectAll}
+              onClick={() => handleSelectAll(sortedFlights)}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Select All
@@ -538,6 +619,21 @@ export function AllFlightsPageClient() {
             <Send className="mr-2 h-4 w-4" />
             Transfer Selected
           </Button>
+          <Button
+            variant="outline"
+            className="border-cyan-700 bg-black text-cyan-300 hover:bg-cyan-950 hover:text-cyan-100"
+            onClick={() => setAreFiltersOpen((isOpen) => !isOpen)}
+            aria-expanded={areFiltersOpen}
+            aria-controls="flight-filters"
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-2 rounded-full bg-cyan-400/15 px-1.5 py-0.5 text-[10px] leading-none text-cyan-200">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
         </div>
         <input
           ref={fileInputRef}
@@ -546,6 +642,68 @@ export function AllFlightsPageClient() {
           onChange={handleFileImport}
           className="hidden"
         />
+
+        {areFiltersOpen && (
+          <section
+            id="flight-filters"
+            className="mt-5 border-y border-gray-800 bg-gray-950/60 px-4 py-4"
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.16em] text-gray-400 uppercase">
+                <Filter className="h-3.5 w-3.5 text-cyan-400" />
+                Flight filters
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] tracking-normal text-cyan-300 normal-case">
+                    {activeFilterCount} active
+                  </span>
+                )}
+              </div>
+              {activeFilterCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
+                  onClick={() => setFilters(emptyFlightFilters)}
+                >
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  Clear filters
+                </Button>
+              )}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {filterOptions.map((option) => (
+                <div key={option.value} className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-400">
+                    {option.label}
+                  </label>
+                  <Select
+                    value={filters[option.value] || allFilterOption}
+                    onValueChange={(value) =>
+                      updateFilter(
+                        option.value,
+                        value === allFilterOption ? "" : value,
+                      )
+                    }
+                  >
+                    <SelectTrigger className="border-gray-700 bg-black text-sm text-white">
+                      <SelectValue placeholder={`All ${option.label}`} />
+                    </SelectTrigger>
+                    <SelectContent className="border-gray-700 bg-gray-900 text-white">
+                      <SelectItem value={allFilterOption}>
+                        All {option.label}
+                      </SelectItem>
+                      {availableFilterValues[option.value].map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {importStatus.type && (
@@ -672,13 +830,16 @@ export function AllFlightsPageClient() {
           <Card className="flex h-[85vh] w-150 flex-col border-gray-700 bg-gray-900">
             <CardHeader className="flex-shrink-0">
               <CardTitle className="text-center text-sm text-white">
-                All Flights ({flights.length})
+                All Flights ({sortedFlights.length}
+                {activeFilterCount > 0 ? ` of ${flights.length}` : ""})
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow space-y-2 overflow-y-auto p-4">
               {sortedFlights.length === 0 ? (
                 <p className="py-8 text-center text-sm text-gray-400">
-                  No flights
+                  {activeFilterCount > 0
+                    ? "No flights match the current filters"
+                    : "No flights"}
                 </p>
               ) : (
                 sortedFlights.map((flight) => (
