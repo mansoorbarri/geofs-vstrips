@@ -1,0 +1,428 @@
+"use client";
+
+import type React from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import {
+  Edit,
+  Trash2,
+  Check,
+  Radar,
+  RefreshCcw,
+  PlaneLanding,
+  PlaneTakeoff,
+  CalendarClock,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
+import { type LegacyFlight as Flight } from "~/hooks/use-flights";
+import type { RadarAircraft } from "~/hooks/use-radar-callsigns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+
+import type { FlightStatus } from "~/components/flight-strip";
+
+const ROUTE_ENDPOINT_PATTERN = /^([A-Z]{4})\/(?:0[1-9]|[12]\d|3[0-6])(?:[LRC])?$/;
+
+function getRouteEndpoints(route: string | null): {
+  departure: string;
+  arrival: string;
+} | null {
+  if (!route) return null;
+
+  const waypoints = route.trim().toUpperCase().split(/\s+/);
+  if (waypoints.length < 2) return null;
+
+  const firstWaypoint = waypoints[0];
+  const lastWaypoint = waypoints[waypoints.length - 1];
+  if (!firstWaypoint || !lastWaypoint) return null;
+
+  const departure = ROUTE_ENDPOINT_PATTERN.exec(firstWaypoint);
+  const arrival = ROUTE_ENDPOINT_PATTERN.exec(lastWaypoint);
+
+  if (!departure?.[1] || !arrival?.[1]) return null;
+
+  return { departure: departure[1], arrival: arrival[1] };
+}
+
+interface DemoFlightStripProps {
+  flight: Flight;
+  onClick?: () => void;
+  onDragStart?: (flightId: string) => void;
+  className?: string;
+  isDragging?: boolean;
+  onEdit?: (flight: Flight) => void;
+  onDelete?: (flightId: string) => void;
+  isSelected: boolean;
+  onSelect: (flightId: string) => void;
+  radarAircraft?: RadarAircraft[];
+  onSquawkChange: (flightId: string, squawk: string) => void;
+  onAssignSquawk: (flightId: string) => void;
+}
+
+/**
+ * Visual copy of FlightStrip for the /demo page. Uses callbacks instead of
+ * Convex mutations so nothing touches the real backend.
+ */
+export function DemoFlightStrip({
+  flight,
+  onClick,
+  onDragStart,
+  className,
+  isDragging,
+  onEdit,
+  onDelete,
+  isSelected,
+  onSelect,
+  radarAircraft,
+  onSquawkChange,
+  onAssignSquawk,
+}: DemoFlightStripProps) {
+  const [isEditingSquawk, setIsEditingSquawk] = useState(false);
+  const [squawkValue, setSquawkValue] = useState(flight.squawk || "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filedAt = useMemo(() => {
+    const date = new Date(flight.created_at);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+    }).format(date);
+  }, [flight.created_at]);
+
+  const routeEndpoints = useMemo(
+    () => getRouteEndpoints(flight.route),
+    [flight.route],
+  );
+
+  const matchedRadarAircraft = useMemo(() => {
+    if (!radarAircraft) return null;
+    const stripCallsign = flight.callsign.toUpperCase();
+    const stripGeofsCallsign = (flight.geofs_callsign || "").toUpperCase();
+    const stripDeparture = flight.departure.toUpperCase();
+    const stripArrival = flight.arrival.toUpperCase();
+
+    return radarAircraft.find((ac) => {
+      // Callsign must match: strip callsign matches SSE flightNo (ICAO/IATA)
+      const callsignMatch = ac.flightNo === stripCallsign;
+      // GeoFS callsign must match: strip geofs_callsign matches SSE callsign
+      const geofsMatch = !stripGeofsCallsign || ac.callsign === stripGeofsCallsign;
+      // Departure must match
+      const depMatch = !stripDeparture || ac.departure === stripDeparture;
+      // Arrival must match
+      const arrMatch = !stripArrival || ac.arrival === stripArrival;
+
+      return callsignMatch && geofsMatch && depMatch && arrMatch;
+    }) ?? null;
+  }, [radarAircraft, flight.callsign, flight.geofs_callsign, flight.departure, flight.arrival]);
+
+  const isOnRadar = !!matchedRadarAircraft;
+  const squawkMismatch = isOnRadar
+    && !!flight.squawk
+    && !!matchedRadarAircraft.squawk
+    && flight.squawk !== matchedRadarAircraft.squawk;
+
+  useEffect(() => {
+    setSquawkValue(flight.squawk || "");
+  }, [flight.squawk]);
+
+  useEffect(() => {
+    if (isEditingSquawk && inputRef.current) inputRef.current.focus();
+  }, [isEditingSquawk]);
+
+  const getStatusColors = (status: FlightStatus) => {
+    switch (status) {
+      case "delivery":
+        return "bg-gray-800 border-gray-600 hover:bg-gray-700";
+      case "ground":
+        return "bg-blue-900 border-blue-600 hover:bg-blue-800";
+      case "tower":
+        return "bg-green-900 border-green-600 hover:bg-green-800";
+      case "departure":
+        return "bg-purple-900 border-purple-600 hover:bg-purple-800";
+      case "approach":
+        return "bg-indigo-900 border-indigo-600 hover:bg-indigo-800";
+      case "control":
+        return "bg-red-900 border-red-600 hover:bg-red-800";
+      default:
+        return "bg-gray-800 border-gray-600 hover:bg-gray-700";
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("text/plain", flight.id);
+    e.dataTransfer.effectAllowed = "move";
+    onDragStart?.(flight.id);
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(flight);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(flight.id);
+  };
+
+  const handleOpenRadar = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(
+      `https://radarthing.com/radar?callsign=${encodeURIComponent(flight.callsign)}`,
+      "_blank"
+    );
+  };
+
+  const handleSelect = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect(flight.id);
+  };
+
+  const handleSquawkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditingSquawk(true);
+  };
+
+  const handleSquawkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numeric = e.target.value.replace(/[^0-7]/g, "").slice(0, 4);
+    setSquawkValue(numeric);
+  };
+
+  const handleSquawkBlur = () => {
+    setIsEditingSquawk(false);
+    if (squawkValue !== (flight.squawk || "")) {
+      onSquawkChange(flight.id, squawkValue);
+    }
+  };
+
+  const handleSquawkKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") inputRef.current?.blur();
+  };
+
+  const handleAssignSquawk = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAssignSquawk(flight.id);
+  };
+
+  return (
+    <div
+      className={cn(
+        "group relative cursor-pointer rounded border p-3 transition-all duration-200 select-none",
+        getStatusColors(flight.status as FlightStatus),
+        isDragging && "scale-95 rotate-1 opacity-50",
+        isSelected && "ring-2 ring-white",
+        className,
+      )}
+      onClick={onClick}
+      draggable
+      onDragStart={handleDragStart}
+    >
+      <div
+        className={cn(
+          "absolute top-2 left-2 z-10 flex h-5 w-5 cursor-pointer items-center justify-center transition-all duration-300",
+          "hover:rounded-sm hover:border hover:border-gray-400",
+          isSelected ? "rounded-sm border-blue-600 bg-blue-600" : "",
+        )}
+        onClick={handleSelect}
+        role="checkbox"
+        aria-checked={isSelected}
+      >
+        {isSelected && <Check className="h-4 w-4 text-white" />}
+      </div>
+
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {isOnRadar && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleOpenRadar}
+                className="h-6 w-6 p-0 text-white hover:bg-cyan-600"
+              >
+                <Radar className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Open in RadarThing</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleEdit}
+          className="h-6 w-6 p-0 text-white hover:bg-blue-600"
+        >
+          <Edit className="h-3 w-3" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleDelete}
+          className="h-6 w-6 p-0 text-white hover:bg-red-600"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+
+      <div className="space-y-2 pr-24 pl-6 font-mono text-sm text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-base font-bold">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    "inline-block h-2 w-2 flex-shrink-0 rounded-full",
+                    isOnRadar ? "bg-green-500" : "bg-gray-500",
+                  )}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isOnRadar ? "On radar" : "Not on radar"}</p>
+              </TooltipContent>
+            </Tooltip>
+            {flight.callsign}
+            {flight.airport === flight.arrival ? (
+              <span title="Arriving">
+                <PlaneLanding className="h-3.5 w-3.5 text-amber-400" />
+              </span>
+            ) : (
+              <span title="Departing">
+                <PlaneTakeoff className="h-3.5 w-3.5 text-emerald-400" />
+              </span>
+            )}
+          </div>
+          <div className="text-xs font-semibold text-gray-300">
+            {flight.status.toUpperCase()}
+          </div>
+        </div>
+
+        {(flight.geofs_callsign || flight.discord_username) && (
+          <div className="flex items-center space-x-2 text-xs text-gray-400">
+            {flight.geofs_callsign && (
+              <span className="text-gray-300">
+                GFS: {flight.geofs_callsign}
+              </span>
+            )}
+            {flight.geofs_callsign && flight.discord_username && (
+              <span className="text-gray-500">|</span>
+            )}
+            {flight.discord_username && (
+              <span className="text-gray-300">
+                DISCORD: {flight.discord_username}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="text-gray-200">{flight.aircraft_type}</div>
+
+        {routeEndpoints && (
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span>
+              Dep: <span className="text-gray-200">{routeEndpoints.departure}</span>
+            </span>
+            <span>
+              Arr: <span className="text-gray-200">{routeEndpoints.arrival}</span>
+            </span>
+          </div>
+        )}
+
+        {filedAt && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <CalendarClock className="h-3.5 w-3.5 text-gray-500" />
+            <span>
+              FILED: <span className="text-gray-200">{filedAt}</span>
+            </span>
+          </div>
+        )}
+
+        <div className="flex justify-between text-xs text-gray-300">
+          {flight.departure_time && (
+            <span>
+              ETD: <span className="text-white">{flight.departure_time}</span>
+            </span>
+          )}
+          <span className="flex items-center gap-1">
+            SQK:{" "}
+            {isEditingSquawk ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={squawkValue}
+                onChange={handleSquawkChange}
+                onBlur={handleSquawkBlur}
+                onKeyDown={handleSquawkKeyDown}
+                maxLength={4}
+                onClick={(e) => e.stopPropagation()}
+                className="w-14 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs text-white outline-none focus:border-blue-500"
+              />
+            ) : squawkMismatch ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    onClick={handleSquawkClick}
+                    className="cursor-pointer rounded border border-red-500 px-1 py-0.5 text-white hover:bg-gray-700"
+                  >
+                    {flight.squawk || "----"}
+                    <span className="ml-1 font-bold text-red-500">!</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Squawk mismatch: aircraft squawk is {matchedRadarAircraft?.squawk}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span
+                onClick={handleSquawkClick}
+                className="cursor-pointer rounded px-1 py-0.5 text-white hover:bg-gray-700"
+              >
+                {flight.squawk || "----"}
+              </span>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleAssignSquawk}
+                  className="rounded p-0.5 text-gray-400 hover:bg-gray-700 hover:text-white"
+                >
+                  <RefreshCcw className="h-3 w-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{flight.squawk ? "Rotate squawk" : "Assign squawk"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </span>
+        </div>
+
+        <div className="flex justify-between text-xs text-gray-300">
+          <span>
+            ALT: <span className="text-white">{flight.altitude}</span>
+          </span>
+          <span>
+            SPD: <span className="text-white">{flight.speed}</span>
+          </span>
+        </div>
+
+        {flight.route && (
+          <div className="bg-opacity-50 mt-2 rounded bg-gray-800 p-2 text-xs text-blue-300">
+            <div className="mb-1 font-semibold">ROUTE:</div>
+            <div className="break-words">{flight.route}</div>
+          </div>
+        )}
+
+        {flight.notes && (
+          <div className="bg-opacity-50 mt-2 rounded bg-gray-800 p-2 text-xs text-yellow-300">
+            <div className="mb-1 font-semibold">NOTES:</div>
+            <div className="break-words">{flight.notes}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
